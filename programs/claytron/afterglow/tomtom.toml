@@ -1,0 +1,111 @@
+# Copyright (C) 2026 claytron
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# TomTom Program Configuration
+#
+# Effect: Per-line horizontal pixel delay with variable shape, drift speed,
+#   and noise — creating a VHS-style smear/shear distortion.
+#
+# Delay knob: controls overall smear depth. Centre = no smear.
+# Shape knob: sweeps the per-line offset pattern from linear ramp → sine → sawtooth.
+# Speed knob: controls how fast the shape pattern drifts frame-to-frame.
+# Noise knob: adds LFSR-based random jitter to each line's offset.
+#   Low = clean geometric smear, high = VHS tracking-error chaos.
+# Channel toggle: apply smear to Y (luma) only or Y+U+V (full colour).
+# Blend slider: wet/dry mix between original and smeared signal.
+
+[program]
+program_id = "com.claytron.tomtom"
+program_name = "TomTom"
+program_version = "0.1.0"
+abi_version = ">=1.0,<2.0"
+author = "claytron"
+license = "GPL-3.0"
+categories = ["Distortion", "Time"]
+program_type = "processing"
+description = "Per-line horizontal delay smear with shape, speed, noise, and VHS character."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# ---------------------------------------------------------------------------
+# KNOBS (Rotary Potentiometers)
+# ---------------------------------------------------------------------------
+
+# Overall smear depth. Centre = no smear; CCW = smear left; CW = smear right.
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Delay"
+control_mode = "linear"
+display_min_value = -512
+display_max_value = 511
+initial_value = 512
+display_float_digits = 0
+suffix_label = ""
+
+# Per-line offset pattern shape.
+# Low end = linear ramp, mid = sine wave, high end = sawtooth.
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Shape"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 0
+suffix_label = "%"
+
+# How fast the shape pattern drifts frame-to-frame.
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Speed"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 0
+suffix_label = "%"
+
+# Random per-line jitter (LFSR noise).
+# Low = clean geometric smear; high = VHS tracking-error chaos.
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Noise"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 0
+suffix_label = "%"
+
+# ---------------------------------------------------------------------------
+# SWITCHES (Toggle Switches)
+# ---------------------------------------------------------------------------
+
+# Channel: apply smear to Y (luma only) or all channels (Y+U+V).
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Channel"
+value_labels = ["Y", "Y+U+V"]
+initial_value_label = "Y"
+
+# Bypass: Videomancer convention — last switch is always bypass.
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Process", "Bypass"]
+initial_value_label = "Process"
+
+# ---------------------------------------------------------------------------
+# SLIDER (Linear Potentiometer)
+# ---------------------------------------------------------------------------
+
+# Wet/dry blend between original and smeared signal.
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Blend"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
