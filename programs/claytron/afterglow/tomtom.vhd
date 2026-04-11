@@ -22,11 +22,12 @@
 --             feed a 2-clock multiply pipeline:
 --               2a: scale line by shape, centre wave/delay/noise into signed inputs
 --               2b: multiply + sum → s_line_offset (signed pixel shift for this line)
---   Stage 3 : Line pixel buffer (BRAM) — circular buffer, one line wide
---   Stage 4 : Read delayed pixel from buffer at offset address
---   Stage 5 : Channel mux — apply delay to Y only or Y+U+V
---   Stage 6 : Wet/dry blend via interpolator_u
---   Stage 7 : Bypass mux + sync delay to match total pipeline latency
+--   Stage 3 : Line pixel buffer — 3× dual-bank BRAM (Y/U/V); write current
+--             line at wr_addr, read previous line at wr_addr+s_line_offset;
+--             2-clock read latency
+--   Stage 4 : Channel mux — select Y-only or Y+U+V from line buffer outputs
+--   Stage 5 : Wet/dry blend via interpolator_u
+--   Stage 6 : Bypass mux + sync delay to match total pipeline latency
 --
 -- Register Map:
 --   rotary_potentiometer_1  : Delay depth (0=full left, 512=centre/off, 1023=full right)
@@ -58,7 +59,10 @@ architecture tomtom of program_top is
     -- Pipeline latency constant
     -- Update this as stages are added so sync delay stays correct.
     ---------------------------------------------------------------------------
-    constant C_LATENCY_CLKS : integer := 1;  -- passthrough for now
+    constant C_LATENCY_CLKS : integer := 1;  -- passthrough for now; grows as stages land
+    -- Stage 3 line buffer depth: 2^11 = 2048 entries per bank.
+    -- Covers HD active width (1920) with room to spare for offset wrap.
+    constant C_LINE_DEPTH   : integer := 11;
 
     ---------------------------------------------------------------------------
     -- Stage 0: Control signals (decoded from registers_in)
@@ -106,6 +110,26 @@ architecture tomtom of program_top is
     -- shape_contrib = (wave × delay) >> 9  → up to ±512 px
     -- noise_contrib = (noise × scale) >> 14 → up to  ±32 px
     signal s_line_offset    : signed(10 downto 0) := (others => '0');
+
+    ---------------------------------------------------------------------------
+    -- Stage 3: Line pixel buffer signals
+    -- Three video_line_buffer instances (Y, U, V).  Each is a dual-bank BRAM:
+    -- while one bank is written with the current line, the other is read to
+    -- supply the previous line's pixels at a horizontally shifted address.
+    -- Read latency: 2 clocks from i_rd_addr to o_data.
+    ---------------------------------------------------------------------------
+    -- Avid edge detection (for avid-gated write counter).
+    signal s_avid_prev  : std_logic                              := '0';
+    -- Bank select: '0' on vsync, toggled each hsync.
+    signal s_lb_ab      : std_logic                              := '0';
+    -- Write address: 0-indexed from first active pixel, advances during avid.
+    signal s_lb_wr_addr : unsigned(C_LINE_DEPTH - 1 downto 0)   := (others => '0');
+    -- Read address: wr_addr + s_line_offset, wraps naturally at 2048.
+    signal s_lb_rd_addr : unsigned(C_LINE_DEPTH - 1 downto 0);
+    -- Line buffer outputs: previous line's Y/U/V at the shifted read position.
+    signal s_lb_y_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s_lb_u_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s_lb_v_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
 
 begin
 
@@ -267,10 +291,90 @@ begin
         end if;
     end process p_stage2b;
 
-    -- TODO Stage 3 : Line pixel buffer (BRAM circular buffer)
-    -- TODO Stage 4 : Read delayed pixel at computed offset address
-    -- TODO Stage 5 : Channel mux (Y only vs Y+U+V)
-    -- TODO Stage 6 : Wet/dry blend (interpolator_u)
-    -- TODO Stage 7 : Bypass mux + sync delay (C_LATENCY_CLKS)
+    ---------------------------------------------------------------------------
+    -- Stage 3: Line pixel buffer control
+    -- Pixel counter (s_lb_wr_addr): resets to 0 on the first active pixel
+    -- of each line (avid rising edge), increments each subsequent avid cycle.
+    -- This mirrors the kintsugi pattern and ensures pixel 0 always maps to
+    -- address 0 regardless of horizontal blanking duration.
+    --
+    -- Bank select (s_lb_ab): cleared on vsync, toggled on each hsync so the
+    -- write and read banks swap every line.
+    --
+    -- s_hsync_n_prev and s_vsync_n_prev are driven by Stages 1/2 — read only.
+    ---------------------------------------------------------------------------
+    p_stage3_ctrl : process(clk)
+    begin
+        if rising_edge(clk) then
+            s_avid_prev <= data_in.avid;
+
+            -- Write address: 0 at first active pixel, then increment
+            if data_in.avid = '1' then
+                if s_avid_prev = '0' then
+                    s_lb_wr_addr <= (others => '0');
+                else
+                    s_lb_wr_addr <= s_lb_wr_addr + 1;
+                end if;
+            end if;
+
+            -- Bank toggle: reset on vsync, flip on each hsync
+            if data_in.vsync_n = '0' and s_vsync_n_prev = '1' then
+                s_lb_ab <= '0';
+            elsif data_in.hsync_n = '0' and s_hsync_n_prev = '1' then
+                s_lb_ab <= not s_lb_ab;
+            end if;
+        end if;
+    end process p_stage3_ctrl;
+
+    ---------------------------------------------------------------------------
+    -- Stage 3: Read address — current pixel position plus signed line offset.
+    -- Natural 11-bit wrap (mod 2048) means extreme offsets produce edge-wrap
+    -- artefacts rather than hard clipping — a pleasing VHS character.
+    ---------------------------------------------------------------------------
+    s_lb_rd_addr <= unsigned(
+        (signed('0' & s_lb_wr_addr) + resize(s_line_offset, 12))(10 downto 0)
+    );
+
+    ---------------------------------------------------------------------------
+    -- Stage 3: Line buffer instances — one per channel (Y, U, V).
+    -- Each dual-bank BRAM writes the current line while reading the previous
+    -- line at the offset address. Read latency: 2 clocks.
+    ---------------------------------------------------------------------------
+    lb_y : entity work.video_line_buffer
+        generic map (G_WIDTH => C_VIDEO_DATA_WIDTH, G_DEPTH => C_LINE_DEPTH)
+        port map (
+            clk       => clk,
+            i_ab      => s_lb_ab,
+            i_wr_addr => s_lb_wr_addr,
+            i_rd_addr => s_lb_rd_addr,
+            i_data    => data_in.y,
+            o_data    => s_lb_y_out
+        );
+
+    lb_u : entity work.video_line_buffer
+        generic map (G_WIDTH => C_VIDEO_DATA_WIDTH, G_DEPTH => C_LINE_DEPTH)
+        port map (
+            clk       => clk,
+            i_ab      => s_lb_ab,
+            i_wr_addr => s_lb_wr_addr,
+            i_rd_addr => s_lb_rd_addr,
+            i_data    => data_in.u,
+            o_data    => s_lb_u_out
+        );
+
+    lb_v : entity work.video_line_buffer
+        generic map (G_WIDTH => C_VIDEO_DATA_WIDTH, G_DEPTH => C_LINE_DEPTH)
+        port map (
+            clk       => clk,
+            i_ab      => s_lb_ab,
+            i_wr_addr => s_lb_wr_addr,
+            i_rd_addr => s_lb_rd_addr,
+            i_data    => data_in.v,
+            o_data    => s_lb_v_out
+        );
+
+    -- TODO Stage 4 : Channel mux — s_lb_y/u/v_out → select Y-only or Y+U+V
+    -- TODO Stage 5 : Wet/dry blend (interpolator_u)
+    -- TODO Stage 6 : Bypass mux + sync delay (C_LATENCY_CLKS)
 
 end architecture tomtom;
