@@ -28,8 +28,9 @@
 --   Stage 4 : Channel mux — 2-clock dry delay to match line buffer latency;
 --             combinatorial mux: Y always smeared, U/V smeared (Y+U+V mode)
 --             or dry (Y-only mode)
---   Stage 5 : Wet/dry blend via interpolator_u
---   Stage 6 : Bypass mux + sync delay to match total pipeline latency
+--   Stage 5 : Wet/dry blend — 3× interpolator_u (a=dry, b=wet, t=s_blend);
+--             4-clock latency; valid output used as data_out.avid
+--   Stage 6 : Bypass mux + sync delay (C_LATENCY_CLKS = 6)
 --
 -- Register Map:
 --   rotary_potentiometer_1  : Delay depth (0=full left, 512=centre/off, 1023=full right)
@@ -61,7 +62,9 @@ architecture tomtom of program_top is
     -- Pipeline latency constant
     -- Update this as stages are added so sync delay stays correct.
     ---------------------------------------------------------------------------
-    constant C_LATENCY_CLKS : integer := 1;  -- passthrough for now; grows as stages land
+    -- Total pipeline latency: 2 (line buffer) + 4 (interpolator_u) = 6 clocks.
+    -- Stage 6 sync delay must match this value exactly.
+    constant C_LATENCY_CLKS : integer := 6;
     -- Stage 3 line buffer depth: 2^11 = 2048 entries per bank.
     -- Covers HD active width (1920) with room to spare for offset wrap.
     constant C_LINE_DEPTH   : integer := 11;
@@ -139,13 +142,16 @@ architecture tomtom of program_top is
     -- latency so the dry U/V (Y-only mode) and the dry blend input (Stage 5)
     -- are in phase with the wet line-buffer outputs.
     ---------------------------------------------------------------------------
-    -- 2-clock delay pipeline for all three input channels.
+    -- 2-clock delay pipeline for Y/U/V and avid.
+    -- avid delayed to match wet-path latency so interpolator valid tracks avid.
     signal s_dry_y_d1   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_dry_u_d1   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_dry_v_d1   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_avid_d1    : std_logic := '0';
     signal s_dry_y_d2   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_dry_u_d2   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_dry_v_d2   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_avid_d2    : std_logic := '0';
     -- Mux outputs (combinatorial — no added latency).
     -- Y always takes the smeared line-buffer value.
     -- U/V are smeared (line buffer) in Y+U+V mode, or passed through dry
@@ -153,6 +159,20 @@ architecture tomtom of program_top is
     signal s4_y         : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s4_u         : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s4_v         : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+
+    ---------------------------------------------------------------------------
+    -- Stage 5: Wet/dry blend signals
+    -- Three interpolator_u instances (Y, U, V).
+    -- result = a + (b - a) * t   where a=dry, b=wet, t=s_blend
+    -- Latency: 4 clocks.  valid output tracks enable (s_avid_d2) through the
+    -- pipeline — used as data_out.avid in Stage 6.
+    ---------------------------------------------------------------------------
+    signal s5_y_result  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s5_y_valid   : std_logic;
+    signal s5_u_result  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s5_u_valid   : std_logic;
+    signal s5_v_result  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s5_v_valid   : std_logic;
 
 begin
 
@@ -409,9 +429,11 @@ begin
             s_dry_y_d1 <= data_in.y;
             s_dry_u_d1 <= data_in.u;
             s_dry_v_d1 <= data_in.v;
+            s_avid_d1  <= data_in.avid;
             s_dry_y_d2 <= s_dry_y_d1;
             s_dry_u_d2 <= s_dry_u_d1;
             s_dry_v_d2 <= s_dry_v_d1;
+            s_avid_d2  <= s_avid_d1;
         end if;
     end process p_stage4_dry_delay;
 
@@ -428,7 +450,71 @@ begin
     s4_u <= s_lb_u_out when s_ch_all = '1' else s_dry_u_d2;
     s4_v <= s_lb_v_out when s_ch_all = '1' else s_dry_v_d2;
 
-    -- TODO Stage 5 : Wet/dry blend (interpolator_u, a=s_dry_*_d2, b=s4_*, t=s_blend)
-    -- TODO Stage 6 : Bypass mux + sync delay (C_LATENCY_CLKS)
+    ---------------------------------------------------------------------------
+    -- Stage 5: Wet/dry blend via interpolator_u (4-clock latency each)
+    --
+    -- For each channel:
+    --   a = dry  = s_dry_*_d2   (current-line pixel, 2-clock delayed)
+    --   b = wet  = s4_*          (channel-mux output: smeared line-buffer data)
+    --   t = s_blend              (slider, 0 = full dry, 1023 = full wet)
+    --
+    -- enable = s_avid_d2 so that the valid output tracks avid through the
+    -- 4-clock pipeline, arriving as a correctly-timed avid for Stage 6.
+    --
+    -- In Y-only channel mode s4_u = s4_v = s_dry_*_d2, so a = b and the
+    -- blend has no effect on chroma — regardless of the Blend knob position.
+    ---------------------------------------------------------------------------
+    interp_y : entity work.interpolator_u
+        generic map (
+            G_WIDTH      => C_VIDEO_DATA_WIDTH,
+            G_FRAC_BITS  => C_VIDEO_DATA_WIDTH,
+            G_OUTPUT_MIN => 0,
+            G_OUTPUT_MAX => 1023
+        )
+        port map (
+            clk    => clk,
+            enable => s_avid_d2,
+            a      => unsigned(s_dry_y_d2),
+            b      => unsigned(s4_y),
+            t      => s_blend,
+            result => s5_y_result,
+            valid  => s5_y_valid
+        );
+
+    interp_u : entity work.interpolator_u
+        generic map (
+            G_WIDTH      => C_VIDEO_DATA_WIDTH,
+            G_FRAC_BITS  => C_VIDEO_DATA_WIDTH,
+            G_OUTPUT_MIN => 0,
+            G_OUTPUT_MAX => 1023
+        )
+        port map (
+            clk    => clk,
+            enable => s_avid_d2,
+            a      => unsigned(s_dry_u_d2),
+            b      => unsigned(s4_u),
+            t      => s_blend,
+            result => s5_u_result,
+            valid  => s5_u_valid
+        );
+
+    interp_v : entity work.interpolator_u
+        generic map (
+            G_WIDTH      => C_VIDEO_DATA_WIDTH,
+            G_FRAC_BITS  => C_VIDEO_DATA_WIDTH,
+            G_OUTPUT_MIN => 0,
+            G_OUTPUT_MAX => 1023
+        )
+        port map (
+            clk    => clk,
+            enable => s_avid_d2,
+            a      => unsigned(s_dry_v_d2),
+            b      => unsigned(s4_v),
+            t      => s_blend,
+            result => s5_v_result,
+            valid  => s5_v_valid
+        );
+
+    -- TODO Stage 6 : Bypass mux + sync delay (C_LATENCY_CLKS = 6)
 
 end architecture tomtom;
