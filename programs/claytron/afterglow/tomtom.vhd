@@ -16,7 +16,8 @@
 --
 -- Architecture (planned stages):
 --   Stage 0 : Control decode — extract and scale register values
---   Stage 1 : LFSR noise generator — one new pseudo-random value per clock
+--   Stage 1 : LFSR noise generator — lfsr16 free-runs; output sampled once
+--             per line on hsync falling edge into s_noise_sample
 --   Stage 2 : Per-line offset calculator — combines shape + speed + noise
 --   Stage 3 : Line pixel buffer (BRAM) — circular buffer, one line wide
 --   Stage 4 : Read delayed pixel from buffer at offset address
@@ -67,6 +68,18 @@ architecture tomtom of program_top is
     signal s_bypass : std_logic;  -- '1' = bypass
     signal s_blend  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
 
+    ---------------------------------------------------------------------------
+    -- Stage 1: LFSR noise generator signals
+    ---------------------------------------------------------------------------
+    -- Raw 16-bit pseudo-random output, advances every clock.
+    signal s_lfsr16_out   : std_logic_vector(15 downto 0);
+    -- Previous hsync state for falling-edge detection.
+    signal s_hsync_n_prev : std_logic := '1';
+    -- Per-line noise sample: lower 10 bits of LFSR latched at each hsync
+    -- falling edge. Stable for the entire line so every pixel on a given
+    -- line receives the same noise contribution.
+    signal s_noise_sample : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
+
 begin
 
     ---------------------------------------------------------------------------
@@ -96,7 +109,39 @@ begin
         end if;
     end process p_passthrough;
 
-    -- TODO Stage 1 : LFSR noise generator
+    ---------------------------------------------------------------------------
+    -- Stage 1a: LFSR16 — free-running pseudo-random source
+    -- Advances one step every clock. Seed fed back to itself so it never
+    -- reloads; the all-zeros lockup guard inside lfsr16 keeps it alive.
+    ---------------------------------------------------------------------------
+    u_lfsr16 : entity work.lfsr16
+        port map (
+            clk    => clk,
+            enable => '1',
+            seed   => s_lfsr16_out,  -- feedback; load is never pulsed
+            load   => '0',
+            q      => s_lfsr16_out
+        );
+
+    ---------------------------------------------------------------------------
+    -- Stage 1b: Per-line noise sample
+    -- On the falling edge of hsync_n (start of sync pulse), latch the lower
+    -- 10 bits of the LFSR into s_noise_sample. This value is held constant
+    -- for the whole line, so every pixel on that line shares the same random
+    -- horizontal offset — exactly the VHS line-jitter character we want.
+    -- Later stages multiply s_noise_sample by the s_noise knob to scale how
+    -- much jitter is applied.
+    ---------------------------------------------------------------------------
+    p_noise_sample : process(clk)
+    begin
+        if rising_edge(clk) then
+            s_hsync_n_prev <= data_in.hsync_n;
+            if data_in.hsync_n = '0' and s_hsync_n_prev = '1' then
+                s_noise_sample <= unsigned(s_lfsr16_out(C_PARAMETER_DATA_WIDTH - 1 downto 0));
+            end if;
+        end if;
+    end process p_noise_sample;
+
     -- TODO Stage 2 : Per-line offset calculator (shape + speed + noise)
     -- TODO Stage 3 : Line pixel buffer (BRAM circular buffer)
     -- TODO Stage 4 : Read delayed pixel at computed offset address
