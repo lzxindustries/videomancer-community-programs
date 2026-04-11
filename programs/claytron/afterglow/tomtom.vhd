@@ -42,7 +42,10 @@
 --   linear_potentiometer_12 : Blend wet/dry (0=dry, 1023=wet)
 --
 -- Timing:
---   Total pipeline latency: TBD (will be updated as stages are implemented)
+--   Total pipeline latency: 6 clock cycles
+--     2 clocks : video_line_buffer read latency (Stage 3)
+--     4 clocks : interpolator_u blend (Stage 5)
+--   Sync delay line (Stage 6) is C_LATENCY_CLKS = 6 deep to match.
 
 --------------------------------------------------------------------------------
 
@@ -174,6 +177,20 @@ architecture tomtom of program_top is
     signal s5_v_result  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s5_v_valid   : std_logic;
 
+    ---------------------------------------------------------------------------
+    -- Stage 6: Bypass delay line signals
+    -- Sync and data signals from data_in shifted by C_LATENCY_CLKS clocks so
+    -- they arrive at data_out at the same time as the processed result.
+    -- Sync signals are always taken from this delay line.
+    -- Y/U/V data is muxed: processed when s_bypass='0', delayed when '1'.
+    ---------------------------------------------------------------------------
+    signal s_hsync_n_delayed : std_logic;
+    signal s_vsync_n_delayed : std_logic;
+    signal s_field_n_delayed : std_logic;
+    signal s_y_delayed       : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s_u_delayed       : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s_v_delayed       : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+
 begin
 
     ---------------------------------------------------------------------------
@@ -192,16 +209,6 @@ begin
             s_blend  <= unsigned(registers_in(11));
         end if;
     end process p_control_decode;
-
-    ---------------------------------------------------------------------------
-    -- Passthrough (temporary — stages will replace this)
-    ---------------------------------------------------------------------------
-    p_passthrough : process(clk)
-    begin
-        if rising_edge(clk) then
-            data_out <= data_in;
-        end if;
-    end process p_passthrough;
 
     ---------------------------------------------------------------------------
     -- Stage 1a: LFSR16 — free-running pseudo-random source
@@ -515,6 +522,52 @@ begin
             valid  => s5_v_valid
         );
 
-    -- TODO Stage 6 : Bypass mux + sync delay (C_LATENCY_CLKS = 6)
+    ---------------------------------------------------------------------------
+    -- Stage 6: Bypass delay line
+    -- Shifts hsync_n, vsync_n, field_n and Y/U/V through a C_LATENCY_CLKS-deep
+    -- shift register so the bypass path arrives at data_out in phase with the
+    -- processed path.  Uses the same variable-prepend pattern as yuv_bit_logic.
+    ---------------------------------------------------------------------------
+    p_stage6_delay : process(clk)
+        type t_sync_delay is array (0 to C_LATENCY_CLKS - 1) of std_logic;
+        type t_data_delay is array (0 to C_LATENCY_CLKS - 1)
+            of std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+        variable v_hsync : t_sync_delay := (others => '1');
+        variable v_vsync : t_sync_delay := (others => '1');
+        variable v_field : t_sync_delay := (others => '1');
+        variable v_y     : t_data_delay := (others => (others => '0'));
+        variable v_u     : t_data_delay := (others => (others => '0'));
+        variable v_v     : t_data_delay := (others => (others => '0'));
+    begin
+        if rising_edge(clk) then
+            v_hsync := data_in.hsync_n & v_hsync(0 to C_LATENCY_CLKS - 2);
+            v_vsync := data_in.vsync_n & v_vsync(0 to C_LATENCY_CLKS - 2);
+            v_field := data_in.field_n & v_field(0 to C_LATENCY_CLKS - 2);
+            v_y     := data_in.y       & v_y(0 to C_LATENCY_CLKS - 2);
+            v_u     := data_in.u       & v_u(0 to C_LATENCY_CLKS - 2);
+            v_v     := data_in.v       & v_v(0 to C_LATENCY_CLKS - 2);
+            s_hsync_n_delayed <= v_hsync(C_LATENCY_CLKS - 1);
+            s_vsync_n_delayed <= v_vsync(C_LATENCY_CLKS - 1);
+            s_field_n_delayed <= v_field(C_LATENCY_CLKS - 1);
+            s_y_delayed       <= v_y(C_LATENCY_CLKS - 1);
+            s_u_delayed       <= v_u(C_LATENCY_CLKS - 1);
+            s_v_delayed       <= v_v(C_LATENCY_CLKS - 1);
+        end if;
+    end process p_stage6_delay;
+
+    ---------------------------------------------------------------------------
+    -- Stage 6: Output mux and assignment
+    -- Y/U/V: processed result when s_bypass='0', delayed input when '1'.
+    -- avid: always s5_y_valid — the interpolator propagates avid timing
+    --       naturally through its 4-clock pipeline regardless of bypass.
+    -- Sync: always the C_LATENCY_CLKS-delayed versions.
+    ---------------------------------------------------------------------------
+    data_out.y <= std_logic_vector(s5_y_result) when s_bypass = '0' else s_y_delayed;
+    data_out.u <= std_logic_vector(s5_u_result) when s_bypass = '0' else s_u_delayed;
+    data_out.v <= std_logic_vector(s5_v_result) when s_bypass = '0' else s_v_delayed;
+    data_out.avid    <= s5_y_valid;
+    data_out.hsync_n <= s_hsync_n_delayed;
+    data_out.vsync_n <= s_vsync_n_delayed;
+    data_out.field_n <= s_field_n_delayed;
 
 end architecture tomtom;
