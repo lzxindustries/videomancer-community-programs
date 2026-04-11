@@ -25,7 +25,9 @@
 --   Stage 3 : Line pixel buffer — 3× dual-bank BRAM (Y/U/V); write current
 --             line at wr_addr, read previous line at wr_addr+s_line_offset;
 --             2-clock read latency
---   Stage 4 : Channel mux — select Y-only or Y+U+V from line buffer outputs
+--   Stage 4 : Channel mux — 2-clock dry delay to match line buffer latency;
+--             combinatorial mux: Y always smeared, U/V smeared (Y+U+V mode)
+--             or dry (Y-only mode)
 --   Stage 5 : Wet/dry blend via interpolator_u
 --   Stage 6 : Bypass mux + sync delay to match total pipeline latency
 --
@@ -130,6 +132,27 @@ architecture tomtom of program_top is
     signal s_lb_y_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_u_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_v_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+
+    ---------------------------------------------------------------------------
+    -- Stage 4: Channel mux signals
+    -- A 2-clock delay pipeline aligns data_in with the line buffer read
+    -- latency so the dry U/V (Y-only mode) and the dry blend input (Stage 5)
+    -- are in phase with the wet line-buffer outputs.
+    ---------------------------------------------------------------------------
+    -- 2-clock delay pipeline for all three input channels.
+    signal s_dry_y_d1   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_dry_u_d1   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_dry_v_d1   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_dry_y_d2   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_dry_u_d2   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_dry_v_d2   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    -- Mux outputs (combinatorial — no added latency).
+    -- Y always takes the smeared line-buffer value.
+    -- U/V are smeared (line buffer) in Y+U+V mode, or passed through dry
+    -- in Y-only mode — giving luma-smear-only with live colour.
+    signal s4_y         : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s4_u         : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s4_v         : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
 
 begin
 
@@ -373,8 +396,39 @@ begin
             o_data    => s_lb_v_out
         );
 
-    -- TODO Stage 4 : Channel mux — s_lb_y/u/v_out → select Y-only or Y+U+V
-    -- TODO Stage 5 : Wet/dry blend (interpolator_u)
+    ---------------------------------------------------------------------------
+    -- Stage 4: Dry delay pipeline
+    -- Delays data_in Y/U/V by exactly 2 clocks to match the line buffer read
+    -- latency.  s_dry_*_d2 is used in two places:
+    --   • As the dry U/V in Y-only channel mode (below).
+    --   • As the 'a' (dry) input to each interpolator_u in Stage 5.
+    ---------------------------------------------------------------------------
+    p_stage4_dry_delay : process(clk)
+    begin
+        if rising_edge(clk) then
+            s_dry_y_d1 <= data_in.y;
+            s_dry_u_d1 <= data_in.u;
+            s_dry_v_d1 <= data_in.v;
+            s_dry_y_d2 <= s_dry_y_d1;
+            s_dry_u_d2 <= s_dry_u_d1;
+            s_dry_v_d2 <= s_dry_v_d1;
+        end if;
+    end process p_stage4_dry_delay;
+
+    ---------------------------------------------------------------------------
+    -- Stage 4: Channel mux (combinatorial)
+    -- Y always comes from the line buffer — the smear is always on luma.
+    -- U/V follow the channel toggle:
+    --   s_ch_all = '0' (Y)      → U/V from current line (s_dry_*_d2)
+    --   s_ch_all = '1' (Y+U+V) → U/V from line buffer (s_lb_*_out)
+    -- No pipeline register here; Stage 5's interpolator input register
+    -- absorbs the combinatorial path.
+    ---------------------------------------------------------------------------
+    s4_y <= s_lb_y_out;
+    s4_u <= s_lb_u_out when s_ch_all = '1' else s_dry_u_d2;
+    s4_v <= s_lb_v_out when s_ch_all = '1' else s_dry_v_d2;
+
+    -- TODO Stage 5 : Wet/dry blend (interpolator_u, a=s_dry_*_d2, b=s4_*, t=s_blend)
     -- TODO Stage 6 : Bypass mux + sync delay (C_LATENCY_CLKS)
 
 end architecture tomtom;
