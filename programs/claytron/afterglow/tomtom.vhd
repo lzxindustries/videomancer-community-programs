@@ -133,7 +133,8 @@ architecture tomtom of program_top is
     -- Write address: 0-indexed from first active pixel, advances during avid.
     signal s_lb_wr_addr : unsigned(C_LINE_DEPTH - 1 downto 0)   := (others => '0');
     -- Read address: wr_addr + s_line_offset, wraps naturally at 2048.
-    signal s_lb_rd_addr : unsigned(C_LINE_DEPTH - 1 downto 0);
+    signal s_lb_rd_addr_sum : signed(C_LINE_DEPTH downto 0);
+    signal s_lb_rd_addr     : unsigned(C_LINE_DEPTH - 1 downto 0);
     -- Line buffer outputs: previous line's Y/U/V at the shifted read position.
     signal s_lb_y_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_u_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -381,9 +382,8 @@ begin
     -- Natural 11-bit wrap (mod 2048) means extreme offsets produce edge-wrap
     -- artefacts rather than hard clipping — a pleasing VHS character.
     ---------------------------------------------------------------------------
-    s_lb_rd_addr <= unsigned(
-        (signed('0' & s_lb_wr_addr) + resize(s_line_offset, 12))(10 downto 0)
-    );
+    s_lb_rd_addr_sum <= signed('0' & s_lb_wr_addr) + resize(s_line_offset, 12);
+    s_lb_rd_addr     <= unsigned(s_lb_rd_addr_sum(C_LINE_DEPTH - 1 downto 0));
 
     ---------------------------------------------------------------------------
     -- Stage 3: Line buffer instances — one per channel (Y, U, V).
