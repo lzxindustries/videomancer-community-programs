@@ -1,9 +1,9 @@
--- TomTom - Video delay / per-line horizontal smear for Videomancer
+-- Afterglow - Video delay / per-line horizontal smear for Videomancer
 -- Copyright (C) 2026 claytron
 -- License: GNU General Public License v3.0
 --
 -- Program Name:
---   TomTom
+--   Afterglow
 --
 -- Author:
 --   claytron
@@ -59,7 +59,7 @@ use work.video_stream_pkg.all;
 use work.core_pkg.all;
 use work.all;
 
-architecture tomtom of program_top is
+architecture afterglow of program_top is
 
     ---------------------------------------------------------------------------
     -- Pipeline latency constant
@@ -570,4 +570,4 @@ begin
     data_out.vsync_n <= s_vsync_n_delayed;
     data_out.field_n <= s_field_n_delayed;
 
-end architecture tomtom;
+end architecture afterglow;

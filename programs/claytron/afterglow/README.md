@@ -1,1 +1,1 @@
-TomTom is a video delay for the Videomancer instrument.
+Afterglow is a video delay for the Videomancer instrument.

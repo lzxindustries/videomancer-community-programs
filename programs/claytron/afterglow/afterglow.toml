@@ -1,7 +1,7 @@
 # Copyright (C) 2026 claytron
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# TomTom Program Configuration
+# Afterglow Program Configuration
 #
 # Effect: Per-line horizontal pixel delay with variable shape, drift speed,
 #   and noise — creating a VHS-style smear/shear distortion.
@@ -15,8 +15,8 @@
 # Blend slider: wet/dry mix between original and smeared signal.
 
 [program]
-program_id = "com.claytron.tomtom"
-program_name = "TomTom"
+program_id = "com.claytron.afterglow"
+program_name = "Afterglow"
 program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "claytron"
