@@ -153,10 +153,13 @@ architecture afterglow of program_top is
     signal s_lb_wr_addr : unsigned(C_LINE_DEPTH - 1 downto 0)   := (others => '0');
     -- Read address: wr_addr + s_line_offset, wraps naturally at 2048.
     -- Y uses s_lb_rd_addr directly; U and V add their chroma offsets on top.
-    signal s_lb_rd_addr_sum : signed(C_LINE_DEPTH downto 0);
-    signal s_lb_rd_addr     : unsigned(C_LINE_DEPTH - 1 downto 0);
-    signal s_lb_rd_addr_u   : unsigned(C_LINE_DEPTH - 1 downto 0);
-    signal s_lb_rd_addr_v   : unsigned(C_LINE_DEPTH - 1 downto 0);
+    -- _sum signals are full 12-bit signed sums before truncation to 11 bits.
+    signal s_lb_rd_addr_sum   : signed(C_LINE_DEPTH downto 0);
+    signal s_lb_rd_addr_sum_u : signed(C_LINE_DEPTH downto 0);
+    signal s_lb_rd_addr_sum_v : signed(C_LINE_DEPTH downto 0);
+    signal s_lb_rd_addr       : unsigned(C_LINE_DEPTH - 1 downto 0);
+    signal s_lb_rd_addr_u     : unsigned(C_LINE_DEPTH - 1 downto 0);
+    signal s_lb_rd_addr_v     : unsigned(C_LINE_DEPTH - 1 downto 0);
     -- Line buffer outputs: previous line's Y/U/V at the shifted read position.
     signal s_lb_y_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_u_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -443,14 +446,12 @@ begin
     -- U and V channels add their chroma offsets on top of the base sum,
     -- independently shifting the colour planes for chromatic aberration.
     ---------------------------------------------------------------------------
-    s_lb_rd_addr_sum <= signed('0' & s_lb_wr_addr) + resize(s_line_offset, 12);
-    s_lb_rd_addr     <= unsigned(s_lb_rd_addr_sum(C_LINE_DEPTH - 1 downto 0));
-    s_lb_rd_addr_u   <= unsigned((s_lb_rd_addr_sum
-                            + resize(signed(resize(s_chroma_u, 11)) - 512, 12))
-                            (C_LINE_DEPTH - 1 downto 0));
-    s_lb_rd_addr_v   <= unsigned((s_lb_rd_addr_sum
-                            + resize(signed(resize(s_chroma_v, 11)) - 512, 12))
-                            (C_LINE_DEPTH - 1 downto 0));
+    s_lb_rd_addr_sum   <= signed('0' & s_lb_wr_addr) + resize(s_line_offset, 12);
+    s_lb_rd_addr_sum_u <= s_lb_rd_addr_sum + resize(signed(resize(s_chroma_u, 11)) - 512, 12);
+    s_lb_rd_addr_sum_v <= s_lb_rd_addr_sum + resize(signed(resize(s_chroma_v, 11)) - 512, 12);
+    s_lb_rd_addr   <= unsigned(s_lb_rd_addr_sum(C_LINE_DEPTH - 1 downto 0));
+    s_lb_rd_addr_u <= unsigned(s_lb_rd_addr_sum_u(C_LINE_DEPTH - 1 downto 0));
+    s_lb_rd_addr_v <= unsigned(s_lb_rd_addr_sum_v(C_LINE_DEPTH - 1 downto 0));
 
     ---------------------------------------------------------------------------
     -- Stage 3: Feedback write-data mux (combinatorial)
