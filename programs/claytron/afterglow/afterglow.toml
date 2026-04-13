@@ -116,6 +116,14 @@ name_label = "Channel"
 value_labels = ["Y", "Y+U+V"]
 initial_value_label = "Y"
 
+# Wave Invert: flip the sign of the per-line wave contribution.
+# Normal = wave adds to delay (peaks shift right); Invert = wave subtracts.
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "W.Inv"
+value_labels = ["Normal", "Invert"]
+initial_value_label = "Normal"
+
 # Bypass: Videomancer convention — last switch is always bypass.
 [[parameter]]
 parameter_id = "toggle_switch_11"

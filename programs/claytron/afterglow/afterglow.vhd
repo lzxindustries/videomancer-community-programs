@@ -12,8 +12,9 @@
 --   Uniform horizontal pixel delay producing a VHS-style smear effect.
 --   All lines are shifted by the same base offset (Delay knob), with an
 --   optional per-line wave distortion (Shape knob depth), frame-rate drift
---   (Speed knob), LFSR per-line noise (Noise knob), and independent
---   chromatic offset for U and V channels (Chroma-U / Chroma-V knobs).
+--   (Speed knob), LFSR per-line noise (Noise knob), independent chromatic
+--   offset for U and V channels (Chroma-U / Chroma-V knobs), and a wave
+--   invert toggle (W.Inv) that flips the sign of the per-line wave.
 --
 -- Architecture (planned stages):
 --   Stage 0 : Control decode — extract and scale register values
@@ -41,6 +42,7 @@
 --   rotary_potentiometer_5  : Chroma-U (0=full left, 512=centre/off, 1023=full right) — U channel offset
 --   rotary_potentiometer_6  : Chroma-V (0=full left, 512=centre/off, 1023=full right) — V channel offset
 --   toggle_switch_7         : Channel select (0=Y only, 1=Y+U+V)
+--   toggle_switch_8         : Wave Invert (0=normal, 1=invert wave sign)
 --   toggle_switch_11        : Bypass (0=process, 1=bypass)
 --   linear_potentiometer_12 : Blend wet/dry (0=dry, 1023=wet)       [register 7]
 --
@@ -82,10 +84,11 @@ architecture afterglow of program_top is
     signal s_shape  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_speed  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_noise  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
-    signal s_chroma_u : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
-    signal s_chroma_v : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
-    signal s_ch_all   : std_logic;  -- '0' = Y only, '1' = Y+U+V
-    signal s_bypass   : std_logic;  -- '1' = bypass
+    signal s_chroma_u    : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
+    signal s_chroma_v    : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
+    signal s_ch_all      : std_logic;  -- '0' = Y only, '1' = Y+U+V
+    signal s_wave_invert : std_logic;  -- '1' = negate wave contribution
+    signal s_bypass      : std_logic;  -- '1' = bypass
     signal s_blend    : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
 
     ---------------------------------------------------------------------------
@@ -124,9 +127,9 @@ architecture afterglow of program_top is
     -- Stage 2b output (2 clks total): signed horizontal pixel offset for
     -- the current line.  Consumed by Stage 3 (line buffer address calc).
     --
-    -- delay_contrib = s2a_delay_signed       → uniform shift, all lines (±512 px)
-    -- shape_contrib = (wave × shape) >> 9   → per-line wave variation
-    -- noise_contrib = (noise × scale) >> 14 → up to ±32 px
+    -- delay_contrib = s2a_delay_signed            → uniform shift, all lines (±512 px)
+    -- shape_contrib = ±(wave × shape) >> 9        → per-line wave variation (sign from P8)
+    -- noise_contrib = (noise × scale) >> 14       → up to ±32 px
     signal s_line_offset    : signed(10 downto 0) := (others => '0');
 
     ---------------------------------------------------------------------------
@@ -218,10 +221,11 @@ begin
             s_shape    <= unsigned(registers_in(1));
             s_speed    <= unsigned(registers_in(2));
             s_noise    <= unsigned(registers_in(3));
-            s_chroma_u <= unsigned(registers_in(4));
-            s_chroma_v <= unsigned(registers_in(5));
-            s_ch_all   <= registers_in(6)(0);  -- toggle_switch_7 bit
-            s_bypass   <= registers_in(6)(4);  -- toggle_switch_11 bit
+            s_chroma_u    <= unsigned(registers_in(4));
+            s_chroma_v    <= unsigned(registers_in(5));
+            s_ch_all      <= registers_in(6)(0);  -- toggle_switch_7 bit
+            s_wave_invert <= registers_in(6)(1);  -- toggle_switch_8 bit
+            s_bypass      <= registers_in(6)(4);  -- toggle_switch_11 bit
             s_blend    <= unsigned(registers_in(7));
         end if;
     end process p_control_decode;
@@ -340,8 +344,9 @@ begin
     --     Uniform shift applied identically to every line.
     --     Range: −512..+511 pixels (P1 knob centred at 512 = no shift).
     --
-    --   shape_contrib = (wave_signed × shape_factor) >> 9
+    --   shape_contrib = ±(wave_signed × shape_factor) >> 9
     --     Per-line wave variation scaled by the Shape knob.
+    --     Sign is normal (+) when s_wave_invert='0', inverted (−) when '1'.
     --     Range: ±(512 × 1023) >> 9 ≈ ±1023 px at max shape and wave.
     --     Wraps naturally in 11-bit BRAM addressing (intentional VHS character).
     --
@@ -353,15 +358,23 @@ begin
     -- line.  It is read by Stage 3 when computing the BRAM read address.
     ---------------------------------------------------------------------------
     p_stage2b : process(clk)
-        variable v_shape_prod : signed(21 downto 0);
-        variable v_noise_prod : signed(21 downto 0);
+        variable v_shape_prod  : signed(21 downto 0);
+        variable v_noise_prod  : signed(21 downto 0);
+        variable v_shape_trunc : signed(10 downto 0);
     begin
         if rising_edge(clk) then
-            v_shape_prod := s2a_wave_signed * s2a_shape_factor;
-            v_noise_prod := s2a_noise_signed * s2a_noise_scale;
-            s_line_offset <= s2a_delay_signed
-                           + resize(signed(v_shape_prod(21 downto 9)), 11)
-                           + resize(signed(v_noise_prod(21 downto 14)), 11);
+            v_shape_prod  := s2a_wave_signed * s2a_shape_factor;
+            v_noise_prod  := s2a_noise_signed * s2a_noise_scale;
+            v_shape_trunc := resize(signed(v_shape_prod(21 downto 9)), 11);
+            if s_wave_invert = '1' then
+                s_line_offset <= s2a_delay_signed
+                               - v_shape_trunc
+                               + resize(signed(v_noise_prod(21 downto 14)), 11);
+            else
+                s_line_offset <= s2a_delay_signed
+                               + v_shape_trunc
+                               + resize(signed(v_noise_prod(21 downto 14)), 11);
+            end if;
         end if;
     end process p_stage2b;
 
