@@ -151,15 +151,19 @@ architecture afterglow of program_top is
     signal s_lb_ab      : std_logic                              := '0';
     -- Write address: 0-indexed from first active pixel, advances during avid.
     signal s_lb_wr_addr : unsigned(C_LINE_DEPTH - 1 downto 0)   := (others => '0');
-    -- Read address: wr_addr + s_line_offset, wraps naturally at 2048.
+    -- Read address: wr_addr + s_line_offset, clamped to valid pixel range.
     -- Y uses s_lb_rd_addr directly; U and V add their chroma offsets on top.
-    -- _sum signals are full 12-bit signed sums before truncation to 11 bits.
+    -- _sum signals are full 12-bit signed sums before clamping to 11 bits.
     signal s_lb_rd_addr_sum   : signed(C_LINE_DEPTH downto 0);
     signal s_lb_rd_addr_sum_u : signed(C_LINE_DEPTH downto 0);
     signal s_lb_rd_addr_sum_v : signed(C_LINE_DEPTH downto 0);
     signal s_lb_rd_addr       : unsigned(C_LINE_DEPTH - 1 downto 0);
     signal s_lb_rd_addr_u     : unsigned(C_LINE_DEPTH - 1 downto 0);
     signal s_lb_rd_addr_v     : unsigned(C_LINE_DEPTH - 1 downto 0);
+    -- Last write address of the previous line — used to clamp read addresses
+    -- so that out-of-range offsets repeat the edge pixel instead of wrapping
+    -- into uninitialised BRAM locations.
+    signal s_line_last_addr   : unsigned(C_LINE_DEPTH - 1 downto 0) := (others => '1');
     -- Line buffer outputs: previous line's Y/U/V at the shifted read position.
     signal s_lb_y_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_u_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -421,13 +425,25 @@ begin
         if rising_edge(clk) then
             s_avid_prev <= data_in.avid;
 
-            -- Write address: 0 at first active pixel, then increment
+            -- Write address: 0 at first active pixel, then increment.
+            -- During blanking, park at max address (2047) so any stale
+            -- writes land outside the active pixel range and don't
+            -- clobber the rightmost edge pixel needed for clamping.
             if data_in.avid = '1' then
                 if s_avid_prev = '0' then
                     s_lb_wr_addr <= (others => '0');
                 else
                     s_lb_wr_addr <= s_lb_wr_addr + 1;
                 end if;
+            else
+                s_lb_wr_addr <= (others => '1');
+            end if;
+
+            -- Latch last write address on avid falling edge (end of active line).
+            -- This captures the rightmost pixel index of the line just written,
+            -- used by the read-address clamp to repeat edge pixels.
+            if data_in.avid = '0' and s_avid_prev = '1' then
+                s_line_last_addr <= s_lb_wr_addr;
             end if;
 
             -- Bank toggle: reset on vsync, flip on each hsync
@@ -441,17 +457,35 @@ begin
 
     ---------------------------------------------------------------------------
     -- Stage 3: Read address — current pixel position plus signed line offset.
-    -- Natural 11-bit wrap (mod 2048) means extreme offsets produce edge-wrap
-    -- artefacts rather than hard clipping — a pleasing VHS character.
+    -- Clamped to [0, s_line_last_addr] so out-of-range offsets repeat the
+    -- edge pixel rather than wrapping into uninitialised BRAM entries.
     -- U and V channels add their chroma offsets on top of the base sum,
     -- independently shifting the colour planes for chromatic aberration.
     ---------------------------------------------------------------------------
     s_lb_rd_addr_sum   <= signed('0' & s_lb_wr_addr) + resize(s_line_offset, 12);
     s_lb_rd_addr_sum_u <= s_lb_rd_addr_sum + resize(signed(resize(s_chroma_u, 11)) - 512, 12);
     s_lb_rd_addr_sum_v <= s_lb_rd_addr_sum + resize(signed(resize(s_chroma_v, 11)) - 512, 12);
-    s_lb_rd_addr   <= unsigned(s_lb_rd_addr_sum(C_LINE_DEPTH - 1 downto 0));
-    s_lb_rd_addr_u <= unsigned(s_lb_rd_addr_sum_u(C_LINE_DEPTH - 1 downto 0));
-    s_lb_rd_addr_v <= unsigned(s_lb_rd_addr_sum_v(C_LINE_DEPTH - 1 downto 0));
+
+    -- Clamp Y read address to valid pixel range
+    s_lb_rd_addr <= (others => '0')
+                    when s_lb_rd_addr_sum < 0
+                    else s_line_last_addr
+                    when s_lb_rd_addr_sum > signed('0' & s_line_last_addr)
+                    else unsigned(s_lb_rd_addr_sum(C_LINE_DEPTH - 1 downto 0));
+
+    -- Clamp U read address to valid pixel range
+    s_lb_rd_addr_u <= (others => '0')
+                      when s_lb_rd_addr_sum_u < 0
+                      else s_line_last_addr
+                      when s_lb_rd_addr_sum_u > signed('0' & s_line_last_addr)
+                      else unsigned(s_lb_rd_addr_sum_u(C_LINE_DEPTH - 1 downto 0));
+
+    -- Clamp V read address to valid pixel range
+    s_lb_rd_addr_v <= (others => '0')
+                      when s_lb_rd_addr_sum_v < 0
+                      else s_line_last_addr
+                      when s_lb_rd_addr_sum_v > signed('0' & s_line_last_addr)
+                      else unsigned(s_lb_rd_addr_sum_v(C_LINE_DEPTH - 1 downto 0));
 
     ---------------------------------------------------------------------------
     -- Stage 3: Feedback write-data mux (combinatorial)
