@@ -39,7 +39,7 @@
 --   rotary_potentiometer_4  : Noise (0=clean, 1023=full VHS chaos)
 --   toggle_switch_7         : Channel select (0=Y only, 1=Y+U+V)
 --   toggle_switch_11        : Bypass (0=process, 1=bypass)
---   linear_potentiometer_12 : Blend wet/dry (0=dry, 1023=wet)
+--   linear_potentiometer_12 : Blend wet/dry (0=dry, 1023=wet)       [register 7]
 --
 -- Timing:
 --   Total pipeline latency: 6 clock cycles
@@ -207,7 +207,7 @@ begin
             s_noise  <= unsigned(registers_in(3));
             s_ch_all <= registers_in(6)(0);  -- toggle_switch_7 bit
             s_bypass <= registers_in(6)(4);  -- toggle_switch_11 bit
-            s_blend  <= unsigned(registers_in(11));
+            s_blend  <= unsigned(registers_in(7));
         end if;
     end process p_control_decode;
 

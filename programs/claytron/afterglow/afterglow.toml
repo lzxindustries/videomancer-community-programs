@@ -17,7 +17,7 @@
 [program]
 program_id = "com.claytron.afterglow"
 program_name = "Afterglow"
-program_version = "0.1.0"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 author = "claytron"
 license = "GPL-3.0"
