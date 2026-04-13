@@ -124,6 +124,15 @@ name_label = "W.Inv"
 value_labels = ["Normal", "Invert"]
 initial_value_label = "Normal"
 
+# Feedback: route line buffer output back as write data.
+# Off = write live input each line; On = write smeared output, compounding trails.
+# Channel toggle controls whether U/V planes participate in the feedback loop.
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Feedbk"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
 # Bypass: Videomancer convention — last switch is always bypass.
 [[parameter]]
 parameter_id = "toggle_switch_11"

@@ -13,8 +13,9 @@
 --   All lines are shifted by the same base offset (Delay knob), with an
 --   optional per-line wave distortion (Shape knob depth), frame-rate drift
 --   (Speed knob), LFSR per-line noise (Noise knob), independent chromatic
---   offset for U and V channels (Chroma-U / Chroma-V knobs), and a wave
---   invert toggle (W.Inv) that flips the sign of the per-line wave.
+--   offset for U and V channels (Chroma-U / Chroma-V knobs), a wave invert
+--   toggle (W.Inv), and a feedback toggle that routes line buffer output back
+--   as write data, compounding the smear into trailing echo artefacts.
 --
 -- Architecture (planned stages):
 --   Stage 0 : Control decode — extract and scale register values
@@ -43,6 +44,7 @@
 --   rotary_potentiometer_6  : Chroma-V (0=full left, 512=centre/off, 1023=full right) — V channel offset
 --   toggle_switch_7         : Channel select (0=Y only, 1=Y+U+V)
 --   toggle_switch_8         : Wave Invert (0=normal, 1=invert wave sign)
+--   toggle_switch_9         : Feedback (0=off, 1=feed lb output back as write data)
 --   toggle_switch_11        : Bypass (0=process, 1=bypass)
 --   linear_potentiometer_12 : Blend wet/dry (0=dry, 1023=wet)       [register 7]
 --
@@ -88,6 +90,7 @@ architecture afterglow of program_top is
     signal s_chroma_v    : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_ch_all      : std_logic;  -- '0' = Y only, '1' = Y+U+V
     signal s_wave_invert : std_logic;  -- '1' = negate wave contribution
+    signal s_feedback    : std_logic;  -- '1' = route lb output back as write data
     signal s_bypass      : std_logic;  -- '1' = bypass
     signal s_blend    : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
 
@@ -155,6 +158,13 @@ architecture afterglow of program_top is
     signal s_lb_y_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_u_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_v_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    -- Write data mux: live input (normal) or line buffer output (feedback).
+    -- Y always follows s_feedback; U/V only feed back in Y+U+V channel mode.
+    -- The 2-clock read latency means the feedback pixel is spatially offset by
+    -- 2 positions — an intentional VHS-character artefact.
+    signal s_lb_wr_y    : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s_lb_wr_u    : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s_lb_wr_v    : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
 
     ---------------------------------------------------------------------------
     -- Stage 4: Channel mux signals
@@ -225,6 +235,7 @@ begin
             s_chroma_v    <= unsigned(registers_in(5));
             s_ch_all      <= registers_in(6)(0);  -- toggle_switch_7 bit
             s_wave_invert <= registers_in(6)(1);  -- toggle_switch_8 bit
+            s_feedback    <= registers_in(6)(2);  -- toggle_switch_9 bit
             s_bypass      <= registers_in(6)(4);  -- toggle_switch_11 bit
             s_blend    <= unsigned(registers_in(7));
         end if;
@@ -430,6 +441,18 @@ begin
                             (C_LINE_DEPTH - 1 downto 0));
 
     ---------------------------------------------------------------------------
+    -- Stage 3: Feedback write-data mux (combinatorial)
+    -- When s_feedback='1', each channel's write data is replaced by the line
+    -- buffer output from the previous read cycle, feeding the smeared result
+    -- back into the buffer for compounding echo trails.
+    -- U/V only feed back when s_ch_all='1' so the channel toggle controls
+    -- whether chroma participates in the feedback loop.
+    ---------------------------------------------------------------------------
+    s_lb_wr_y <= s_lb_y_out when s_feedback = '1'                          else data_in.y;
+    s_lb_wr_u <= s_lb_u_out when (s_feedback = '1' and s_ch_all = '1')    else data_in.u;
+    s_lb_wr_v <= s_lb_v_out when (s_feedback = '1' and s_ch_all = '1')    else data_in.v;
+
+    ---------------------------------------------------------------------------
     -- Stage 3: Line buffer instances — one per channel (Y, U, V).
     -- Each dual-bank BRAM writes the current line while reading the previous
     -- line at the offset address. Read latency: 2 clocks.
@@ -441,7 +464,7 @@ begin
             i_ab      => s_lb_ab,
             i_wr_addr => s_lb_wr_addr,
             i_rd_addr => s_lb_rd_addr,
-            i_data    => data_in.y,
+            i_data    => s_lb_wr_y,
             o_data    => s_lb_y_out
         );
 
@@ -452,7 +475,7 @@ begin
             i_ab      => s_lb_ab,
             i_wr_addr => s_lb_wr_addr,
             i_rd_addr => s_lb_rd_addr_u,
-            i_data    => data_in.u,
+            i_data    => s_lb_wr_u,
             o_data    => s_lb_u_out
         );
 
@@ -463,7 +486,7 @@ begin
             i_ab      => s_lb_ab,
             i_wr_addr => s_lb_wr_addr,
             i_rd_addr => s_lb_rd_addr_v,
-            i_data    => data_in.v,
+            i_data    => s_lb_wr_v,
             o_data    => s_lb_v_out
         );
 
