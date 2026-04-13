@@ -15,7 +15,8 @@
 --   (Speed knob), LFSR per-line noise (Noise knob), independent chromatic
 --   offset for U and V channels (Chroma-U / Chroma-V knobs), a wave invert
 --   toggle (W.Inv), and a feedback toggle that routes line buffer output back
---   as write data, compounding the smear into trailing echo artefacts.
+--   as write data (compounding the smear into trailing echo artefacts), and
+--   a noise mode toggle that switches between per-line and per-pixel jitter.
 --
 -- Architecture (planned stages):
 --   Stage 0 : Control decode — extract and scale register values
@@ -45,6 +46,7 @@
 --   toggle_switch_7         : Channel select (0=Y only, 1=Y+U+V)
 --   toggle_switch_8         : Wave Invert (0=normal, 1=invert wave sign)
 --   toggle_switch_9         : Feedback (0=off, 1=feed lb output back as write data)
+--   toggle_switch_10        : Noise mode (0=per-line LFSR, 1=per-pixel LFSR)
 --   toggle_switch_11        : Bypass (0=process, 1=bypass)
 --   linear_potentiometer_12 : Blend wet/dry (0=dry, 1023=wet)       [register 7]
 --
@@ -91,6 +93,7 @@ architecture afterglow of program_top is
     signal s_ch_all      : std_logic;  -- '0' = Y only, '1' = Y+U+V
     signal s_wave_invert : std_logic;  -- '1' = negate wave contribution
     signal s_feedback    : std_logic;  -- '1' = route lb output back as write data
+    signal s_noise_mode  : std_logic;  -- '0' = per-line LFSR, '1' = per-pixel LFSR
     signal s_bypass      : std_logic;  -- '1' = bypass
     signal s_blend    : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
 
@@ -236,6 +239,7 @@ begin
             s_ch_all      <= registers_in(6)(0);  -- toggle_switch_7 bit
             s_wave_invert <= registers_in(6)(1);  -- toggle_switch_8 bit
             s_feedback    <= registers_in(6)(2);  -- toggle_switch_9 bit
+            s_noise_mode  <= registers_in(6)(3);  -- toggle_switch_10 bit
             s_bypass      <= registers_in(6)(4);  -- toggle_switch_11 bit
             s_blend    <= unsigned(registers_in(7));
         end if;
@@ -259,9 +263,10 @@ begin
     -- Stage 1b: Per-line noise sample
     -- On the falling edge of hsync_n (start of sync pulse), latch the lower
     -- 10 bits of the LFSR into s_noise_sample. Held constant for the whole
-    -- line — every pixel on a given line shares the same random offset,
-    -- producing VHS-style per-line horizontal jitter.
-    -- Stage 2 multiplies s_noise_sample by the s_noise knob to scale magnitude.
+    -- line — every pixel shares the same random offset (per-line mode).
+    -- In per-pixel mode (s_noise_mode='1'), Stage 2a uses s_lfsr16_out
+    -- directly instead, so s_noise_sample is ignored.
+    -- Stage 2 multiplies the selected noise value by the Noise knob to scale.
     ---------------------------------------------------------------------------
     p_noise_sample : process(clk)
     begin
@@ -337,8 +342,15 @@ begin
             -- Centre delay: 0..1023 → −512..+511
             -- (knob at 512 = no shift; CW = right, CCW = left, all lines equally)
             s2a_delay_signed <= signed(resize(s_delay, 11)) - 512;
-            -- Centre noise sample: 0..1023 → −512..+511 (bipolar per-line jitter)
-            s2a_noise_signed <= signed(resize(s_noise_sample, 11)) - 512;
+            -- Centre noise: per-line mode uses the latched hsync sample (same
+            -- value every pixel); per-pixel mode uses the live LFSR output so
+            -- every pixel gets an independent random offset.
+            if s_noise_mode = '1' then
+                s2a_noise_signed <= signed(resize(
+                    unsigned(s_lfsr16_out(C_PARAMETER_DATA_WIDTH - 1 downto 0)), 11)) - 512;
+            else
+                s2a_noise_signed <= signed(resize(s_noise_sample, 11)) - 512;
+            end if;
             -- Noise knob as positive scale (0 = no jitter, 1023 = full scale)
             s2a_noise_scale  <= signed('0' & s_noise);
             -- Shape knob as unsigned scale for wave depth (0 = no wave, 1023 = deep wave)

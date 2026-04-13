@@ -133,6 +133,14 @@ name_label = "Feedbk"
 value_labels = ["Off", "On"]
 initial_value_label = "Off"
 
+# Noise mode: per-line = same LFSR value for every pixel on a line (VHS tracking jitter);
+# per-pixel = live LFSR value per pixel (grain / static texture).
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Noise"
+value_labels = ["Line", "Pixel"]
+initial_value_label = "Line"
+
 # Bypass: Videomancer convention — last switch is always bypass.
 [[parameter]]
 parameter_id = "toggle_switch_11"
