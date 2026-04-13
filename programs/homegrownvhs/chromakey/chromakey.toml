@@ -1,0 +1,121 @@
+# Copyright (C) 2026 Adam Pflanzer
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Chroma Key Program Configuration
+
+[program]
+program_id = "com.homegrownvhs.chromakey"
+program_name = "Chroma Key"
+program_version = "1.0.0"
+abi_version = ">=1.0,<2.0"
+author = "Adam Pflanzer"
+license = "GPL-3.0"
+categories = ["Mask", "Color"]
+program_type = "processing"
+description = "Threshold keyer with selectable channel, soft edges, and fill color"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# Knob 1: Key Channel — selects which signal to threshold
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Key Channel"
+value_labels = ["Y", "U", "V", "Sat"]
+initial_value_label = "Y"
+
+# Knob 2: Threshold — the key target value
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Threshold"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+display_float_digits = 1
+suffix_label = "%"
+
+# Knob 3: Softness — transition sharpness (8 steps)
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Softness"
+value_labels = ["1", "2", "3", "4", "5", "6", "7", "8"]
+initial_value_label = "3"
+
+# Knob 4: Fill Y — luma of replacement color
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Fill Y"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+# Knob 5: Fill U — chroma blue-yellow of replacement color
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Fill U"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+display_float_digits = 1
+suffix_label = "%"
+
+# Knob 6: Fill V — chroma red-cyan of replacement color
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Fill V"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+display_float_digits = 1
+suffix_label = "%"
+
+# Switch 7: Key Invert — flip key polarity
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Key Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Switch 8: Key View — show matte as grayscale
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Key View"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Switch 9: Fill Source — color from knobs or black
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Fill Source"
+value_labels = ["Color", "Black"]
+initial_value_label = "Black"
+
+# Switch 10: Key Mode — distance from target or below target
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Key Mode"
+value_labels = ["Near", "Below"]
+initial_value_label = "Near"
+
+# Switch 11: Bypass
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Fader 12: Mix — key strength / dry-wet
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Mix"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
