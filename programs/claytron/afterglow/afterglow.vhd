@@ -9,10 +9,11 @@
 --   claytron
 --
 -- Overview:
---   Per-line horizontal pixel delay producing a VHS-style smear/shear effect.
---   Each horizontal line is offset by a variable number of pixels determined
---   by a per-line pattern (linear ramp, sine, or sawtooth), a drift speed,
---   and an LFSR noise component.
+--   Uniform horizontal pixel delay producing a VHS-style smear effect.
+--   All lines are shifted by the same base offset (Delay knob), with an
+--   optional per-line wave distortion (Shape knob depth), frame-rate drift
+--   (Speed knob), LFSR per-line noise (Noise knob), and independent
+--   chromatic offset for U and V channels (Chroma-U / Chroma-V knobs).
 --
 -- Architecture (planned stages):
 --   Stage 0 : Control decode — extract and scale register values
@@ -20,8 +21,8 @@
 --             per line on hsync falling edge into s_noise_sample
 --   Stage 2 : Per-line offset calculator — line counter + frame_phase_accumulator
 --             feed a 2-clock multiply pipeline:
---               2a: scale line by shape, centre wave/delay/noise into signed inputs
---               2b: multiply + sum → s_line_offset (signed pixel shift for this line)
+--               2a: centre wave/delay/noise into signed inputs; shape_factor = s_shape
+--               2b: delay (uniform) + wave×shape + noise → s_line_offset
 --   Stage 3 : Line pixel buffer — 3× dual-bank BRAM (Y/U/V); write current
 --             line at wr_addr, read previous line at wr_addr+s_line_offset;
 --             2-clock read latency
@@ -33,10 +34,12 @@
 --   Stage 6 : Bypass mux + sync delay (C_LATENCY_CLKS = 6)
 --
 -- Register Map:
---   rotary_potentiometer_1  : Delay depth (0=full left, 512=centre/off, 1023=full right)
---   rotary_potentiometer_2  : Shape (0=linear ramp, 512=sine, 1023=sawtooth)
+--   rotary_potentiometer_1  : Delay (0=full left, 512=centre/off, 1023=full right) — uniform shift
+--   rotary_potentiometer_2  : Shape (0=no wave, 1023=deep wave distortion) — per-line wave depth
 --   rotary_potentiometer_3  : Speed (0=static, 1023=fast drift)
 --   rotary_potentiometer_4  : Noise (0=clean, 1023=full VHS chaos)
+--   rotary_potentiometer_5  : Chroma-U (0=full left, 512=centre/off, 1023=full right) — U channel offset
+--   rotary_potentiometer_6  : Chroma-V (0=full left, 512=centre/off, 1023=full right) — V channel offset
 --   toggle_switch_7         : Channel select (0=Y only, 1=Y+U+V)
 --   toggle_switch_11        : Bypass (0=process, 1=bypass)
 --   linear_potentiometer_12 : Blend wet/dry (0=dry, 1023=wet)       [register 7]
@@ -79,9 +82,11 @@ architecture afterglow of program_top is
     signal s_shape  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_speed  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_noise  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
-    signal s_ch_all : std_logic;  -- '0' = Y only, '1' = Y+U+V
-    signal s_bypass : std_logic;  -- '1' = bypass
-    signal s_blend  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
+    signal s_chroma_u : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
+    signal s_chroma_v : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
+    signal s_ch_all   : std_logic;  -- '0' = Y only, '1' = Y+U+V
+    signal s_bypass   : std_logic;  -- '1' = bypass
+    signal s_blend    : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
 
     ---------------------------------------------------------------------------
     -- Stage 1: LFSR noise generator signals
@@ -112,11 +117,16 @@ architecture afterglow of program_top is
     signal s2a_noise_signed : signed(10 downto 0) := (others => '0');
     signal s2a_noise_scale  : signed(10 downto 0) := (others => '0');
 
+    -- Stage 2a: shape_factor — unsigned s_shape passed as signed for multiply.
+    -- Range 0–1023 (always non-negative); scales the wave contribution.
+    signal s2a_shape_factor : signed(10 downto 0) := (others => '0');
+
     -- Stage 2b output (2 clks total): signed horizontal pixel offset for
     -- the current line.  Consumed by Stage 3 (line buffer address calc).
     --
-    -- shape_contrib = (wave × delay) >> 9  → up to ±512 px
-    -- noise_contrib = (noise × scale) >> 14 → up to  ±32 px
+    -- delay_contrib = s2a_delay_signed       → uniform shift, all lines (±512 px)
+    -- shape_contrib = (wave × shape) >> 9   → per-line wave variation
+    -- noise_contrib = (noise × scale) >> 14 → up to ±32 px
     signal s_line_offset    : signed(10 downto 0) := (others => '0');
 
     ---------------------------------------------------------------------------
@@ -133,8 +143,11 @@ architecture afterglow of program_top is
     -- Write address: 0-indexed from first active pixel, advances during avid.
     signal s_lb_wr_addr : unsigned(C_LINE_DEPTH - 1 downto 0)   := (others => '0');
     -- Read address: wr_addr + s_line_offset, wraps naturally at 2048.
+    -- Y uses s_lb_rd_addr directly; U and V add their chroma offsets on top.
     signal s_lb_rd_addr_sum : signed(C_LINE_DEPTH downto 0);
     signal s_lb_rd_addr     : unsigned(C_LINE_DEPTH - 1 downto 0);
+    signal s_lb_rd_addr_u   : unsigned(C_LINE_DEPTH - 1 downto 0);
+    signal s_lb_rd_addr_v   : unsigned(C_LINE_DEPTH - 1 downto 0);
     -- Line buffer outputs: previous line's Y/U/V at the shifted read position.
     signal s_lb_y_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_u_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -201,13 +214,15 @@ begin
     p_control_decode : process(clk)
     begin
         if rising_edge(clk) then
-            s_delay  <= unsigned(registers_in(0));
-            s_shape  <= unsigned(registers_in(1));
-            s_speed  <= unsigned(registers_in(2));
-            s_noise  <= unsigned(registers_in(3));
-            s_ch_all <= registers_in(6)(0);  -- toggle_switch_7 bit
-            s_bypass <= registers_in(6)(4);  -- toggle_switch_11 bit
-            s_blend  <= unsigned(registers_in(7));
+            s_delay    <= unsigned(registers_in(0));
+            s_shape    <= unsigned(registers_in(1));
+            s_speed    <= unsigned(registers_in(2));
+            s_noise    <= unsigned(registers_in(3));
+            s_chroma_u <= unsigned(registers_in(4));
+            s_chroma_v <= unsigned(registers_in(5));
+            s_ch_all   <= registers_in(6)(0);  -- toggle_switch_7 bit
+            s_bypass   <= registers_in(6)(4);  -- toggle_switch_11 bit
+            s_blend    <= unsigned(registers_in(7));
         end if;
     end process p_control_decode;
 
@@ -305,23 +320,30 @@ begin
             -- Centre wave: 0..1023 → −512..+511
             s2a_wave_signed  <= signed(resize(v_wave_phase, 11)) - 512;
             -- Centre delay: 0..1023 → −512..+511
-            -- (knob at 512 = no smear; CW/CCW = direction and depth)
+            -- (knob at 512 = no shift; CW = right, CCW = left, all lines equally)
             s2a_delay_signed <= signed(resize(s_delay, 11)) - 512;
             -- Centre noise sample: 0..1023 → −512..+511 (bipolar per-line jitter)
             s2a_noise_signed <= signed(resize(s_noise_sample, 11)) - 512;
             -- Noise knob as positive scale (0 = no jitter, 1023 = full scale)
             s2a_noise_scale  <= signed('0' & s_noise);
+            -- Shape knob as unsigned scale for wave depth (0 = no wave, 1023 = deep wave)
+            s2a_shape_factor <= signed('0' & s_shape);
         end if;
     end process p_stage2a;
 
     ---------------------------------------------------------------------------
     -- Stage 2b: multiply and sum into s_line_offset (1 clk)
     --
-    -- Two independent DSP multiplies, results shifted and added:
+    -- Three contributions added together:
     --
-    --   shape_contrib = (wave_signed × delay_signed) >> 9
-    --     Arithmetic shift right 9 on the 22-bit product.
-    --     Range: ±(512 × 512) >> 9 = ±512 pixels at full knob deflection.
+    --   delay_contrib = s2a_delay_signed
+    --     Uniform shift applied identically to every line.
+    --     Range: −512..+511 pixels (P1 knob centred at 512 = no shift).
+    --
+    --   shape_contrib = (wave_signed × shape_factor) >> 9
+    --     Per-line wave variation scaled by the Shape knob.
+    --     Range: ±(512 × 1023) >> 9 ≈ ±1023 px at max shape and wave.
+    --     Wraps naturally in 11-bit BRAM addressing (intentional VHS character).
     --
     --   noise_contrib = (noise_signed × noise_scale) >> 14
     --     Range: ±(512 × 1023) >> 14 ≈ ±32 pixels at full noise knob.
@@ -335,9 +357,10 @@ begin
         variable v_noise_prod : signed(21 downto 0);
     begin
         if rising_edge(clk) then
-            v_shape_prod := s2a_wave_signed * s2a_delay_signed;
+            v_shape_prod := s2a_wave_signed * s2a_shape_factor;
             v_noise_prod := s2a_noise_signed * s2a_noise_scale;
-            s_line_offset <= resize(signed(v_shape_prod(21 downto 9)), 11)
+            s_line_offset <= s2a_delay_signed
+                           + resize(signed(v_shape_prod(21 downto 9)), 11)
                            + resize(signed(v_noise_prod(21 downto 14)), 11);
         end if;
     end process p_stage2b;
@@ -381,9 +404,17 @@ begin
     -- Stage 3: Read address — current pixel position plus signed line offset.
     -- Natural 11-bit wrap (mod 2048) means extreme offsets produce edge-wrap
     -- artefacts rather than hard clipping — a pleasing VHS character.
+    -- U and V channels add their chroma offsets on top of the base sum,
+    -- independently shifting the colour planes for chromatic aberration.
     ---------------------------------------------------------------------------
     s_lb_rd_addr_sum <= signed('0' & s_lb_wr_addr) + resize(s_line_offset, 12);
     s_lb_rd_addr     <= unsigned(s_lb_rd_addr_sum(C_LINE_DEPTH - 1 downto 0));
+    s_lb_rd_addr_u   <= unsigned((s_lb_rd_addr_sum
+                            + resize(signed(resize(s_chroma_u, 11)) - 512, 12))
+                            (C_LINE_DEPTH - 1 downto 0));
+    s_lb_rd_addr_v   <= unsigned((s_lb_rd_addr_sum
+                            + resize(signed(resize(s_chroma_v, 11)) - 512, 12))
+                            (C_LINE_DEPTH - 1 downto 0));
 
     ---------------------------------------------------------------------------
     -- Stage 3: Line buffer instances — one per channel (Y, U, V).
@@ -407,7 +438,7 @@ begin
             clk       => clk,
             i_ab      => s_lb_ab,
             i_wr_addr => s_lb_wr_addr,
-            i_rd_addr => s_lb_rd_addr,
+            i_rd_addr => s_lb_rd_addr_u,
             i_data    => data_in.u,
             o_data    => s_lb_u_out
         );
@@ -418,7 +449,7 @@ begin
             clk       => clk,
             i_ab      => s_lb_ab,
             i_wr_addr => s_lb_wr_addr,
-            i_rd_addr => s_lb_rd_addr,
+            i_rd_addr => s_lb_rd_addr_v,
             i_data    => data_in.v,
             o_data    => s_lb_v_out
         );

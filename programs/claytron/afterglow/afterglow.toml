@@ -3,14 +3,17 @@
 #
 # Afterglow Program Configuration
 #
-# Effect: Per-line horizontal pixel delay with variable shape, drift speed,
-#   and noise — creating a VHS-style smear/shear distortion.
+# Effect: Uniform horizontal pixel delay with wave distortion, chromatic
+#   aberration, and noise — creating a VHS-style smear effect.
 #
-# Delay knob: controls overall smear depth. Centre = no smear.
-# Shape knob: sweeps the per-line offset pattern from linear ramp → sine → sawtooth.
-# Speed knob: controls how fast the shape pattern drifts frame-to-frame.
+# Delay knob: uniform horizontal shift of all lines. Centre = no shift.
+# Shape knob: depth of per-line wave variation. Low = uniform; high = wave distortion.
+# Speed knob: controls how fast the wave pattern drifts frame-to-frame.
 # Noise knob: adds LFSR-based random jitter to each line's offset.
 #   Low = clean geometric smear, high = VHS tracking-error chaos.
+# Chroma-U knob: independent horizontal offset for U (Cb) colour plane.
+#   Centre = aligned with Y; CW/CCW = chromatic fringing right/left.
+# Chroma-V knob: independent horizontal offset for V (Cr) colour plane.
 # Channel toggle: apply smear to Y (luma) only or Y+U+V (full colour).
 # Blend slider: wet/dry mix between original and smeared signal.
 
@@ -23,7 +26,7 @@ author = "claytron"
 license = "GPL-3.0"
 categories = ["Distortion", "Time"]
 program_type = "processing"
-description = "Per-line horizontal delay smear with shape, speed, noise, and VHS character."
+description = "Uniform horizontal delay with wave depth, speed, noise, and VHS character."
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"
 
@@ -42,8 +45,8 @@ initial_value = 512
 display_float_digits = 0
 suffix_label = ""
 
-# Per-line offset pattern shape.
-# Low end = linear ramp, mid = sine wave, high end = sawtooth.
+# Depth of per-line wave variation.
+# Low = uniform horizontal shift (clean delay); high = wave distortion across lines.
 [[parameter]]
 parameter_id = "rotary_potentiometer_2"
 name_label = "Shape"
@@ -76,6 +79,31 @@ display_max_value = 100
 initial_value = 0
 display_float_digits = 0
 suffix_label = "%"
+
+# Additional horizontal offset applied to the U (Cb) colour plane only.
+# Independent of the Y smear — centre = aligned with Y; CW/CCW = shift right/left.
+# Creates colour fringing and chromatic aberration on smear edges.
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Chroma-U"
+control_mode = "linear"
+display_min_value = -512
+display_max_value = 511
+initial_value = 512
+display_float_digits = 0
+suffix_label = "px"
+
+# Additional horizontal offset applied to the V (Cr) colour plane only.
+# Independent of the Y smear — centre = aligned with Y; CW/CCW = shift right/left.
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Chroma-V"
+control_mode = "linear"
+display_min_value = -512
+display_max_value = 511
+initial_value = 512
+display_float_digits = 0
+suffix_label = "px"
 
 # ---------------------------------------------------------------------------
 # SWITCHES (Toggle Switches)
