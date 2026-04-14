@@ -1,0 +1,110 @@
+[program]
+program_id = "com.homegrownvhs.ascii"
+program_version = "1.0.0"
+abi_version = ">=1.0,<2.0"
+program_name = "ASCII Art"
+author = "Adam Pflanzer"
+license = "GPL-3.0"
+categories = ["Text", "Pixel", "Computer"]
+program_type = "processing"
+description = "Converts video to ASCII text via glyph density mapping with video-through masking"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# --- Knobs ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Block Size"
+control_mode = "steps_4"
+initial_value = 256
+display_min_value = 1
+display_max_value = 4
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Contrast"
+control_mode = "linear"
+initial_value = 512
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "FG Hue"
+control_mode = "linear"
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "BG Level"
+control_mode = "linear"
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Brightness"
+control_mode = "linear"
+initial_value = 900
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Threshold"
+control_mode = "linear"
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# --- Toggles ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Color"
+value_labels = ["Mono", "Mask"]
+initial_value_label = "Mono"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Invert"
+value_labels = ["Normal", "Inverted"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Grid"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Font"
+value_labels = ["Normal", "Bold"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Fader ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Mix"
+control_mode = "linear"
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
