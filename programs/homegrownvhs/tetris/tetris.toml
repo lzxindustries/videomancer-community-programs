@@ -1,0 +1,138 @@
+# Copyright (C) 2026 Adam Pflanzer
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Tetris Program Configuration
+
+[program]
+program_id = "com.homegrownvhs.tetris"
+program_name = "Tetris"
+program_version = "1.0.0"
+abi_version = ">=1.0,<2.0"
+author = "Adam Pflanzer"
+license = "GPL-3.0"
+categories = ["Game"]
+program_type = "processing"
+description = "Classic block-stacking game with analog knob controls"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# Knob 1: Column — piece horizontal position (0-9)
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Column"
+control_mode = "linear"
+initial_value = 512
+display_min_value = 0
+display_max_value = 9
+suffix_label = ""
+
+# Knob 2: Rotate — piece orientation (4 positions)
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Rotate"
+control_mode = "steps_4"
+initial_value = 0
+display_min_value = 0
+display_max_value = 3
+suffix_label = ""
+
+# Knob 3: Speed — gravity drop speed
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Speed"
+control_mode = "linear"
+initial_value = 128
+display_min_value = 1
+display_max_value = 20
+suffix_label = ""
+
+# Knob 4: Background — grid/border brightness
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Background"
+control_mode = "linear"
+initial_value = 128
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# Knob 5: Brightness — piece brightness
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Brightness"
+control_mode = "linear"
+initial_value = 900
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# Knob 6: Ghost — ghost piece brightness
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Ghost"
+control_mode = "linear"
+initial_value = 256
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# Toggle 7: Hard Drop — flick to instantly drop piece
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Hard Drop"
+value_labels = ["Off", "Drop"]
+initial_value_label = "Off"
+
+# Toggle 8: Grid — show/hide grid lines
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Grid"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+# Toggle 9: Next — show/hide next piece preview
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Next Piece"
+value_labels = ["Hide", "Show"]
+initial_value_label = "Show"
+
+# Toggle 10: Restart — flick to restart game
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Restart"
+value_labels = ["A", "B"]
+initial_value_label = "A"
+
+# Toggle 11: Pause
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Pause"
+value_labels = ["Play", "Pause"]
+initial_value_label = "Play"
+
+# Fader: Mix — blend between input video and game overlay
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Mix"
+control_mode = "linear"
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[preset]]
+name = "Classic"
+
+[[preset]]
+name = "Fast"
+rotary_potentiometer_3 = 900
+toggle_switch_8 = 0
+
+[[preset]]
+name = "Overlay"
+rotary_potentiometer_4 = 64
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 200
+toggle_switch_8 = 0
+linear_potentiometer_12 = 700
