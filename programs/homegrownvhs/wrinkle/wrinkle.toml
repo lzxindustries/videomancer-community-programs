@@ -1,0 +1,194 @@
+[program]
+program_id = "com.homegrownvhs.wrinkle"
+program_version = "2.1.0"
+abi_version = ">=1.0,<2.0"
+program_name = "Wrinkle"
+author = "homegrownvhs"
+license = "GPL-3.0"
+categories = ["Color", "Curve", "Signal"]
+program_type = "processing"
+description = "Continuous wavefolder with tri/sin/saw/square and YUV/RGB/XYZ/Y-only modes"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# Pot 1: Fold amount (continuous frequency 1x-64x)
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Fold Amount"
+control_mode = "linear"
+initial_value = 128
+display_min_value = 1
+display_max_value = 64
+suffix_label = "x"
+
+# Pot 2: Phase offset
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Phase"
+control_mode = "polar_degs_360"
+initial_value = 0
+display_min_value = 0
+display_max_value = 360
+suffix_label = "deg"
+
+# Pot 3: Symmetry (DC offset before fold, centered)
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Symmetry"
+control_mode = "linear"
+initial_value = 512
+display_min_value = -50
+display_max_value = 50
+suffix_label = "%"
+
+# Pot 4: Chroma freq offset (center = same as luma)
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Chroma Offset"
+control_mode = "linear"
+initial_value = 512
+display_min_value = -100
+display_max_value = 100
+suffix_label = "%"
+
+# Pot 5: Smoothing (LPF on source video before fold, 0=off)
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Smoothing"
+control_mode = "linear"
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# Pot 6: Post-fold brightness offset (center = no change)
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Brightness"
+control_mode = "linear"
+initial_value = 512
+display_min_value = -50
+display_max_value = 50
+suffix_label = "%"
+
+# Tog 7: Shape bit 0 (00=Tri, 01=Sin, 10=Saw, 11=Sqr)
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Shape A"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Tog 8: Shape bit 1
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Shape B"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Tog 9: Colorspace bit 0 (00=YUV, 01=RGB, 10=XYZ, 11=Y-only)
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Cspace A"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Tog 10: Colorspace bit 1
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Cspace B"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Tog 11: Bypass
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Fader: Dry/wet mix
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Mix"
+control_mode = "linear"
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Triangle Gentle"
+rotary_potentiometer_1 = 128
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Sine Heavy"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Sawtooth RGB"
+rotary_potentiometer_1 = 400
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 700
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Square XYZ"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Sine Y-Only"
+rotary_potentiometer_1 = 500
+rotary_potentiometer_2 = 128
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
