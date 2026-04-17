@@ -98,7 +98,7 @@ jobs:
 
       - name: Setup OSS CAD Suite
         if: steps.cache-oss-cad-suite.outputs.cache-hit != 'true'
-        run: bash videomancer-sdk/scripts/setup.sh
+        run: bash scripts/setup.sh
 
       - name: Build all programs
         run: |
@@ -108,7 +108,7 @@ jobs:
 
       - name: Check build results
         run: |
-          total=$(find out -name "*.vmprog" -type f | wc -l)
+          total=$(find out -name "*.vmprog" -type f 2>/dev/null | wc -l)
           echo "vmprog_count=$total" >> "$GITHUB_ENV"
           if [ "$total" -eq 0 ]; then
             echo "ERROR: No programs built successfully. Aborting release."
@@ -128,18 +128,6 @@ jobs:
 
       - name: Package programs by hardware revision
         run: |
-          # Build a lookup: program_name -> vendor (from programs/<vendor>/<program>/)
-          declare -A vendor_map
-          for vendor_dir in programs/*/; do
-            vendor=$(basename "$vendor_dir")
-            for program_dir in "$vendor_dir"*/; do
-              if [ -d "$program_dir" ]; then
-                program=$(basename "$program_dir")
-                vendor_map["$program"]="$vendor"
-              fi
-            done
-          done
-
           tag="${{ github.ref_name }}"
 
           for hw_dir in out/*/; do
@@ -152,16 +140,17 @@ jobs:
 
             echo "Packaging $hw ($vmprog_count programs) -> $zip_name"
 
-            # Create staging directory with programs/<vendor>/<program>.vmprog structure
+            # Build staging directory with programs/<vendor>/<program>.vmprog structure.
+            # Output layout is out/<hardware>/<vendor>/<program>.vmprog.
             stage_dir="$(mktemp -d)"
-            for vmprog in "$hw_dir"*.vmprog; do
-              [ -f "$vmprog" ] || continue
-              program=$(basename "$vmprog" .vmprog)
-              vendor="${vendor_map[$program]:-unknown}"
+            while IFS= read -r vmprog; do
+              rel_path="${vmprog#${hw_dir}}"
+              vendor="${rel_path%%/*}"
+              program="$(basename "$vmprog")"
               mkdir -p "$stage_dir/programs/$vendor"
-              cp "$vmprog" "$stage_dir/programs/$vendor/${program}.vmprog"
-              echo "  programs/$vendor/${program}.vmprog"
-            done
+              cp "$vmprog" "$stage_dir/programs/$vendor/$program"
+              echo "  programs/$vendor/$program"
+            done < <(find "$hw_dir" -mindepth 2 -maxdepth 2 -name "*.vmprog" -type f | sort)
 
             (cd "$stage_dir" && zip -r "$OLDPWD/$zip_name" programs/)
             rm -rf "$stage_dir"
