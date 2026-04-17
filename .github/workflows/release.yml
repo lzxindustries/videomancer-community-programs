@@ -98,7 +98,7 @@ jobs:
 
       - name: Setup OSS CAD Suite
         if: steps.cache-oss-cad-suite.outputs.cache-hit != 'true'
-        run: bash scripts/setup.sh
+        run: bash videomancer-sdk/scripts/setup.sh
 
       - name: Build all programs
         run: |
