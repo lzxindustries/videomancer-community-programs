@@ -86,6 +86,9 @@ architecture afterglow of program_top is
     ---------------------------------------------------------------------------
     signal s_delay  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_shape  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
+    -- Shape scaled to ~20% of its raw range so the full knob sweep gives
+    -- finer control (previous 20% knob position = new maximum).
+    signal s_shape_scaled : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_speed  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_noise  : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
     signal s_chroma_u    : unsigned(C_PARAMETER_DATA_WIDTH - 1 downto 0);
@@ -253,6 +256,18 @@ begin
     end process p_control_decode;
 
     ---------------------------------------------------------------------------
+    -- Stage 0b: Shape scale
+    -- Approximates s_shape / 5 using shift-add: 1/8 + 1/16 + 1/64 ≈ 0.2031.
+    -- At s_shape = 1023 this yields 127 + 63 + 15 = 205, matching the old
+    -- 20% knob position. Both the wave frequency and wave amplitude uses of
+    -- shape pull from s_shape_scaled so the full knob sweep covers what
+    -- used to be the lowest fifth of travel.
+    ---------------------------------------------------------------------------
+    s_shape_scaled <= shift_right(s_shape, 3)
+                    + shift_right(s_shape, 4)
+                    + shift_right(s_shape, 6);
+
+    ---------------------------------------------------------------------------
     -- Stage 1a: LFSR16 — free-running pseudo-random source
     -- Advances one step every clock. Seed fed back to itself so it never
     -- reloads; the all-zeros lockup guard inside lfsr16 keeps it alive.
@@ -330,8 +345,12 @@ begin
     -- All three values are centred to −512..+511 so the multiply in Stage 2b
     -- produces a bipolar result with zero at knob centre.
     --
-    --   s_shape = 0   → shape_scale = 256 → 1 sawtooth ramp per frame
-    --   s_shape = 1023 → shape_scale = 1279 → ~5 ramps per frame
+    -- Wave frequency and amplitude are both driven by s_shape_scaled (the
+    -- 20%-clamped version of the raw shape knob). The tabulated ranges below
+    -- reflect the scaled values:
+    --
+    --   knob = 0%   → s_shape_scaled = 0   → shape_scale = 256  → 1 ramp per frame
+    --   knob = 100% → s_shape_scaled = 205 → shape_scale = 461  → ~1.8 ramps per frame
     ---------------------------------------------------------------------------
     p_stage2a : process(clk)
         variable v_shape_scale : unsigned(10 downto 0);
@@ -339,7 +358,7 @@ begin
         variable v_wave_phase  : unsigned(9 downto 0);
     begin
         if rising_edge(clk) then
-            v_shape_scale := resize(s_shape, 11) + 256;
+            v_shape_scale := resize(s_shape_scaled, 11) + 256;
             v_scaled_line := resize(s_v_count(9 downto 0), 11) * v_shape_scale;
             -- Mix in upper 10 bits of frame phase for vertical drift.
             v_wave_phase  := v_scaled_line(17 downto 8) + s_frame_phase(15 downto 6);
@@ -360,8 +379,10 @@ begin
             end if;
             -- Noise knob as positive scale (0 = no jitter, 1023 = full scale)
             s2a_noise_scale  <= signed('0' & s_noise);
-            -- Shape knob as unsigned scale for wave depth (0 = no wave, 1023 = deep wave)
-            s2a_shape_factor <= signed('0' & s_shape);
+            -- Shape knob as unsigned scale for wave depth. Uses the 20%-clamped
+            -- s_shape_scaled (max ≈ 205) so the amplitude also benefits from
+            -- the extra resolution across the knob range.
+            s2a_shape_factor <= signed('0' & s_shape_scaled);
         end if;
     end process p_stage2a;
 
