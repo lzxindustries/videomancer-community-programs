@@ -19,65 +19,72 @@ Switch 1 has a dual role: for deterministic operations (AND–NXOR) it inverts a
 
 The input YUV signal is converted to RGB, the logic operation is applied, and the result is converted back to YUV. Per-channel and global wet/dry blend controls allow the effect to be mixed with the original signal.
 
+## Notes
+
+This and others of my rgb_bit_* and yuv_bit_* programs have a similar user interface, designed like a simple audio mixer.
+These are the Bit Crush, Bit Logic, and Bit Rotator programs.
+
+There are three vertical channels for either Red, Green, and Blue or Y, U, and V.
+
+Knobs 1, 2, and 3 control the effect processing.
+Knobs 4, 5, and 6 control the amount of wet/dry effect passed to the master bus.
+
+The slider controls the global wet/dry blend to the master output.
+
+This gives a lot of control, from mild to wild!
+
+Once you understand one, the rest are easy.
+
 ## Controls
 
 ### Knobs
 
-| Knob  |  Control     | Function
-|-------| ------------ |----------
-|   1   |  Red Mask    | 10-bit mask for the Red channel (0 = no bits affected, 1023 = all bits)
-|   2   |  Green Mask  | 10-bit mask for the Green channel
-|   3   |  Blue Mask   | 10-bit mask for the Blue channel
-|   4   |  Red Blend   | Wet/dry blend for Red (0% = original, 100% = fully processed)
-|   5   |  Green Blend | Wet/dry blend for Green
-|   6   |  Blue Blend  | Wet/dry blend for Blue
+| Knob | Operation    | Description                                              |
+|------|--------------|----------------------------------------------------------|
+|  1   | Red Mask     | 10-bit mask for the Red channel (0 = no bits affected, 1023 = all bits) |
+|  2   | Green Mask   | 10-bit mask for the Green channel                        |
+|  3   | Blue Mask    | 10-bit mask for the Blue channel                         |
+|  4   | Red Blend    | Wet/dry blend for Red (0% = original, 100% = fully processed) |
+|  5   | Green Blend  | Wet/dry blend for Green                                  |
+|  6   | Blue Blend   | Wet/dry blend for Blue                                   |
 
 ### Switches
 
-| Switch      | Function     | Description
-|-------------|----------    | ------------ 
-|   S1		  | Invert/Seed  | Ops 0–5: Off = normal mask, On = invert all masks before applying; Op 6 (LFSR): Off = reseed from PRNG at vsync (sync), On = free-run; Op 7 (PRNG): no effect
-|   S2 		  | Op S2        | Operator select bit 2 (MSB)
-|   S3        | Op S3        | Operator select bit 1
-|   S4        | Op S4        | Operator select bit 0 (LSB)
-|   S5        | Bypass       | Pass the input signal through unprocessed
+| S1 | Operation    | Description                                                                 |
+|----|--------------|-----------------------------------------------------------------------------|
+|  0 | Normal/Free  | Ops 0–5: normal mask applied; Op 6 (LFSR): reseed from PRNG at vsync       |
+|  1 | Invert/Sync  | Ops 0–5: all masks bitwise-inverted before applying; Op 6 (LFSR): free-run from power-on; Op 7: no effect |
 
-**Operator encoding (S2 S3 S4):**
+| S2 | S3 | S4 | Operation | Description                          |
+|----|----|----|-----------|--------------------------------------|
+|  0 |  0 |  0 | AND       | pixel AND mask                       |
+|  0 |  0 |  1 | OR        | pixel OR mask                        |
+|  0 |  1 |  0 | XOR       | pixel XOR mask                       |
+|  0 |  1 |  1 | NAND      | NOT (pixel AND mask)                 |
+|  1 |  0 |  0 | NOR       | NOT (pixel OR mask)                  |
+|  1 |  0 |  1 | NXOR      | NOT (pixel XOR mask)                 |
+|  1 |  1 |  0 | LFSR      | pixel XOR (10-bit LFSR AND mask)     |
+|  1 |  1 |  1 | PRNG      | pixel XOR (16-bit LFSR AND mask)     |
 
-  S2    S3    S4    Operation   Description
- ----- ----- ----- ----------- -------------
-
-  0     0     0     AND         pixel AND mask
-
-  0     0     1     OR          pixel OR mask
-
-  0     1     0     XOR         pixel XOR mask
-
-  0     1     1     NAND        NOT (pixel AND mask)
-
-  1     0     0     NOR         NOT (pixel OR mask)
-
-  1     0     1     NXOR        NOT (pixel XOR mask)
-
-  1     1     0     LFSR        pixel XOR (10-bit LFSR AND mask)
-
-  1     1     1     PRNG        pixel XOR (16-bit LFSR AND mask)
-
+| S5 | Operation | Description                                   |
+|----|-----------|-----------------------------------------------|
+|  0 | Process   | Apply effect                                  |
+|  1 | Bypass    | Pass the input signal through unprocessed     |
 
 ### Slider
 
-| Control      | Function
-|--------------|----------
-| Global Blend | Overall wet/dry blend after per-channel blending (0% = original, 100% = processed)
+| Slider | Operation    | Description                                                                 |
+|--------|--------------|-----------------------------------------------------------------------------|
+|  12    | Global Blend | Overall wet/dry blend after per-channel blending (0% = original, 100% = processed) |
 
 ## Technical Notes
 
 - **Colour space:** Input YUV444 → RGB → process → RGB → YUV444 output
 - **Colour conversion:** BT.601 full-range coefficients implemented as 11 pre-computed BRAM lookup tables (31 of 32 ice40 hx4k BRAM blocks)
-- **Pipeline latency:** 16 clock cycles
+- **Pipeline latency:** 12 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
-- **HD timing:** All six variants meet 74.25 MHz (worst case ~77.6 MHz)
-- **LC utilisation:** ~74% (5711–5725 of 7680)
+- **HD timing:** All six variants meet 74.25 MHz (worst case ~84.8 MHz)
+- **LC utilisation:** ~63% (4838–4859 of 7680)
 
 ## Hardware Requirements
 

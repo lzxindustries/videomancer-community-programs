@@ -244,7 +244,7 @@ begin
             -- after the vsync falling edge when op=LFSR and switch is on (sync mode).
             if (data_in.vsync_n = '0' and s_vsync_n_prev = '1')
                     and (registers_in(6)(3) = '1' and registers_in(6)(2) = '1' and registers_in(6)(1) = '0')
-                    and (registers_in(6)(0) = '1') then   -- 1=off=vsync-reseed, 0=on=free-run
+                    and (registers_in(6)(0) = '0') then   -- 0=off=vsync-reseed, 1=on=free-run
                 s_lfsr_reset <= '1';
             else
                 s_lfsr_reset <= '0';

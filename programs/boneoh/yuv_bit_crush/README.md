@@ -8,57 +8,84 @@ Bit crushing quantises each channel to a coarser set of values, producing a step
 
 All three channels (Y, U, V) are crushed using their respective knobs, each selecting one of eight quantisation step sizes. Y is always truncated (floor). U and V support optional round-to-nearest switching and optional RPDF dither from the onboard LFSRs, which breaks up the hard quantisation edges at the cost of added grain.
 
+## Notes
+
+This and others of my rgb_bit_* and yuv_bit_* programs have a similar user interface, designed like a simple audio mixer.
+These are the Bit Crush, Bit Logic, and Bit Rotator programs.
+
+There are three vertical channels for either Red, Green, and Blue or Y, U, and V.
+
+Knobs 1, 2, and 3 control the effect processing.
+Knobs 4, 5, and 6 control the amount of wet/dry effect passed to the master bus.
+
+The slider controls the global wet/dry blend to the master output.
+
+This gives a lot of control, from mild to wild!
+
+Once you understand one, the rest are easy.
+
 ## Controls
 
 ### Knobs
 
-|  Knob  | Function | Description
-|--------|----------| -------------------
-|    1   | Y Crush  | Quantisation step for Y (luminance) — always truncated (knob min = step 2, max = step 96)
-|    2   | U Crush  | Quantisation step for the U (blue-yellow chroma) channel
-|    3   | V Crush  | Quantisation step for the V (red-cyan chroma) channel
-|    4   | Y Blend  | Wet/dry blend for Y (0% = original, 100% = fully crushed)
-|    5   | U Blend  | Wet/dry blend for U (0% = original, 100% = fully crushed)
-|    6   | V Blend  | Wet/dry blend for V
+| Knob | Operation | Description                                                                                       |
+|------|-----------|---------------------------------------------------------------------------------------------------|
+|  1   | Y Crush   | Quantisation step for Y (luminance) — always truncated (knob minimum = step 2, maximum = step 96) |
+|  2   | U Crush   | Quantisation step for the U (blue-yellow chroma) channel                                          |
+|  3   | V Crush   | Quantisation step for the V (red-cyan chroma) channel                                             |
+|  4   | Y Blend   | Wet/dry blend for Y (0% = original, 100% = fully crushed)                                         |
+|  5   | U Blend   | Wet/dry blend for U                                                                               |
+|  6   | V Blend   | Wet/dry blend for V                                                                               |
 
 ### Switches
 
-  Switch    Description
- --------- ------------
+| S1 | Operation | Description                                            |
+|----|-----------|--------------------------------------------------------|
+|  0 | Normal    | Normal output                                          |
+|  1 | Invert    | Bitwise-NOT all three channels after processing        |
 
-  S1		Invert    0   = normal output; 1  = bitwise-NOT all three channels after processing
+| S2 | Operation | Description                                                          |
+|----|-----------|----------------------------------------------------------------------|
+|  0 | Off       | No dither                                                            |
+|  1 | Dither    | Add RPDF pseudorandom noise before crushing U and V (Y unaffected)   |
 
-  S2		Dither    0   = no dither; 1  = add RPDF pseudorandom noise before crushing U and V (Y unaffected)
+| S3 | Operation | Description                                            |
+|----|-----------|--------------------------------------------------------|
+|  0 | Truncate  | Floor to lower quantisation step (U channel)           |
+|  1 | Round     | Round to nearest quantisation step (U channel)         |
 
-  S3		U Round   0   = truncate (floor to lower quantization step); 1  = round to nearest
+| S4 | Operation | Description                                            |
+|----|-----------|--------------------------------------------------------|
+|  0 | Truncate  | Floor to lower quantisation step (V channel)           |
+|  1 | Round     | Round to nearest quantisation step (V channel)         |
 
-  S4		V Round   0   = truncate; 1  = round to nearest
+| S5 | Operation | Description                                            |
+|----|-----------|--------------------------------------------------------|
+|  0 | Process   | Apply effect                                           |
+|  1 | Bypass    | Pass the input signal through unprocessed              |
 
-  S5		Bypass    Pass the input signal through unprocessed
-
-
-**Note:** Round takes priority over Dither. When both U Round and Dither are On, rounding is applied (no dither) for the U channel.
+**Note:** Round takes priority over Dither. When both U Round and Dither are on, rounding is applied (no dither) for the U channel.
 
 ### Slider
 
-| Control      | Function
-|--------------|----------
-| Global Blend | Overall wet/dry blend after per-channel blending (0% = original, 100% = processed)
+| Slider | Operation    | Description                                                                 |
+|--------|--------------|-----------------------------------------------------------------------------|
+|  12    | Global Blend | Overall wet/dry blend after per-channel blending (0% = original, 100% = processed) |
 
 ## Crush Step Reference
 
 The knob is divided into 8 equal bands of 128 counts each (step_idx = knob / 128):
 
-| Knob range | Step size | Output levels | Character
-|------------|-----------|---------------|----------
-| 0–127      | 2         | 512           | very subtle (knob minimum)
-| 128–255    | 4         | 256           | subtle
-| 256–383    | 8         | 128           | mild
-| 384–511    | 16        | 64            | noticeable posterisation
-| 512–639    | 32        | 32            | strong posterisation
-| 640–767    | 48        | ~21           | heavy
-| 768–895    | 64        | 16            | very heavy
-| 896–1023   | 96        | ~11           | extreme (knob maximum)
+| Knob range | Step size | Output levels | Character                    |
+|------------|-----------|---------------|------------------------------|
+| 0–127      | 2         | 512           | very subtle (knob minimum)   |
+| 128–255    | 4         | 256           | subtle                       |
+| 256–383    | 8         | 128           | mild                         |
+| 384–511    | 16        | 64            | noticeable posterisation     |
+| 512–639    | 32        | 32            | strong posterisation         |
+| 640–767    | 48        | ~21           | heavy                        |
+| 768–895    | 64        | 16            | very heavy                   |
+| 896–1023   | 96        | ~11           | extreme (knob maximum)       |
 
 ## Technical Notes
 
