@@ -116,8 +116,8 @@ suffix_label = "%"
 [[parameter]]
 parameter_id = "toggle_switch_7"
 name_label = "Invert/Seed"
-value_labels = ["Off/Free", "On/Sync"]
-initial_value_label = "Off/Free"
+value_labels = ["Off/Sync", "On/Free"]
+initial_value_label = "Off/Sync"
 
 # Switches 2-4: Operator select (3-bit encoding, see header for full table)
 [[parameter]]
