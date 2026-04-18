@@ -38,8 +38,8 @@ Switch 1 selects between two modes:
 |  0 |  1 |  0 | Logical AND  | White (1023) if all channels are in-window, else black (default)           |
 |  0 |  1 |  1 | Bitwise AND  | AND of masked channel values (original value if gate passed, else 0)       |
 |  1 |  0 |  0 | Luma         | BT.601 luma of the pixel (greyscale)                                       |
-|  1 |  0 |  1 | LFSR         | Frame-locked noise (greyscale)                                             |
-|  1 |  1 |  0 | PRNG         | Free-running noise (greyscale)                                             |
+|  1 |  0 |  1 | LFSR         | Frame-locked noise (AND gated, greyscale)                                  |
+|  1 |  1 |  0 | PRNG         | Free-running noise (AND gated, greyscale)                                  |
 |  1 |  1 |  1 | Passthrough  | Original pixel R, G, B (colour; only active in Matte mode)                 |
 
 | S5 | Operation | Description                                         |
@@ -77,9 +77,9 @@ The three per-channel window results are combined by S2/S3/S4 into a single grey
 
 **Luma** — BT.601 luma (`Y = (77R + 150G + 29B) >> 8`) computed from the full unmasked pixel, gated by logical AND.
 
-**LFSR** — a 10-bit frame-locked noise value (Fibonacci LFSR, polynomial x¹⁰ + x⁷ + 1, reseeded each frame), gated by logical OR.
+**LFSR** — a 10-bit frame-locked noise value (Fibonacci LFSR, polynomial x¹⁰ + x⁷ + 1, reseeded each frame). Gated by logical AND — noise appears only where all three channels are simultaneously in-window.
 
-**PRNG** — the same polynomial as LFSR but never reseeded. The noise pattern shifts by the number of active pixels each frame, producing a different phase every frame. Gated by logical OR.
+**PRNG** — the same polynomial as LFSR but never reseeded. The noise pattern shifts by the number of active pixels each frame, producing a different phase every frame. Gated by logical AND.
 
 **Passthrough** — the original pixel R, G, B is output directly on all three channels. Window checks are still performed but the output is always the original colour.
 

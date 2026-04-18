@@ -56,7 +56,8 @@
 --     Stage 1  (per-channel blend):    4 clocks -> T+6
 --     Stage 2  (global blend):         4 clocks -> T+10
 --
---   Pre-global delay: 6 clocks (data_in at T+0, delayed to T+6 for global dry)
+--   Pre-global delay: 6 clocks — tapped from the 10-clock bypass delay at stage 6
+--     (T+0 -> T+6). No separate delay process; saves 180 flip-flops.
 --   Per-channel dry:  2 clocks (data_in.y/u/v delayed to T+2, aligned with Stage 0b output)
 --
 -- LFSR/PRNG:
@@ -329,30 +330,9 @@ begin
                  result=>s_blended_v, valid=>s_blended_v_valid);
 
     --------------------------------------------------------------------------------
-    -- Delay Line: Original YUV for Global Blend Dry Input
-    -- Delays data_in.y/u/v by 6 clocks: T+0+6 = T+6. Aligned with s_blended at T+6.
-    --------------------------------------------------------------------------------
-    p_global_dry_delay : process(clk)
-        type t_data_delay is array (0 to C_PRE_GLOBAL_DELAY_CLKS - 1)
-            of unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
-        variable v_y_delay : t_data_delay := (others => (others => '0'));
-        variable v_u_delay : t_data_delay := (others => (others => '0'));
-        variable v_v_delay : t_data_delay := (others => (others => '0'));
-    begin
-        if rising_edge(clk) then
-            v_y_delay := unsigned(data_in.y) & v_y_delay(0 to C_PRE_GLOBAL_DELAY_CLKS - 2);
-            v_u_delay := unsigned(data_in.u) & v_u_delay(0 to C_PRE_GLOBAL_DELAY_CLKS - 2);
-            v_v_delay := unsigned(data_in.v) & v_v_delay(0 to C_PRE_GLOBAL_DELAY_CLKS - 2);
-            s_y_for_global <= v_y_delay(C_PRE_GLOBAL_DELAY_CLKS - 1);
-            s_u_for_global <= v_u_delay(C_PRE_GLOBAL_DELAY_CLKS - 1);
-            s_v_for_global <= v_v_delay(C_PRE_GLOBAL_DELAY_CLKS - 1);
-        end if;
-    end process p_global_dry_delay;
-
-    --------------------------------------------------------------------------------
     -- Stage 2: Global Wet/Dry Blend
     -- Latency: 4 clocks. Input T+6, output T+10.
-    -- a = original YUV (dry, delayed to T+6), b = per-channel blended YUV
+    -- a = original YUV (dry, tapped from bypass delay at T+6), b = per-channel blended YUV
     --------------------------------------------------------------------------------
     interp_global_y : entity work.interpolator_u
         generic map(G_WIDTH=>C_VIDEO_DATA_WIDTH, G_FRAC_BITS=>C_VIDEO_DATA_WIDTH,
@@ -377,6 +357,10 @@ begin
 
     --------------------------------------------------------------------------------
     -- Bypass Path Delay Line (10 clocks)
+    -- Also provides a 6-clock tap (index C_PRE_GLOBAL_DELAY_CLKS-1) for the
+    -- global blend dry input, replacing the former p_global_dry_delay process.
+    -- This eliminates the duplicate Y/U/V shift-register chains and the extra
+    -- routing trees they created.
     --------------------------------------------------------------------------------
     p_bypass_delay : process(clk)
         type t_sync_delay is array (0 to C_PROCESSING_DELAY_CLKS - 1) of std_logic;
@@ -402,6 +386,11 @@ begin
             s_y_delayed       <= v_y_delay(C_PROCESSING_DELAY_CLKS - 1);
             s_u_delayed       <= v_u_delay(C_PROCESSING_DELAY_CLKS - 1);
             s_v_delayed       <= v_v_delay(C_PROCESSING_DELAY_CLKS - 1);
+            -- 6-clock tap: v_y_delay(5) holds data_in.y from 6 clocks ago
+            -- (T+0 -> T+6), aligned with s_blended for the global dry input
+            s_y_for_global    <= unsigned(v_y_delay(C_PRE_GLOBAL_DELAY_CLKS - 1));
+            s_u_for_global    <= unsigned(v_u_delay(C_PRE_GLOBAL_DELAY_CLKS - 1));
+            s_v_for_global    <= unsigned(v_v_delay(C_PRE_GLOBAL_DELAY_CLKS - 1));
         end if;
     end process p_bypass_delay;
 

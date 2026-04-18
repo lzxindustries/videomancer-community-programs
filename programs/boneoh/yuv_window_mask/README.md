@@ -40,8 +40,8 @@ U and V neutral (no colour) is at 50% (512). Values below 50% are negative chrom
 |  0 |  1 |  0 | Logical AND  | White if all channels are in-window, else black (default)                   |
 |  0 |  1 |  1 | Bitwise AND  | Y = AND of masked channel values (original if gate passed, else 0); U=V=512 |
 |  1 |  0 |  0 | Luma         | Y = Y channel value; U=V=512 (neutral chroma)                               |
-|  1 |  0 |  1 | LFSR         | Y = frame-locked noise; U=V=512                                             |
-|  1 |  1 |  0 | PRNG         | Y = free-running noise; U=V=512                                             |
+|  1 |  0 |  1 | LFSR         | Y = frame-locked noise (AND gated); U=V=512                                 |
+|  1 |  1 |  0 | PRNG         | Y = free-running noise (AND gated); U=V=512                                 |
 |  1 |  1 |  1 | Passthrough  | Original Y, U, V (colour; only active in Matte mode)                        |
 
 | S5 | Operation | Description                                         |
@@ -79,9 +79,9 @@ The three per-channel window results are combined by S2/S3/S4 into a single matt
 
 **Luma** — Y = the original Y (luma) value of the pixel, passed directly as the output luma. Gated by logical AND.
 
-**LFSR** — Y = a 10-bit frame-locked noise value (Fibonacci LFSR, polynomial x¹⁰ + x⁷ + 1, reseeded each frame). Gated by logical OR.
+**LFSR** — Y = a 10-bit frame-locked noise value (Fibonacci LFSR, polynomial x¹⁰ + x⁷ + 1, reseeded each frame). Gated by logical AND — noise appears only where all three channels are simultaneously in-window.
 
-**PRNG** — Y = free-running noise using the same polynomial as LFSR but never reseeded. The noise pattern shifts by the number of active pixels each frame, producing a different phase every frame. Gated by logical OR.
+**PRNG** — Y = free-running noise using the same polynomial as LFSR but never reseeded. The noise pattern shifts by the number of active pixels each frame, producing a different phase every frame. Gated by logical AND.
 
 **Passthrough** — the original Y, U, V pixel is output directly. Window checks are still performed but the output is always the original colour.
 

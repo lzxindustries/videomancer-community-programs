@@ -26,8 +26,8 @@
 --       010  Logical AND   - white (1023) if all channels in-window, else black
 --       011  Bitwise AND   - AND of channel values; failing channels contribute 0
 --       100  Luma          - Y channel value passed directly, gated by logical AND
---       101  LFSR synced   - frame-locked noise value, gated by logical OR
---       110  PRNG          - free-running noise value, gated by logical OR
+--       101  LFSR synced   - frame-locked noise value, gated by logical AND
+--       110  PRNG          - free-running noise value, gated by logical AND
 --       111  Passthrough   - original Y/U/V pixel (no keying)
 --
 --   No colour space conversion is performed; processing is entirely in YUV.
@@ -152,7 +152,6 @@ architecture yuv_window_key of program_top is
     signal s_matte_mode     : std_logic_vector(2 downto 0) := "010";  -- default: Logical AND
     -- LFSR / PRNG noise generators for matte modes 101 and 110
     signal s_vsync_n_d      : std_logic := '1';  -- registered vsync_n for edge detect
-    signal s_hsync_n_d      : std_logic := '1';  -- registered hsync_n for edge detect
     signal s_lfsr           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0)
                                           := "0101010101";
     signal s_prng           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0)
@@ -328,8 +327,8 @@ begin
     --------------------------------------------------------------------------------
     -- LFSR Noise Generator (frame-synced)
     -- 10-bit Fibonacci LFSR, polynomial x^10 + x^7 + 1 (primitive, period 1023).
-    -- Reseeds from the current PRNG state on the falling edge of vsync_n so that
-    -- each frame produces a different base pattern.
+    -- Reseeds to a fixed non-zero constant on the falling edge of vsync_n so that
+    -- it produces the same noise pattern every frame (frozen static on screen).
     -- Output is XOR'd with the Y pixel value in p_window_key to make the noise
     -- content-dependent (each luma level yields a different texture).
     -- Used by matte mode 101; gated by logical OR in p_window_key.
@@ -340,8 +339,8 @@ begin
         if rising_edge(clk) then
             s_vsync_n_d <= data_in.vsync_n;
             if s_vsync_n_d = '1' and data_in.vsync_n = '0' then
-                -- Reseed from PRNG so each frame starts with a different pattern
-                s_lfsr <= s_prng;
+                -- Reseed to fixed constant so pattern is identical every frame
+                s_lfsr <= "0101010101";
             else
                 v_fb   := s_lfsr(9) xor s_lfsr(6);
                 s_lfsr <= s_lfsr(8 downto 0) & v_fb;
@@ -350,10 +349,10 @@ begin
     end process p_lfsr;
 
     --------------------------------------------------------------------------------
-    -- PRNG Noise Generator (line-seeded)
-    -- Same polynomial as the LFSR.  Reseeds from the current LFSR state on each
-    -- falling edge of hsync_n so that every line starts with a different sequence.
-    -- Because the LFSR itself varies each frame, the PRNG pattern is unique across
+    -- PRNG Noise Generator (free-running)
+    -- Same polynomial as the LFSR (x^10 + x^7 + 1).  Never reseeded — runs
+    -- continuously from power-on.  Advances ~2200 clocks per line (including
+    -- blanking) so the pattern at any given pixel position is unique across
     -- both lines and frames.  Output is XOR'd with Y in p_window_key.
     -- Used by matte mode 110; gated by logical OR in p_window_key.
     --------------------------------------------------------------------------------
@@ -361,14 +360,8 @@ begin
         variable v_fb : std_logic;
     begin
         if rising_edge(clk) then
-            s_hsync_n_d <= data_in.hsync_n;
-            if s_hsync_n_d = '1' and data_in.hsync_n = '0' then
-                -- Reseed from LFSR at each line start for per-line variation
-                s_prng <= s_lfsr;
-            else
-                v_fb   := s_prng(9) xor s_prng(6);
-                s_prng <= s_prng(8 downto 0) & v_fb;
-            end if;
+            v_fb   := s_prng(9) xor s_prng(6);
+            s_prng <= s_prng(8 downto 0) & v_fb;
         end if;
     end process p_prng;
 
@@ -443,8 +436,8 @@ begin
     --     "010" Logical AND : 1023 if all flags set, else 0
     --     "011" Bitwise AND : AND of masked channel values
     --     "100" Luma        : Y value passed, gated by AND
-    --     "101" LFSR synced : frame-seeded noise XOR Y value, gated by OR
-    --     "110" PRNG        : line-seeded noise XOR Y value, gated by OR
+    --     "101" LFSR synced : frame-seeded noise XOR Y value, gated by AND
+    --     "110" PRNG        : line-seeded noise XOR Y value, gated by AND
     --     "111" Passthrough : original Y/U/V pixel (only active in Matte mode)
     --
     -- Blanking (avid='0'): raw data always passes to preserve sync structure.
@@ -483,14 +476,14 @@ begin
                         else
                             v_matte := (others => '0');
                         end if;
-                    when "101" =>  -- LFSR synced: frame-seeded noise XOR Y, gated by OR
-                        if s_wf_in_any = '1' then
+                    when "101" =>  -- LFSR synced: frame-seeded noise XOR Y, gated by AND
+                        if s_wf_in_all = '1' then
                             v_matte := s_wf_lfsr_xor_y;
                         else
                             v_matte := (others => '0');
                         end if;
-                    when "110" =>  -- PRNG: line-seeded noise XOR Y, gated by OR
-                        if s_wf_in_any = '1' then
+                    when "110" =>  -- PRNG: line-seeded noise XOR Y, gated by AND
+                        if s_wf_in_all = '1' then
                             v_matte := s_wf_prng_xor_y;
                         else
                             v_matte := (others => '0');

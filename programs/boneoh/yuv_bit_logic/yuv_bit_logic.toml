@@ -30,7 +30,7 @@
 [program]
 program_id = "com.peteappleby.yuv_bit_logic"
 program_name = "YUV Bit Logic"
-program_version = "0.1.0"
+program_version = "0.1.5"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"

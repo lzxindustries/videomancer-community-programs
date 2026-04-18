@@ -21,14 +21,14 @@
 #     0,1,0  Logical AND   — white if all channels in-window, else black  (default)
 #     0,1,1  Bitwise AND   — AND of channel values; failing channels contribute 0
 #     1,0,0  Luma          — BT.601 luma of the pixel, gated by logical AND
-#     1,0,1  LFSR synced   — frame-locked noise, gated by logical OR
-#     1,1,0  PRNG          — free-running noise, gated by logical OR
+#     1,0,1  LFSR synced   — frame-locked noise, gated by logical AND
+#     1,1,0  PRNG          — free-running noise, gated by logical AND
 #     1,1,1  Passthrough   — original pixel (only active in Matte mode)
 
 [program]
-program_id = "com.peteappleby.rgb_window_key"
+program_id = "com.peteappleby.rgb_window_mask"
 program_name = "RGB Window Mask"
-program_version = "0.1.0"
+program_version = "0.1.5"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"

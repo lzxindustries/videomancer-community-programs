@@ -28,8 +28,8 @@
 --       010  Logical AND   - white (1023) if all channels in-window, else black
 --       011  Bitwise AND   - AND of channel values; failing channels contribute 0
 --       100  Luma          - BT.601 luma of the full pixel, gated by logical AND
---       101  LFSR synced   - frame-locked noise value, gated by logical OR
---       110  PRNG          - free-running noise value, gated by logical OR
+--       101  LFSR synced   - frame-locked noise value, gated by logical AND
+--       110  PRNG          - free-running noise value, gated by logical AND
 --       111  Passthrough   - original pixel on all channels (no keying)
 --
 --   Colour conversion uses the same pre-computed BT.601 BRAM tables as the
@@ -947,7 +947,6 @@ architecture rgb_window_key of program_top is
     signal s_matte_mode     : std_logic_vector(2 downto 0) := "010";  -- default: Logical AND
     -- LFSR / PRNG noise generators for matte modes 101 and 110
     signal s_vsync_n_d      : std_logic := '1';  -- registered vsync_n for edge detect
-    signal s_hsync_n_d      : std_logic := '1';  -- registered hsync_n for edge detect
     signal s_lfsr           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0)
                                           := "0101010101";
     signal s_prng           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0)
@@ -993,11 +992,11 @@ architecture rgb_window_key of program_top is
 
     --------------------------------------------------------------------------------
     -- Stage 0c: Luma Partial Products (T+4)
-    -- Registers the three BT.601 multiply results separately to ease timing.
+    -- Registers BT.601 luma partial products: R*77 + G*150 pre-summed to reduce
+    -- Stage 1a carry chain depth to a single 18-bit + 15-bit addition.
     --------------------------------------------------------------------------------
-    signal s_0c_luma_r_prod  : unsigned(16 downto 0);   -- s_rgb_r * 77   (17-bit)
-    signal s_0c_luma_g_prod  : unsigned(17 downto 0);   -- s_rgb_g * 150  (18-bit)
-    signal s_0c_luma_b_prod  : unsigned(14 downto 0);   -- s_rgb_b * 29   (15-bit)
+    signal s_0c_luma_rg_sum  : unsigned(17 downto 0);   -- r*77 + g*150  (max 232221 < 2^18)
+    signal s_0c_luma_b_prod  : unsigned(14 downto 0);   -- s_rgb_b * 29  (15-bit)
     signal s_0c_rgb_r        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_0c_rgb_g        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_0c_rgb_b        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -1210,8 +1209,8 @@ begin
     --------------------------------------------------------------------------------
     -- LFSR Noise Generator (frame-synced)
     -- 10-bit Fibonacci LFSR, polynomial x^10 + x^7 + 1 (primitive, period 1023).
-    -- Reseeds from the current PRNG state on the falling edge of vsync_n so that
-    -- each frame produces a different base pattern.
+    -- Reseeds to a fixed non-zero constant on the falling edge of vsync_n so that
+    -- it produces the same noise pattern every frame (frozen static on screen).
     -- Output is XOR'd with the BT.601 luma of the pixel in p_window_key to make
     -- the noise content-dependent (each luma level yields a different texture).
     -- Used by matte mode 101; gating by logical OR in p_window_key ensures that
@@ -1223,8 +1222,8 @@ begin
         if rising_edge(clk) then
             s_vsync_n_d <= data_in.vsync_n;
             if s_vsync_n_d = '1' and data_in.vsync_n = '0' then
-                -- Reseed from PRNG so each frame starts with a different pattern
-                s_lfsr <= s_prng;
+                -- Reseed to fixed constant so pattern is identical every frame
+                s_lfsr <= "0101010101";
             else
                 v_fb   := s_lfsr(9) xor s_lfsr(6);
                 s_lfsr <= s_lfsr(8 downto 0) & v_fb;
@@ -1233,10 +1232,10 @@ begin
     end process p_lfsr;
 
     --------------------------------------------------------------------------------
-    -- PRNG Noise Generator (line-seeded)
-    -- Same polynomial as the LFSR.  Reseeds from the current LFSR state on each
-    -- falling edge of hsync_n so that every line starts with a different sequence.
-    -- Because the LFSR itself varies each frame, the PRNG pattern is unique across
+    -- PRNG Noise Generator (free-running)
+    -- Same polynomial as the LFSR (x^10 + x^7 + 1).  Never reseeded — runs
+    -- continuously from power-on.  Advances ~2200 clocks per line (including
+    -- blanking) so the pattern at any given pixel position is unique across
     -- both lines and frames.  Output is XOR'd with luma in p_window_key.
     -- Used by matte mode 110.
     --------------------------------------------------------------------------------
@@ -1244,30 +1243,25 @@ begin
         variable v_fb : std_logic;
     begin
         if rising_edge(clk) then
-            s_hsync_n_d <= data_in.hsync_n;
-            if s_hsync_n_d = '1' and data_in.hsync_n = '0' then
-                -- Reseed from LFSR at each line start for per-line variation
-                s_prng <= s_lfsr;
-            else
-                v_fb   := s_prng(9) xor s_prng(6);
-                s_prng <= s_prng(8 downto 0) & v_fb;
-            end if;
+            v_fb   := s_prng(9) xor s_prng(6);
+            s_prng <= s_prng(8 downto 0) & v_fb;
         end if;
     end process p_prng;
 
     --------------------------------------------------------------------------------
     -- Stage 0c: Luma Partial Products
     -- Latency: 1 clock. Input T+3, output T+4.
-    -- Registers each of the three BT.601 multiply results in its own flip-flop
-    -- stage, isolating the carry chains from the subsequent addition and window
-    -- comparison logic.  Also propagates pixel, valid, and control signals.
+    -- Pre-sums R*77 + G*150 into a single 18-bit registered value so that Stage 1a
+    -- needs only one 18-bit + 15-bit addition for the full luma sum, halving the
+    -- carry chain depth in Stage 1a.  B*29 is registered separately.
+    -- Also propagates pixel, valid, and control signals.
     --------------------------------------------------------------------------------
     p_luma_mult : process(clk)
     begin
         if rising_edge(clk) then
-            s_0c_luma_r_prod <= s_rgb_r * to_unsigned(77,  7);   -- 10+7 = 17-bit
-            s_0c_luma_g_prod <= s_rgb_g * to_unsigned(150, 8);   -- 10+8 = 18-bit
-            s_0c_luma_b_prod <= s_rgb_b * to_unsigned(29,  5);   -- 10+5 = 15-bit
+            s_0c_luma_rg_sum <= resize(s_rgb_r * to_unsigned(77,  7), 18)   -- 17-bit
+                              + resize(s_rgb_g * to_unsigned(150, 8), 18);  -- 18-bit
+            s_0c_luma_b_prod <= s_rgb_b * to_unsigned(29,  5);              -- 15-bit
             s_0c_rgb_r       <= s_rgb_r;
             s_0c_rgb_g       <= s_rgb_g;
             s_0c_rgb_b       <= s_rgb_b;
@@ -1307,10 +1301,11 @@ begin
             if v_in_g = '1' then s_wf_g_m <= s_0c_rgb_g; else s_wf_g_m <= (others => '0'); end if;
             if v_in_b = '1' then s_wf_b_m <= s_0c_rgb_b; else s_wf_b_m <= (others => '0'); end if;
 
-            -- Sum luma partial products; take bits [17:8] for 10-bit BT.601 luma
-            -- Max sum: 1023*77 + 1023*150 + 1023*29 = 261888 < 2^18 = 262144
-            v_luma_wide := resize(s_0c_luma_r_prod, 18)
-                         + resize(s_0c_luma_g_prod, 18)
+            -- Sum luma partial products; take bits [17:8] for 10-bit BT.601 luma.
+            -- rg_sum (R*77+G*150, max 232221) + B*29 (max 29667) = max 261888 < 2^18.
+            -- Single 18-bit + 15-bit addition (one carry chain) vs. the previous
+            -- two chained 18-bit additions, halving Stage 1a carry chain depth.
+            v_luma_wide := s_0c_luma_rg_sum
                          + resize(s_0c_luma_b_prod, 18);
             s_wf_luma <= v_luma_wide(17 downto 8);
 
@@ -1346,8 +1341,8 @@ begin
     --   "010" Logical AND : 1023 if all channels in-window, else 0
     --   "011" Bitwise AND : AND of channel values, failing channels = 0
     --   "100" Luma        : BT.601 luma of full pixel, gated by AND
-    --   "101" LFSR synced : frame-seeded noise XOR luma, gated by OR
-    --   "110" PRNG        : line-seeded noise XOR luma, gated by OR
+    --   "101" LFSR synced : frame-seeded noise XOR luma, gated by AND
+    --   "110" PRNG        : line-seeded noise XOR luma, gated by AND
     --   "111" Passthrough : original pixel, no keying
     --------------------------------------------------------------------------------
     p_window_key : process(clk)
@@ -1378,14 +1373,14 @@ begin
                     else
                         v_matte := (others => '0');
                     end if;
-                when "101" =>  -- LFSR synced: frame-seeded noise XOR luma, gated by OR
-                    if s_wf_in_any = '1' then
+                when "101" =>  -- LFSR synced: frame-seeded noise XOR luma, gated by AND
+                    if s_wf_in_all = '1' then
                         v_matte := unsigned(s_wf_lfsr) xor s_wf_luma;
                     else
                         v_matte := (others => '0');
                     end if;
-                when "110" =>  -- PRNG: line-seeded noise XOR luma, gated by OR
-                    if s_wf_in_any = '1' then
+                when "110" =>  -- PRNG: line-seeded noise XOR luma, gated by AND
+                    if s_wf_in_all = '1' then
                         v_matte := unsigned(s_wf_prng) xor s_wf_luma;
                     else
                         v_matte := (others => '0');
