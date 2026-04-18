@@ -2,33 +2,35 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 --
 -- Program Name:
---   RGB Window Key
+--   RGB Window Mask
 --
 -- Author:
 --   Pete Appleby
 --
 -- Overview:
---   Per-channel window keying effect with full YUV<->RGB colour space conversion.
+--   Per-channel window masking effect with full YUV<->RGB colour space conversion.
 --   For each channel (R, G, B) a lower and upper threshold knob define a window.
 --   When the lower threshold exceeds the upper threshold the window is inverted:
 --   pixels outside the normal window pass.  This inversion happens per-channel
 --   automatically, requiring no additional switch.
 --
---   Matte Mode (S2/S3/S4 as a 3-bit word, S2=MSB, S4=LSB):
---     000  Logical OR    - white (1023) if any channel in-window, else black
---     001  Bitwise OR    - OR of channel values; failing channels contribute 0
---     010  Logical AND   - white (1023) if all channels in-window, else black
---     011  Bitwise AND   - AND of channel values; failing channels contribute 0
---     100  Luma          - BT.601 luma of the full pixel, gated by logical AND
---     101  LFSR synced   - frame-locked noise value, gated by logical OR
---     110  PRNG          - free-running noise value, gated by logical OR
---     111  Passthrough   - original pixel on all channels (no keying)
+--   Show Matte Off (S1=0) — Normal mode:
+--     Each output channel is independently gated by its own window check.
+--     A passing channel outputs its original value; a failing channel outputs 0.
+--     S2/S3/S4 are ignored in this mode.
 --
---   Show Matte (S1):
---     On  — outputs the computed matte as a greyscale signal on all three channels.
---           R=G=B so the downstream YUV conversion produces a true monochrome signal.
---     Off — uses the matte as a binary gate: pixels with matte>0 pass through as
---           the original RGB pixel; pixels with matte=0 are replaced with black.
+--   Show Matte On (S1=1) — Matte mode:
+--     A combined matte is computed from S2/S3/S4 and output as greyscale on all
+--     three channels (R=G=B → true mono after downstream YUV conversion).
+--     Matte modes (S2=MSB, S4=LSB):
+--       000  Logical OR    - white (1023) if any channel in-window, else black
+--       001  Bitwise OR    - OR of channel values; failing channels contribute 0
+--       010  Logical AND   - white (1023) if all channels in-window, else black
+--       011  Bitwise AND   - AND of channel values; failing channels contribute 0
+--       100  Luma          - BT.601 luma of the full pixel, gated by logical AND
+--       101  LFSR synced   - frame-locked noise value, gated by logical OR
+--       110  PRNG          - free-running noise value, gated by logical OR
+--       111  Passthrough   - original pixel on all channels (no keying)
 --
 --   Colour conversion uses the same pre-computed BT.601 BRAM tables as the
 --   RGB Bit Crush / RGB Bit Rotator colour conversion path (11 BRAMs total).
@@ -39,7 +41,7 @@
 --   Stage 0b    - YUV->RGB Accumulate and Clamp          (1 clock) -> T+3
 --   Stage 0c    - Luma Partial Products                  (1 clock) -> T+4
 --   Stage 1a    - Window Checks + Luma Sum               (1 clock) -> T+5
---   Stage 1b    - Window Key Operation                   (1 clock) -> T+6
+--   Stage 1b    - Window Mask Output                     (1 clock) -> T+6
 --   Stage 2     - Global Blend      (3x interpolator_u) (4 clocks) -> T+10
 --   Stage 3a-i  - RGB->YUV BRAM Lookup                  (1 clock) -> T+11
 --   Stage 3a-ii - RGB->YUV Partial Pre-sums             (1 clock) -> T+12
@@ -60,9 +62,9 @@
 --   Register  5: B channel high threshold (0-1023)   rotary_potentiometer_6
 --   Register  6: Packed toggle bits (Off='0', On='1'):
 --     bit 0: Show Matte (0=Off/gate pixel, 1=On/show matte)            toggle_switch_7
---     bit 3: Matte Bit2 MSB of 3-bit matte mode {S2,S3,S4}             toggle_switch_8
+--     bit 1: Matte Bit2 MSB of 3-bit matte mode {S2,S3,S4}             toggle_switch_8
 --     bit 2: Matte Bit1 middle bit of matte mode word                  toggle_switch_9
---     bit 1: Matte Bit0 LSB of matte mode word                         toggle_switch_10
+--     bit 3: Matte Bit0 LSB of matte mode word                         toggle_switch_10
 --     bit 4: Fine       (0=Normal full-range, 1=Fine 1/8-sensitivity)   toggle_switch_11
 --   Register  7: Global blend (0=dry, 1023=wet)                    linear_potentiometer_12
 --
@@ -1131,8 +1133,8 @@ begin
             -- Pre-register decoded controls (parallel with BRAM lookup, no added latency).
             -- Off='0'/On='1': feature active when bit='1' (On position).
             s_show_matte <= registers_in(6)(0);          -- '1' = On/Show Matte
-            -- S2=bit3=MSB, S3=bit2, S4=bit1=LSB → concatenate to preserve {S2,S3,S4} order
-            s_matte_mode <= registers_in(6)(3) & registers_in(6)(2) & registers_in(6)(1);
+            -- S2=bit1=MSB, S3=bit2, S4=bit3=LSB → concatenate to preserve {S2,S3,S4} order
+            s_matte_mode <= registers_in(6)(1) & registers_in(6)(2) & registers_in(6)(3);
             -- Fine mode: register S5; latch reference values on Normal->Fine transition
             s_fine <= registers_in(6)(4);
             if s_fine = '0' and registers_in(6)(4) = '1' then
@@ -1325,24 +1327,28 @@ begin
     end process p_window_check;
 
     --------------------------------------------------------------------------------
-    -- Stage 1b: Window Key Operation
+    -- Stage 1b: Window Mask Operation
     -- Latency: 1 clock. Input T+5, output T+6.
     --
     -- All inputs are registered flip-flop outputs from Stage 1a: no comparisons,
     -- multiplications, or additions longer than a simple mux in this stage.
     --
-    -- Matte mode (s_wf_matte_mode = S2 & S3 & S4, S2=MSB):
-    --   "000" Logical OR  : 1023 if any channel in-window (OR), else 0
+    -- Show Matte Off (S1=0) — Normal mode:
+    --   Per-channel independent gating; S2/S3/S4 are ignored.
+    --   R output = pixel R if v_in_r, else 0.
+    --   G output = pixel G if v_in_g, else 0.
+    --   B output = pixel B if v_in_b, else 0.
+    --
+    -- Show Matte On (S1=1) — Matte mode:
+    --   Matte computed from S2/S3/S4 and output as greyscale on all channels.
+    --   "000" Logical OR  : 1023 if any channel in-window, else 0
     --   "001" Bitwise OR  : OR of channel values, failing channels = 0
-    --   "010" Logical AND : 1023 if all channels in-window (AND), else 0
+    --   "010" Logical AND : 1023 if all channels in-window, else 0
     --   "011" Bitwise AND : AND of channel values, failing channels = 0
     --   "100" Luma        : BT.601 luma of full pixel, gated by AND
     --   "101" LFSR synced : frame-seeded noise XOR luma, gated by OR
     --   "110" PRNG        : line-seeded noise XOR luma, gated by OR
     --   "111" Passthrough : original pixel, no keying
-    --
-    -- Show Matte On  : matte value output on all three channels (greyscale)
-    -- Show Matte Off : matte > 0 passes original pixel; matte = 0 outputs black
     --------------------------------------------------------------------------------
     p_window_key : process(clk)
         variable v_matte : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -1389,27 +1395,21 @@ begin
             end case;
 
             -- Drive outputs
-            if s_wf_matte_mode = "111" then
-                -- Passthrough: output original pixel on all three channels
+            if s_wf_show_matte = '0' then
+                -- Normal: per-channel independent gating; S2/S3/S4 ignored
+                if s_wf_in_r = '1' then s_processed_r <= s_wf_rgb_r; else s_processed_r <= (others => '0'); end if;
+                if s_wf_in_g = '1' then s_processed_g <= s_wf_rgb_g; else s_processed_g <= (others => '0'); end if;
+                if s_wf_in_b = '1' then s_processed_b <= s_wf_rgb_b; else s_processed_b <= (others => '0'); end if;
+            elsif s_wf_matte_mode = "111" then
+                -- Passthrough: output original pixel (only active in Matte mode)
                 s_processed_r <= s_wf_rgb_r;
                 s_processed_g <= s_wf_rgb_g;
                 s_processed_b <= s_wf_rgb_b;
-            elsif s_wf_show_matte = '1' then
-                -- Show Matte: greyscale matte on all channels (R=G=B → true mono YUV)
+            else
+                -- Matte: greyscale matte on all channels (R=G=B → true mono YUV)
                 s_processed_r <= v_matte;
                 s_processed_g <= v_matte;
                 s_processed_b <= v_matte;
-            else
-                -- Normal: gate original pixel with matte
-                if v_matte /= 0 then
-                    s_processed_r <= s_wf_rgb_r;
-                    s_processed_g <= s_wf_rgb_g;
-                    s_processed_b <= s_wf_rgb_b;
-                else
-                    s_processed_r <= (others => '0');
-                    s_processed_g <= (others => '0');
-                    s_processed_b <= (others => '0');
-                end if;
             end if;
 
             s_processed_valid <= s_wf_rgb_valid;

@@ -1,14 +1,21 @@
 # Copyright (C) 2026 Pete Appleby
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# RGB Window Key Program Configuration
+# RGB Window Mask Program Configuration
 #
-# Effect: Per-channel window keying operating in RGB space (full BT.601 YUV<->RGB
+# Effect: Per-channel window masking operating in RGB space (full BT.601 YUV<->RGB
 #   conversion). For each channel, a Lower and Upper knob define a threshold window.
-#   Inverting the key: when a channel's Lower knob exceeds its Upper knob, the window
-#   inverts automatically — no extra switch needed.
+#   Inverting: when a channel's Lower knob exceeds its Upper knob, that channel's
+#   window inverts automatically — no extra switch needed.
 #
-#   Matte Mode (S2/S3/S4 as a 3-bit word, S2=MSB, S4=LSB):
+#   Show Matte Off (S1 Off) — Normal mode:
+#     Each output channel is independently gated by its own window check.
+#     A passing channel outputs its original value; a failing channel outputs 0.
+#     S2/S3/S4 are ignored in this mode.
+#
+#   Show Matte On (S1 On) — Matte mode:
+#     A combined matte is computed from S2/S3/S4 (3-bit word, S2=MSB, S4=LSB)
+#     and output as greyscale on all channels.
 #     0,0,0  Logical OR    — white if any channel in-window, else black
 #     0,0,1  Bitwise OR    — OR of channel values; failing channels contribute 0
 #     0,1,0  Logical AND   — white if all channels in-window, else black  (default)
@@ -16,20 +23,17 @@
 #     1,0,0  Luma          — BT.601 luma of the pixel, gated by logical AND
 #     1,0,1  LFSR synced   — frame-locked noise, gated by logical OR
 #     1,1,0  PRNG          — free-running noise, gated by logical OR
-#     1,1,1  Passthrough   — original pixel (no keying)
-#
-#   Show Matte (S1 On): outputs the matte as greyscale on all channels.
-#   Show Matte (S1 Off): matte > 0 passes the original pixel; matte = 0 → black.
+#     1,1,1  Passthrough   — original pixel (only active in Matte mode)
 
 [program]
 program_id = "com.peteappleby.rgb_window_key"
-program_name = "RGB Window Key"
+program_name = "RGB Window Mask"
 program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
 category = "Video Processing"
-description = "Per-channel RGB window keying with 8 matte modes and global blend"
+description = "Per-channel RGB window masking with independent channel gating and 8 matte modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"
 

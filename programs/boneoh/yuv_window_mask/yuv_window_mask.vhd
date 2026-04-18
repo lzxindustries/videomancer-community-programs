@@ -2,39 +2,40 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 --
 -- Program Name:
---   YUV Window Key
+--   YUV Window Mask
 --
 -- Author:
 --   Pete Appleby
 --
 -- Overview:
---   Per-channel window keying operating directly in YUV space.  For each channel
+--   Per-channel window masking operating directly in YUV space.  For each channel
 --   (Y, U, V) a lower and upper threshold knob define a window.  When the lower
 --   threshold exceeds the upper threshold the window inverts automatically for that
 --   channel — no extra switch required.
 --
---   Matte Mode (S2/S3/S4 as a 3-bit word, S2=MSB, S4=LSB):
---     000  Logical OR    - white (1023) if any channel in-window, else black
---     001  Bitwise OR    - OR of channel values; failing channels contribute 0
---     010  Logical AND   - white (1023) if all channels in-window, else black
---     011  Bitwise AND   - AND of channel values; failing channels contribute 0
---     100  Luma          - Y channel value passed directly, gated by logical AND
---     101  LFSR synced   - frame-locked noise value, gated by logical OR
---     110  PRNG          - free-running noise value, gated by logical OR
---     111  Passthrough   - original Y/U/V pixel (no keying)
+--   Show Matte Off (S1=0) — Normal mode:
+--     Each output channel is independently gated by its own window check.
+--     A passing channel outputs its original value; a failing channel outputs 0
+--     (Y) or 512 (U/V — neutral chroma).  S2/S3/S4 are ignored in this mode.
 --
---   Show Matte (S1):
---     On  — outputs the computed matte as Y; U and V are forced to 512 (neutral
---           chroma) for a true monochrome signal suitable for feeding other devices.
---     Off — matte gates original pixel: matte>0 passes Y/U/V through; matte=0
---           outputs black (Y=0, U=512, V=512).
+--   Show Matte On (S1=1) — Matte mode:
+--     A combined matte is computed from S2/S3/S4 and output as greyscale
+--     (Y=matte, U=V=512).  Matte modes (S2=MSB, S4=LSB):
+--       000  Logical OR    - white (1023) if any channel in-window, else black
+--       001  Bitwise OR    - OR of channel values; failing channels contribute 0
+--       010  Logical AND   - white (1023) if all channels in-window, else black
+--       011  Bitwise AND   - AND of channel values; failing channels contribute 0
+--       100  Luma          - Y channel value passed directly, gated by logical AND
+--       101  LFSR synced   - frame-locked noise value, gated by logical OR
+--       110  PRNG          - free-running noise value, gated by logical OR
+--       111  Passthrough   - original Y/U/V pixel (no keying)
 --
 --   No colour space conversion is performed; processing is entirely in YUV.
 --
 -- Architecture:
 --   Stage 0   - Control decode + data register + comparisons  (1 clock) -> T+1
 --   Stage 1a  - Window flag register (LUT-only)               (1 clock) -> T+2
---   Stage 1b  - Matte computation + output                    (1 clock) -> T+3
+--   Stage 1b  - Window mask output                            (1 clock) -> T+3
 --   Stage 2   - Global Blend (3x interpolator_u)             (4 clocks) -> T+7
 --
 -- Videomancer UV Convention Note:
@@ -51,9 +52,9 @@
 --   Register  5: V channel high threshold (0-1023)   rotary_potentiometer_6
 --   Register  6: Packed toggle bits (Off='0', On='1'):
 --     bit 0: Show Matte (0=Off/gate pixel, 1=On/show matte)            toggle_switch_7
---     bit 3: Matte Bit2 MSB of 3-bit matte mode {S2,S3,S4}             toggle_switch_8
+--     bit 1: Matte Bit2 MSB of 3-bit matte mode {S2,S3,S4}             toggle_switch_8
 --     bit 2: Matte Bit1 middle bit of matte mode word                  toggle_switch_9
---     bit 1: Matte Bit0 LSB of matte mode word                         toggle_switch_10
+--     bit 3: Matte Bit0 LSB of matte mode word                         toggle_switch_10
 --     bit 4: Fine       (0=Normal full-range, 1=Fine 1/8-sensitivity)   toggle_switch_11
 --   Register  7: Global blend (0=dry, 1023=wet)                    linear_potentiometer_12
 --
@@ -293,8 +294,8 @@ begin
             if s_low_v             <= s_high_v  then s_pb_lo_le_hi_v <= '1'; else s_pb_lo_le_hi_v <= '0'; end if;
             -- Switches — Off='0'/On='1'
             s_show_matte <= registers_in(6)(0);          -- '1' = On/Show Matte
-            -- S2=bit3=MSB, S3=bit2, S4=bit1=LSB → concatenate to preserve {S2,S3,S4} order
-            s_matte_mode <= registers_in(6)(3) & registers_in(6)(2) & registers_in(6)(1);
+            -- S2=bit1=MSB, S3=bit2, S4=bit3=LSB → concatenate to preserve {S2,S3,S4} order
+            s_matte_mode <= registers_in(6)(1) & registers_in(6)(2) & registers_in(6)(3);
             -- Fine mode: register S5; latch reference values on Normal->Fine transition
             s_fine <= registers_in(6)(4);
             if s_fine = '0' and registers_in(6)(4) = '1' then
@@ -424,22 +425,28 @@ begin
     end process p_window_check;
 
     --------------------------------------------------------------------------------
-    -- Stage 1b: Matte Computation + Output
+    -- Stage 1b: Window Mask Output
     -- Latency: 1 clock. Input T+2 (registered flags), output T+3.
     -- All inputs are registered values — no comparisons, just mux/logic.
     --
-    -- Matte mode (s_wf_matte_mode = {S2, S3, S4}, S2=MSB):
-    --   "000" Logical OR  : 1023 if any flag set, else 0
-    --   "001" Bitwise OR  : OR of masked channel values
-    --   "010" Logical AND : 1023 if all flags set, else 0
-    --   "011" Bitwise AND : AND of masked channel values
-    --   "100" Luma        : Y value passed, gated by AND
-    --   "101" LFSR synced : frame-seeded noise XOR Y value, gated by OR
-    --   "110" PRNG        : line-seeded noise XOR Y value, gated by OR
-    --   "111" Passthrough : original Y/U/V, no keying
+    -- Show Matte Off (S1=0) — Normal mode:
+    --   Per-channel independent gating; S2/S3/S4 are ignored.
+    --   Y output = pixel Y if s_wf_in_y, else 0.
+    --   U output = pixel U if s_wf_in_u, else 512 (neutral chroma).
+    --   V output = pixel V if s_wf_in_v, else 512 (neutral chroma).
     --
-    -- Show Matte On  : matte → Y; U=V=512 (neutral chroma, true monochrome)
-    -- Show Matte Off : matte>0 passes original Y/U/V; matte=0 → black (Y=0,U=V=512)
+    -- Show Matte On (S1=1) — Matte mode:
+    --   Matte computed from S2/S3/S4 and output as greyscale (Y=matte, U=V=512).
+    --   Matte mode (s_wf_matte_mode = {S2, S3, S4}, S2=MSB):
+    --     "000" Logical OR  : 1023 if any flag set, else 0
+    --     "001" Bitwise OR  : OR of masked channel values
+    --     "010" Logical AND : 1023 if all flags set, else 0
+    --     "011" Bitwise AND : AND of masked channel values
+    --     "100" Luma        : Y value passed, gated by AND
+    --     "101" LFSR synced : frame-seeded noise XOR Y value, gated by OR
+    --     "110" PRNG        : line-seeded noise XOR Y value, gated by OR
+    --     "111" Passthrough : original Y/U/V pixel (only active in Matte mode)
+    --
     -- Blanking (avid='0'): raw data always passes to preserve sync structure.
     --------------------------------------------------------------------------------
     p_window_key : process(clk)
@@ -493,27 +500,21 @@ begin
                 end case;
 
                 -- Drive outputs
-                if s_wf_matte_mode = "111" then
-                    -- Passthrough: output original Y/U/V
+                if s_wf_show_matte = '0' then
+                    -- Normal: per-channel independent gating; S2/S3/S4 ignored
+                    if s_wf_in_y = '1' then s_processed_y <= unsigned(s_wf_y); else s_processed_y <= (others => '0'); end if;
+                    if s_wf_in_u = '1' then s_processed_u <= unsigned(s_wf_u); else s_processed_u <= to_unsigned(512, C_VIDEO_DATA_WIDTH); end if;
+                    if s_wf_in_v = '1' then s_processed_v <= unsigned(s_wf_v); else s_processed_v <= to_unsigned(512, C_VIDEO_DATA_WIDTH); end if;
+                elsif s_wf_matte_mode = "111" then
+                    -- Passthrough: output original Y/U/V (only active in Matte mode)
                     s_processed_y <= unsigned(s_wf_y);
                     s_processed_u <= unsigned(s_wf_u);
                     s_processed_v <= unsigned(s_wf_v);
-                elsif s_wf_show_matte = '1' then
-                    -- Show Matte: Y = matte; U/V = neutral chroma for true mono
+                else
+                    -- Matte: Y = matte; U/V = neutral chroma for true monochrome
                     s_processed_y <= v_matte;
                     s_processed_u <= to_unsigned(512, C_VIDEO_DATA_WIDTH);
                     s_processed_v <= to_unsigned(512, C_VIDEO_DATA_WIDTH);
-                else
-                    -- Normal: gate original Y/U/V with matte
-                    if v_matte /= 0 then
-                        s_processed_y <= unsigned(s_wf_y);
-                        s_processed_u <= unsigned(s_wf_u);
-                        s_processed_v <= unsigned(s_wf_v);
-                    else
-                        s_processed_y <= (others => '0');
-                        s_processed_u <= to_unsigned(512, C_VIDEO_DATA_WIDTH);
-                        s_processed_v <= to_unsigned(512, C_VIDEO_DATA_WIDTH);
-                    end if;
                 end if;
             end if;
             s_processed_valid <= s_wf_avid;

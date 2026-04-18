@@ -45,9 +45,9 @@
 --     bit 0: Invert/Seed   (ops 0-5: 0=normal, 1=invert masks;
 --                           op  6:   0=vsync-reseed LFSR, 1=free-run;
 --                           op  7:   no effect)           toggle_switch_7
---     bit 3: Op S2 MSB     (0=Off, 1=On)                 toggle_switch_8
+--     bit 1: Op S2 MSB     (0=Off, 1=On)                 toggle_switch_8
 --     bit 2: Op S3         (0=Off, 1=On)                 toggle_switch_9
---     bit 1: Op S4 LSB     (0=Off, 1=On)                 toggle_switch_10
+--     bit 3: Op S4 LSB     (0=Off, 1=On)                 toggle_switch_10
 --     bit 4: Bypass enable (0=Process, 1=Bypass)         toggle_switch_11
 --   Register  7: Global blend (0=dry, 1023=wet)          linear_potentiometer_12
 --
@@ -1086,14 +1086,14 @@ begin
             s_mask_r      <= unsigned(registers_in(0));   -- R bit mask
             s_mask_g      <= unsigned(registers_in(1));   -- G bit mask
             s_mask_b      <= unsigned(registers_in(2));   -- B bit mask
-            s_operator    <= registers_in(6)(3) & registers_in(6)(2) & registers_in(6)(1); -- {S2=MSB, S3, S4=LSB}
+            s_operator    <= registers_in(6)(1) & registers_in(6)(2) & registers_in(6)(3); -- {S2=MSB, S3, S4=LSB}
             s_invert_mask <= registers_in(6)(0);          -- invert / vsync-seed mode
             s_vsync_n_prev <= data_in.vsync_n;            -- vsync edge detect
             -- LFSR reset: registered here to eliminate combinational glitches on
             -- registers_in during vsync. Output is a flip-flop; fires one clock
             -- after the vsync falling edge when op=LFSR and switch is on (sync mode).
             if (data_in.vsync_n = '0' and s_vsync_n_prev = '1')
-                    and (registers_in(6)(3) = '1' and registers_in(6)(2) = '1' and registers_in(6)(1) = '0')
+                    and (registers_in(6)(1) = '1' and registers_in(6)(2) = '1' and registers_in(6)(3) = '0')
                     and (registers_in(6)(0) = '0') then   -- 0=off=vsync-reseed, 1=on=free-run
                 s_lfsr_reset <= '1';
             else
