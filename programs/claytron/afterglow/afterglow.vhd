@@ -14,9 +14,10 @@
 --   optional per-line wave distortion (Shape knob depth), frame-rate drift
 --   (Speed knob), LFSR per-line noise (Noise knob), independent chromatic
 --   offset for U and V channels (Chroma-U / Chroma-V knobs), a wave invert
---   toggle (W.Inv), and a feedback toggle that routes line buffer output back
---   as write data (compounding the smear into trailing echo artefacts), and
---   a noise mode toggle that switches between per-line and per-pixel jitter.
+--   toggle (W.Inv), and a feedback toggle that mixes 50/50 between live input
+--   and line buffer output on write (leaving geometrically-decaying echo
+--   trails behind moving content), and a noise mode toggle that switches
+--   between per-line and per-pixel jitter.
 --
 -- Architecture (planned stages):
 --   Stage 0 : Control decode — extract and scale register values
@@ -45,7 +46,7 @@
 --   rotary_potentiometer_6  : Chroma-V (0=full left, 512=centre/off, 1023=full right) — V channel offset
 --   toggle_switch_7         : Channel select (0=Y only, 1=Y+U+V)
 --   toggle_switch_8         : Wave Invert (0=normal, 1=invert wave sign)
---   toggle_switch_9         : Feedback (0=off, 1=feed lb output back as write data)
+--   toggle_switch_9         : Feedback (0=off, 1=write 50/50 mix of live and lb output)
 --   toggle_switch_10        : Noise mode (0=per-line LFSR, 1=per-pixel LFSR)
 --   toggle_switch_11        : Bypass (0=process, 1=bypass)
 --   linear_potentiometer_12 : Blend wet/dry (0=dry, 1023=wet)       [register 7]
@@ -171,13 +172,20 @@ architecture afterglow of program_top is
     signal s_lb_y_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_u_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_v_out   : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
-    -- Write data mux: live input (normal) or line buffer output (feedback).
-    -- Y always follows s_feedback; U/V only feed back in Y+U+V channel mode.
-    -- The 2-clock read latency means the feedback pixel is spatially offset by
-    -- 2 positions — an intentional VHS-character artefact.
+    -- Write data mux: live input (normal) or 50/50 mix of live input and line
+    -- buffer output (feedback). Mixing keeps fresh signal entering the buffer
+    -- while leaving a geometrically-decaying trail of previously-shifted
+    -- content. Y always follows s_feedback; U/V only feed back in Y+U+V mode.
+    -- The 2-clock read latency means the fed-back pixel is spatially offset
+    -- by 2 positions — an intentional VHS-character artefact.
     signal s_lb_wr_y    : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_wr_u    : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_lb_wr_v    : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    -- 11-bit sums of live input + line buffer output. Dropping the LSB via
+    -- slice [WIDTH:1] yields the 10-bit 50/50 average used in feedback mode.
+    signal s_fb_y_sum   : unsigned(C_VIDEO_DATA_WIDTH downto 0);
+    signal s_fb_u_sum   : unsigned(C_VIDEO_DATA_WIDTH downto 0);
+    signal s_fb_v_sum   : unsigned(C_VIDEO_DATA_WIDTH downto 0);
 
     ---------------------------------------------------------------------------
     -- Stage 4: Channel mux signals
@@ -510,15 +518,24 @@ begin
 
     ---------------------------------------------------------------------------
     -- Stage 3: Feedback write-data mux (combinatorial)
-    -- When s_feedback='1', each channel's write data is replaced by the line
-    -- buffer output from the previous read cycle, feeding the smeared result
-    -- back into the buffer for compounding echo trails.
+    -- When s_feedback='1', each channel's write data is a 50/50 average of
+    -- live input and the line buffer output from 2 clocks ago. Live signal
+    -- keeps entering the buffer (so delay/shape/noise remain audible), while
+    -- previous lines' shifted content decays geometrically across successive
+    -- passes to produce the trail/echo effect.
     -- U/V only feed back when s_ch_all='1' so the channel toggle controls
     -- whether chroma participates in the feedback loop.
     ---------------------------------------------------------------------------
-    s_lb_wr_y <= s_lb_y_out when s_feedback = '1'                          else data_in.y;
-    s_lb_wr_u <= s_lb_u_out when (s_feedback = '1' and s_ch_all = '1')    else data_in.u;
-    s_lb_wr_v <= s_lb_v_out when (s_feedback = '1' and s_ch_all = '1')    else data_in.v;
+    s_fb_y_sum <= ('0' & unsigned(data_in.y)) + ('0' & unsigned(s_lb_y_out));
+    s_fb_u_sum <= ('0' & unsigned(data_in.u)) + ('0' & unsigned(s_lb_u_out));
+    s_fb_v_sum <= ('0' & unsigned(data_in.v)) + ('0' & unsigned(s_lb_v_out));
+
+    s_lb_wr_y <= std_logic_vector(s_fb_y_sum(C_VIDEO_DATA_WIDTH downto 1))
+                 when s_feedback = '1' else data_in.y;
+    s_lb_wr_u <= std_logic_vector(s_fb_u_sum(C_VIDEO_DATA_WIDTH downto 1))
+                 when (s_feedback = '1' and s_ch_all = '1') else data_in.u;
+    s_lb_wr_v <= std_logic_vector(s_fb_v_sum(C_VIDEO_DATA_WIDTH downto 1))
+                 when (s_feedback = '1' and s_ch_all = '1') else data_in.v;
 
     ---------------------------------------------------------------------------
     -- Stage 3: Line buffer instances — one per channel (Y, U, V).

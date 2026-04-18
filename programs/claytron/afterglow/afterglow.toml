@@ -124,8 +124,10 @@ name_label = "W.Inv"
 value_labels = ["Normal", "Invert"]
 initial_value_label = "Normal"
 
-# Feedback: route line buffer output back as write data.
-# Off = write live input each line; On = write smeared output, compounding trails.
+# Feedback: mix line buffer output into the write data (50/50 with live input).
+# Off = write live input each line; On = write 50/50 average of live input and
+# the previous shifted buffer read, leaving geometrically-decaying echo trails
+# behind moving content.
 # Channel toggle controls whether U/V planes participate in the feedback loop.
 [[parameter]]
 parameter_id = "toggle_switch_9"
