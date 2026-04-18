@@ -1,0 +1,166 @@
+# Copyright (C) 2026 claytron
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Afterglow Program Configuration
+#
+# Effect: Uniform horizontal pixel delay with wave distortion, chromatic
+#   aberration, and noise — creating a VHS-style smear effect.
+#
+# Delay knob: uniform horizontal shift of all lines. Centre = no shift.
+# Shape knob: depth of per-line wave variation. Low = uniform; high = wave distortion.
+# Speed knob: controls how fast the wave pattern drifts frame-to-frame.
+# Noise knob: adds LFSR-based random jitter to each line's offset.
+#   Low = clean geometric smear, high = VHS tracking-error chaos.
+# Chroma-U knob: independent horizontal offset for U (Cb) colour plane.
+#   Centre = aligned with Y; CW/CCW = chromatic fringing right/left.
+# Chroma-V knob: independent horizontal offset for V (Cr) colour plane.
+# Channel toggle: apply smear to Y (luma) only or Y+U+V (full colour).
+# Blend slider: wet/dry mix between original and smeared signal.
+
+[program]
+program_id = "com.claytron.afterglow"
+program_name = "Afterglow"
+program_version = "1.2.0"
+abi_version = ">=1.0,<2.0"
+author = "claytron"
+license = "GPL-3.0"
+categories = ["Distortion", "Time"]
+program_type = "processing"
+description = "Uniform horizontal delay with wave depth, speed, noise, and VHS character."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# ---------------------------------------------------------------------------
+# KNOBS (Rotary Potentiometers)
+# ---------------------------------------------------------------------------
+
+# Overall smear depth. Centre = no smear; CCW = smear left; CW = smear right.
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Delay"
+control_mode = "linear"
+display_min_value = -512
+display_max_value = 511
+initial_value = 512
+display_float_digits = 0
+suffix_label = ""
+
+# Depth of per-line wave variation.
+# Low = uniform horizontal shift (clean delay); high = wave distortion across lines.
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Shape"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 0
+suffix_label = "%"
+
+# How fast the shape pattern drifts frame-to-frame.
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Speed"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 0
+suffix_label = "%"
+
+# Random per-line jitter (LFSR noise).
+# Low = clean geometric smear; high = VHS tracking-error chaos.
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Noise"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 0
+suffix_label = "%"
+
+# Additional horizontal offset applied to the U (Cb) colour plane only.
+# Independent of the Y smear — centre = aligned with Y; CW/CCW = shift right/left.
+# Creates colour fringing and chromatic aberration on smear edges.
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Chroma-U"
+control_mode = "linear"
+display_min_value = -512
+display_max_value = 511
+initial_value = 512
+display_float_digits = 0
+suffix_label = "px"
+
+# Additional horizontal offset applied to the V (Cr) colour plane only.
+# Independent of the Y smear — centre = aligned with Y; CW/CCW = shift right/left.
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Chroma-V"
+control_mode = "linear"
+display_min_value = -512
+display_max_value = 511
+initial_value = 512
+display_float_digits = 0
+suffix_label = "px"
+
+# ---------------------------------------------------------------------------
+# SWITCHES (Toggle Switches)
+# ---------------------------------------------------------------------------
+
+# Channel: apply smear to Y (luma only) or all channels (Y+U+V).
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Channel"
+value_labels = ["Y", "Y+U+V"]
+initial_value_label = "Y"
+
+# Wave Invert: flip the sign of the per-line wave contribution.
+# Normal = wave adds to delay (peaks shift right); Invert = wave subtracts.
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "W.Inv"
+value_labels = ["Normal", "Invert"]
+initial_value_label = "Normal"
+
+# Feedback: mix line buffer output into the write data (50/50 with live input).
+# Off = write live input each line; On = write 50/50 average of live input and
+# the previous shifted buffer read, leaving geometrically-decaying echo trails
+# behind moving content.
+# Channel toggle controls whether U/V planes participate in the feedback loop.
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Feedbk"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Noise mode: per-line = same LFSR value for every pixel on a line (VHS tracking jitter);
+# per-pixel = live LFSR value per pixel (grain / static texture).
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Noise"
+value_labels = ["Line", "Pixel"]
+initial_value_label = "Line"
+
+# Bypass: Videomancer convention — last switch is always bypass.
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Process", "Bypass"]
+initial_value_label = "Process"
+
+# ---------------------------------------------------------------------------
+# SLIDER (Linear Potentiometer)
+# ---------------------------------------------------------------------------
+
+# Wet/dry blend between original and smeared signal.
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Blend"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
