@@ -4,87 +4,81 @@ A per-channel YUV window keying effect for the [LZX Industries Videomancer](http
 
 ## Effect
 
-Window keying isolates a range of pixel values within a defined lower–upper threshold window. For each channel (Y, U, V) a Low and High knob define the window; pixels whose values fall within that range are considered "in-window." The three per-channel results are then combined into a matte according to the selected Matte Mode, and that matte controls what appears in the output. Because the keying operates directly in YUV space (no colour conversion), the thresholds work on luma (Y) and the two chroma-difference channels (U = Cr, V = Cb) as they arrive from the hardware.
+Window keying isolates a range of pixel values within a defined lower–upper threshold window. For each channel (Y, U, V) a Low and High knob define the window; pixels whose values fall within that range are considered "in-window." Switch 1 selects between Normal and Matte mode, which determines how the three per-channel gate results are combined and what appears in the output. Because the keying operates directly in YUV space (no colour conversion), the thresholds work on luma (Y) and the two chroma-difference channels (U = Cr, V = Cb) as they arrive from the hardware.
 
 ## Controls
 
 ### Knobs
 
-| Control | Function |
-|---------|----------|
-| Y Low   | Lower threshold for the Y (luma) channel (0% = black, 100% = white) |
-| U Low   | Lower threshold for the U (Cr, red-difference) channel |
-| V Low   | Lower threshold for the V (Cb, blue-difference) channel |
-| Y High  | Upper threshold for the Y channel |
-| U High  | Upper threshold for the U channel |
-| V High  | Upper threshold for the V channel |
+| Knob | Operation | Description                                                                   |
+|------|-----------|-------------------------------------------------------------------------------|
+|  1   | Y Low     | Lower threshold for the Y (luma) channel (0% = black, 100% = white)          |
+|  2   | U Low     | Lower threshold for the U (Cr, red-difference) channel                        |
+|  3   | V Low     | Lower threshold for the V (Cb, blue-difference) channel                       |
+|  4   | Y High    | Upper threshold for the Y channel                                             |
+|  5   | U High    | Upper threshold for the U channel                                             |
+|  6   | V High    | Upper threshold for the V channel                                             |
 
 U and V neutral (no colour) is at 50% (512). Values below 50% are negative chroma; values above 50% are positive chroma.
 
 ### Switches
 
-| Switch          | Off                              | On                          |
-|-----------------|----------------------------------|-----------------------------|
-| S1  Show Matte  | Keyed output (original or black) | Greyscale matte preview     |
-| S2  Matte Bit 2 | 0 (MSB of matte mode word)       | 1                           |
-| S3  Matte Bit 1 | 0 (middle bit)                   | 1                           |
-| S4  Matte Bit 0 | 0 (LSB of matte mode word)       | 1                           |
-| S5  Fine        | Normal (full-range knobs)        | Fine (1/8-sensitivity)      |
+| S1 | Operation | Description                                                                           |
+|----|-----------|---------------------------------------------------------------------------------------|
+|  0 | Normal    | Per-channel independent gating; S2/S3/S4 have no effect                               |
+|  1 | Matte     | Three channel gates OR-combined into a single matte; S2/S3/S4 select the output value |
 
-### Matte Modes
+| S2 | S3 | S4 | Operation    | Description                                                                |
+|----|----|----|--------------|----------------------------------------------------------------------------|
+|  0 |  0 |  0 | Logical OR   | White (Y=1023, U=V=512) if any channel is in-window, else black            |
+|  0 |  0 |  1 | Bitwise OR   | Y = OR of masked channel values (original if gate passed, else 0); U=V=512 |
+|  0 |  1 |  0 | Logical AND  | White if all masked values are non-zero, else black (default)              |
+|  0 |  1 |  1 | Bitwise AND  | Y = AND of masked channel values (original if gate passed, else 0); U=V=512 |
+|  1 |  0 |  0 | Luma         | Y = Y channel value; U=V=512 (neutral chroma)                              |
+|  1 |  0 |  1 | LFSR         | Y = frame-locked noise; U=V=512                                            |
+|  1 |  1 |  0 | PRNG         | Y = free-running noise; U=V=512                                            |
+|  1 |  1 |  1 | Passthrough  | Original Y, U, V (colour)                                                  |
 
-Matte Bit 2 (S2), Matte Bit 1 (S3), and Matte Bit 0 (S4) form a 3-bit word (S2 = MSB, S4 = LSB) that selects one of eight matte modes:
+| S5 | Operation | Description                                            |
+|----|-----------|--------------------------------------------------------|
+|  0 | Normal    | Full-range knob sensitivity                            |
+|  1 | Fine      | Half-sensitivity for precise threshold adjustment      |
 
-  S2     S3     S4    Mode           Description   
- ----   ----   ----  -------------- ------------- 
-
-  0      0      0    Logical OR     Matte = white (1023) if **any** channel is in-window, else black  
-
-  0      0      1    Bitwise OR     Matte = bitwise OR of in-window channel values; failing channels 																			contribute 0  
-
-  0      1      0    Logical AND    Matte = white (1023) if **all** channels are in-window, else black  
-
-  0      1      1    Bitwise AND    Matte = bitwise AND of in-window channel values; failing channels 																			contribute 0  
-
-  1      0      0    Luma           Matte = Luma (Y) value of the pixel, gated by logical AND  
-
-  1      0      1    LFSR           Matte = frame-locked noise value, gated by logical OR  
-
-  1      1      0    PRNG           Matte = free-running noise value, gated by logical OR  
-
-  1      1      1    Passthrough    Original pixel output 1  all channels — keying disabled  
-  
 ### Slider
 
-| Control      | Function |
-|--------------|----------|
-| Global Blend | Wet/dry blend between the original and keyed signal (0% = original, 100% = keyed) |
+| Slider | Operation    | Description                                                                 |
+|--------|--------------|-----------------------------------------------------------------------------|
+|  12    | Global Blend | Wet/dry blend between the original and keyed signal (0% = original, 100% = keyed) |
 
 ## Key Inversion
 
 When a channel's Low knob is set **above** its High knob, the window inverts automatically for that channel: pixels outside the normal (High, Low) gap pass, and pixels inside are blocked. Each channel inverts independently — no extra switch is needed.
 
-## Show Matte
+## Normal Mode
 
-With Show Matte **On**, the computed matte value is output as a greyscale signal: Y is set to the matte value, and U and V are forced to 512 (neutral chroma). This produces a true monochrome luma signal with no colour information — suitable for feeding other devices directly. Use this to dial in your thresholds visually, then switch Show Matte Off for the actual keyed output.
+With S1 in Normal mode, each channel gates independently. Y outputs its original value if in-window, else 0. U outputs its original value if in-window, else 512 (neutral chroma). V outputs its original value if in-window, else 512. S2, S3, and S4 have no effect in Normal mode.
 
-With Show Matte **Off**, the matte is used as a binary gate: pixels where the matte is greater than zero pass through as the original YUV pixel; pixels where the matte is zero are replaced with black (Y=0, U=512, V=512).
+## Matte Mode
 
-The Passthrough mode (S2=1, S3=1, S4=1) always outputs the original pixel on all channels regardless of the Show Matte setting.
+With S1 in Matte mode, the three per-channel gates are OR-combined into a single matte gate: if any channel is in-window, the pixel passes. Pixels where no channel is in-window output black (Y=0, U=512, V=512).
 
-## Matte Mode Details
+For pixels that pass the matte gate, S2/S3/S4 select the output value. The computation uses *masked values* — a channel's original value if its gate passed, or 0 if it did not. All non-Passthrough modes output neutral chroma (U=V=512):
 
-**Logical OR / AND** — produce a pure black-or-white matte. OR passes if any channel is in-window; AND requires all three channels to be in-window simultaneously.
+**Logical OR** — Y=1023 (white luma) for any pixel that passed the OR gate.
 
-**Bitwise OR / AND** — produce a greyscale matte from the channel values themselves. Failing channels contribute 0 to the bitwise operation, so only in-window values appear.
+**Bitwise OR** — Y = bitwise OR of the three masked channel values, producing a greyscale luma result.
 
-**Y value** — the Y (luma) value of the pixel is used directly as the matte. The Y value is output only if all three channels are in-window (logical AND gate); otherwise matte = 0. This mode is useful for producing a luma-shaped matte from a luminance-selected region.
+**Logical AND** — Y=1023 if all three masked values are non-zero (i.e. all channels passed their individual gate), else Y=0.
 
-**LFSR** — the matte is a 10-bit frame-locked noise value (Fibonacci LFSR, polynomial x¹⁰ + x⁷ + 1, reseeded each frame). The noise value is gated by logical OR: it appears only for pixels where at least one channel is in-window.
+**Bitwise AND** — Y = bitwise AND of the three masked channel values, producing a greyscale luma result.
 
-**PRNG** — the same polynomial as LFSR but never reseeded. The noise pattern shifts by the number of active pixels each frame, producing a different phase every frame. Also gated by logical OR.
+**Luma** — Y = the original Y (luma) value of the pixel, passed directly as the output luma.
 
-**Passthrough** — the original pixel is output directly on all three channels. The window checks and Show Matte setting are both ignored.
+**LFSR** — Y = a 10-bit frame-locked noise value (Fibonacci LFSR, polynomial x¹⁰ + x⁷ + 1, reseeded each frame).
+
+**PRNG** — Y = free-running noise using the same polynomial as LFSR but never reseeded. The noise pattern shifts by the number of active pixels each frame, producing a different phase every frame.
+
+**Passthrough** — the original Y, U, V pixel is output directly. The window checks are still performed, but the output is always the original colour.
 
 ## Fine Mode
 
@@ -93,8 +87,8 @@ With Fine **On**, the current knob positions are latched as reference values at 
 ## Typical Use
 
 1. Set a matte mode (Logical AND, S2=0 S3=1 S4=0, is the default).
-2. Turn Show Matte On and adjust each channel's Low/High knobs until the target region shows as white in the preview.
-3. Turn Show Matte Off to switch to the keyed output.
+2. Switch to Matte mode (S1=1) and adjust each channel's Low/High knobs until the target region passes the gate.
+3. Switch to Normal mode (S1=0) to confirm per-channel gating, then back to Matte for the combined output.
 4. Use the Global Blend slider to fade between the original and keyed result.
 5. Use Fine mode for precise threshold adjustment once the range is roughly set.
 
