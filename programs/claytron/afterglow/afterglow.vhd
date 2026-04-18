@@ -25,7 +25,7 @@
 --             per line on hsync falling edge into s_noise_sample
 --   Stage 2 : Per-line offset calculator — line counter + frame_phase_accumulator
 --             feed a 2-clock multiply pipeline:
---               2a: centre wave/delay/noise into signed inputs; shape_factor = s_shape
+--               2a: centre wave/delay/noise into signed inputs; shape_factor = s_shape_scaled
 --               2b: delay (uniform) + wave×shape + noise → s_line_offset
 --   Stage 3 : Line pixel buffer — 3× dual-bank BRAM (Y/U/V); write current
 --             line at wr_addr, read previous line at wr_addr+s_line_offset;
@@ -130,8 +130,8 @@ architecture afterglow of program_top is
     signal s2a_noise_signed : signed(10 downto 0) := (others => '0');
     signal s2a_noise_scale  : signed(10 downto 0) := (others => '0');
 
-    -- Stage 2a: shape_factor — unsigned s_shape passed as signed for multiply.
-    -- Range 0–1023 (always non-negative); scales the wave contribution.
+    -- Stage 2a: shape_factor — unsigned s_shape_scaled passed as signed for multiply.
+    -- Range 0–~205 (always non-negative); scales the wave contribution.
     signal s2a_shape_factor : signed(10 downto 0) := (others => '0');
 
     -- Stage 2b output (2 clks total): signed horizontal pixel offset for
@@ -347,7 +347,7 @@ begin
     ---------------------------------------------------------------------------
     -- Stage 2a: derive signed, centred inputs for the multiply stage (1 clk)
     --
-    -- Wave phase: line position scaled by Shape knob (1×–5× cycles per frame)
+    -- Wave phase: line position scaled by Shape knob (1×–~1.8× cycles per frame)
     -- plus upper 10 bits of frame phase for drift.  Result wraps at 1024.
     --
     -- All three values are centred to −512..+511 so the multiply in Stage 2b
@@ -406,7 +406,7 @@ begin
     --   shape_contrib = ±(wave_signed × shape_factor) >> 9
     --     Per-line wave variation scaled by the Shape knob.
     --     Sign is normal (+) when s_wave_invert='0', inverted (−) when '1'.
-    --     Range: ±(512 × 1023) >> 9 ≈ ±1023 px at max shape and wave.
+    --     Range: ±(512 × 205) >> 9 ≈ ±205 px at max shape and wave.
     --     Wraps naturally in 11-bit BRAM addressing (intentional VHS character).
     --
     --   noise_contrib = (noise_signed × noise_scale) >> 14
