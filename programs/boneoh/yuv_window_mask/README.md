@@ -99,7 +99,7 @@ With Fine **On**, the current knob positions are latched as reference values at 
 
 ## Typical Use
 
-1. Switch to Matte mode (S1=1) with Logical AND (S2=0 S3=1 S4=0, the default).
+1. Switch to Matte mode (S1=1) with Logical OR (S2=0 S3=1 S4=0, the default).
 2. Adjust each channel's Low/High knobs until the region of interest appears white in the matte.
 3. Switch to Normal mode (S1=0) — each knob pair now independently gates its named YUV channel.
 4. Use Fine mode for precise threshold adjustment once the range is roughly set.
