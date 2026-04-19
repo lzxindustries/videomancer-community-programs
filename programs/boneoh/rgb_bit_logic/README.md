@@ -73,9 +73,11 @@ Once you understand one, the rest are easy.
 ## Technical Notes
 
 - **Colour space:** Input YUV444 → RGB → process → RGB → YUV444 output
-- **Colour conversion:** BT.601 full-range coefficients implemented as 11 pre-computed BRAM lookup tables (31 of 32 ice40 hx4k BRAM blocks)
-- **Pipeline latency:** 12 clock cycles
+- **Colour conversion:** BT.601 full-range coefficients implemented as 11 pre-computed BRAM lookup tables (31 of 32 iCE40 HX4K BRAM blocks)
+- **Pipeline latency:** 16 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
+- **IOs:** 107 / 256
+- **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
 - **HD timing:** All six variants meet 74.25 MHz (worst case ~84.8 MHz)
 - **LC utilisation:** ~63% (4838–4859 of 7680)
 

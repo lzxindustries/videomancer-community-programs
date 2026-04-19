@@ -79,6 +79,8 @@ Once you understand one, the rest are easy.
 - **Colour conversion:** BT.601 full-range coefficients implemented as 11 pre-computed BRAM lookup tables (31 of 32 iCE40 HX4K BRAM blocks)
 - **Pipeline latency:** 14 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
+- **IOs:** 107 / 256
+- **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
 - **HD timing:** All six variants meet 74.25 MHz (worst case ~77 MHz)
 - **LC utilisation:** ~25% (routing-friendly)
 

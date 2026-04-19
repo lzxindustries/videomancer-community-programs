@@ -123,6 +123,8 @@ Use YUV Window Mask when your threshold decisions map naturally onto luma or chr
 - **Pipeline latency:** 7 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
 - **BRAM usage:** 0 (no lookup tables required)
+- **IOs:** 107 / 256
+- **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
 - **UV convention:** U = Cr (red-difference), V = Cb (blue-difference) — Videomancer hardware convention; thresholds apply to the raw hardware values
 - **Neutral chroma:** U = V = 512 (50%)
 

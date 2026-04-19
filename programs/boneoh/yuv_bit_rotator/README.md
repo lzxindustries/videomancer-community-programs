@@ -78,6 +78,9 @@ Once you understand one, the rest are easy.
 - **Colour space:** Operates directly on YUV444 — no colour conversion, minimal resource usage
 - **Pipeline latency:** 10 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
+- **BRAM usage:** 0 block RAMs (no colour conversion)
+- **IOs:** 107 / 256
+- **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
 - **HD timing:** All six variants meet 74.25 MHz (worst case ~119 MHz)
 - **LC utilisation:** ~18% (very routing-friendly, fast builds)
 

@@ -108,7 +108,9 @@ With Fine **On**, the current knob positions are latched as reference values at 
 - **Colour space:** Operates on RGB (full BT.601 YUV↔RGB conversion via BRAM LUTs)
 - **Pipeline latency:** 14 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
-- **BRAM usage:** 11 block RAMs (same BT.601 LUT tables as RGB Bit Crush / RGB Bit Rotator)
+- **BRAM usage:** 11 block RAMs (BT.601 colour conversion LUTs; 31 / 32 total including SDK)
+- **IOs:** 107 / 256
+- **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
 - **Window inversion:** Handled inside the `window_check` function — no extra hardware
 
 ## Hardware Requirements
