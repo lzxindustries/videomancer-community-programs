@@ -25,9 +25,9 @@
 --       001  Bitwise OR    - OR of channel values; failing channels contribute 0
 --       010  Logical AND   - white (1023) if all channels in-window, else black
 --       011  Bitwise AND   - AND of channel values; failing channels contribute 0
---       100  Luma          - Y channel value passed directly, gated by logical AND
---       101  LFSR synced   - frame-locked noise value, gated by logical AND
---       110  PRNG          - free-running noise value, gated by logical AND
+--       100  Luma          - Y channel value passed directly, gated by logical OR
+--       101  LFSR synced   - frame-locked noise OR'd with Y luma texture, gated by logical OR
+--       110  PRNG          - free-running noise OR'd with Y luma texture, gated by logical OR
 --       111  Passthrough   - original Y/U/V pixel (no keying)
 --
 --   No colour space conversion is performed; processing is entirely in YUV.
@@ -169,12 +169,13 @@ architecture yuv_window_key of program_top is
     signal s_avid_d1        : std_logic := '0';
 
     --------------------------------------------------------------------------------
-    -- Stage 0: Pre-computed LFSR/PRNG XOR Y (T+1)
-    -- Computed alongside data_in registration to keep Stage 1a critical path
-    -- free of XOR logic.
+    -- Stage 0: Pre-computed LFSR/PRNG OR Y>>4 (T+1)
+    -- Mirrors the original XOR-Y strategy: 1 LUT per bit in Stage 0, pure
+    -- propagation in Stage 1a, gate mux in Stage 1b on registered signals.
+    -- Y channel is used for texture (appropriate for YUV — Y carries luminance).
     --------------------------------------------------------------------------------
-    signal s_lfsr_xor_y_d1  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
-    signal s_prng_xor_y_d1  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_lfsr_or_y_d1 : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_prng_or_y_d1 : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
 
     --------------------------------------------------------------------------------
     -- Stage 0: Window Comparison Pre-compute Outputs (T+1)
@@ -213,8 +214,8 @@ architecture yuv_window_key of program_top is
     signal s_wf_avid        : std_logic := '0';
     signal s_wf_show_matte  : std_logic := '0';
     signal s_wf_matte_mode  : std_logic_vector(2 downto 0) := "010";
-    signal s_wf_lfsr_xor_y  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
-    signal s_wf_prng_xor_y  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_wf_lfsr_m      : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_wf_prng_m      : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
 
     --------------------------------------------------------------------------------
     -- Stage 1b: Window Key Outputs (T+3)
@@ -258,8 +259,8 @@ begin
     -- Latency: 1 clock. Input T+0, output T+1.
     -- Registers all threshold knobs, switches, and the data_in Y/U/V samples
     -- in one clock so that controls and data arrive at Stage 1a together.
-    -- Also pre-computes the 9 window comparison bits (carry chains) and the
-    -- LFSR/PRNG XOR Y values so that Stage 1a is pure LUT logic.
+    -- Also pre-computes the 9 window comparison bits (carry chains) so that
+    -- Stage 1a is pure LUT logic.
     -- Hardware switch polarity: Off='0', On='1' (direct bit value).
     --
     -- Note on comparison timing: s_low_y / s_high_y etc. are written in this same
@@ -276,9 +277,10 @@ begin
             s_u_d1    <= data_in.u;
             s_v_d1    <= data_in.v;
             s_avid_d1 <= data_in.avid;
-            -- Pre-compute LFSR/PRNG XOR Y so Stage 1a has no XOR carry logic.
-            s_lfsr_xor_y_d1 <= unsigned(s_lfsr) xor unsigned(data_in.y);
-            s_prng_xor_y_d1 <= unsigned(s_prng) xor unsigned(data_in.y);
+            -- Pre-compute noise OR Y>>4: 1 LUT per bit, same depth as original XOR.
+            -- Gate mux is deferred to Stage 1b where it runs on registered signals.
+            s_lfsr_or_y_d1 <= unsigned(s_lfsr) or shift_right(unsigned(data_in.y), 4);
+            s_prng_or_y_d1 <= unsigned(s_prng) or shift_right(unsigned(data_in.y), 4);
             -- Pre-compute per-channel window comparison bits (carry chains here,
             -- not in Stage 1a).  Reads current s_low_*/s_high_* (previous clock's
             -- registered values) vs data_in port inputs.
@@ -329,8 +331,8 @@ begin
     -- 10-bit Fibonacci LFSR, polynomial x^10 + x^7 + 1 (primitive, period 1023).
     -- Reseeds to a fixed non-zero constant on the falling edge of vsync_n so that
     -- it produces the same noise pattern every frame (frozen static on screen).
-    -- Output is XOR'd with the Y pixel value in p_window_key to make the noise
-    -- content-dependent (each luma level yields a different texture).
+    -- Output is OR'd with Y>>4 so noise dominates brightness while luma adds
+    -- subtle low-bit texture (max 63/1023, Y channel only in YUV space).
     -- Used by matte mode 101; gated by logical OR in p_window_key.
     --------------------------------------------------------------------------------
     p_lfsr : process(clk)
@@ -353,7 +355,8 @@ begin
     -- Same polynomial as the LFSR (x^10 + x^7 + 1).  Never reseeded — runs
     -- continuously from power-on.  Advances ~2200 clocks per line (including
     -- blanking) so the pattern at any given pixel position is unique across
-    -- both lines and frames.  Output is XOR'd with Y in p_window_key.
+    -- both lines and frames.  Output is OR'd with shift-right(channel, 4)
+    -- Y>>4 in p_window_key (same approach as LFSR mode 101).
     -- Used by matte mode 110; gated by logical OR in p_window_key.
     --------------------------------------------------------------------------------
     p_prng : process(clk)
@@ -377,6 +380,8 @@ begin
     --------------------------------------------------------------------------------
     p_window_check : process(clk)
         variable v_in_y, v_in_u, v_in_v : std_logic;
+        variable v_in_any                : std_logic;
+        variable v_y_m, v_u_m, v_v_m    : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     begin
         if rising_edge(clk) then
             -- Combine pre-registered comparison bits (pure LUT logic, no carry chains)
@@ -395,16 +400,24 @@ begin
             else
                 v_in_v := s_pb_v_ge_low or  s_pb_v_le_high;
             end if;
+            v_in_any := v_in_y or v_in_u or v_in_v;
             -- Register per-channel flags and reductions
             s_wf_in_y   <= v_in_y;
             s_wf_in_u   <= v_in_u;
             s_wf_in_v   <= v_in_v;
-            s_wf_in_any <= v_in_y or  v_in_u or  v_in_v;
+            s_wf_in_any <= v_in_any;
             s_wf_in_all <= v_in_y and v_in_u and v_in_v;
-            -- Register masked channel values (failing channel = 0)
-            if v_in_y = '1' then s_wf_y_m <= unsigned(s_y_d1); else s_wf_y_m <= (others => '0'); end if;
-            if v_in_u = '1' then s_wf_u_m <= unsigned(s_u_d1); else s_wf_u_m <= (others => '0'); end if;
-            if v_in_v = '1' then s_wf_v_m <= unsigned(s_v_d1); else s_wf_v_m <= (others => '0'); end if;
+            -- Compute masked channel values (failing channel = 0)
+            if v_in_y = '1' then v_y_m := unsigned(s_y_d1); else v_y_m := (others => '0'); end if;
+            if v_in_u = '1' then v_u_m := unsigned(s_u_d1); else v_u_m := (others => '0'); end if;
+            if v_in_v = '1' then v_v_m := unsigned(s_v_d1); else v_v_m := (others => '0'); end if;
+            s_wf_y_m <= v_y_m;
+            s_wf_u_m <= v_u_m;
+            s_wf_v_m <= v_v_m;
+            -- Propagate pre-computed noise values — gate applied in Stage 1b
+            -- on registered s_wf_in_any (1 LUT, same pattern as original).
+            s_wf_lfsr_m <= s_lfsr_or_y_d1;
+            s_wf_prng_m <= s_prng_or_y_d1;
             -- Delay raw data and control signals to keep them aligned with flags
             s_wf_y          <= s_y_d1;
             s_wf_u          <= s_u_d1;
@@ -412,8 +425,6 @@ begin
             s_wf_avid       <= s_avid_d1;
             s_wf_show_matte <= s_show_matte;
             s_wf_matte_mode <= s_matte_mode;
-            s_wf_lfsr_xor_y <= s_lfsr_xor_y_d1;
-            s_wf_prng_xor_y <= s_prng_xor_y_d1;
         end if;
     end process p_window_check;
 
@@ -435,9 +446,9 @@ begin
     --     "001" Bitwise OR  : OR of masked channel values
     --     "010" Logical AND : 1023 if all flags set, else 0
     --     "011" Bitwise AND : AND of masked channel values
-    --     "100" Luma        : Y value passed, gated by AND
-    --     "101" LFSR synced : frame-seeded noise XOR Y value, gated by AND
-    --     "110" PRNG        : line-seeded noise XOR Y value, gated by AND
+    --     "100" Luma        : Y value passed directly, gated by OR
+    --     "101" LFSR synced : frame-seeded noise OR'd with Y luma texture, gated by OR
+    --     "110" PRNG        : free-running noise OR'd with Y luma texture, gated by OR
     --     "111" Passthrough : original Y/U/V pixel (only active in Matte mode)
     --
     -- Blanking (avid='0'): raw data always passes to preserve sync structure.
@@ -470,21 +481,21 @@ begin
                         end if;
                     when "011" =>  -- Bitwise AND: AND of masked values
                         v_matte := s_wf_y_m and s_wf_u_m and s_wf_v_m;
-                    when "100" =>  -- Luma: Y value, gated by AND
-                        if s_wf_in_all = '1' then
-                            v_matte := unsigned(s_wf_y);
+                    when "100" =>  -- Luma: Y channel, gated by OR
+                        if s_wf_in_any = '1' then
+                            v_matte := s_wf_y_m;
                         else
                             v_matte := (others => '0');
                         end if;
-                    when "101" =>  -- LFSR synced: frame-seeded noise XOR Y, gated by AND
-                        if s_wf_in_all = '1' then
-                            v_matte := s_wf_lfsr_xor_y;
+                    when "101" =>  -- LFSR synced: noise OR Y>>4, gated by OR
+                        if s_wf_in_any = '1' then
+                            v_matte := s_wf_lfsr_m;
                         else
                             v_matte := (others => '0');
                         end if;
-                    when "110" =>  -- PRNG: line-seeded noise XOR Y, gated by AND
-                        if s_wf_in_all = '1' then
-                            v_matte := s_wf_prng_xor_y;
+                    when "110" =>  -- PRNG: noise OR Y>>4, gated by OR
+                        if s_wf_in_any = '1' then
+                            v_matte := s_wf_prng_m;
                         else
                             v_matte := (others => '0');
                         end if;

@@ -8,8 +8,8 @@ Window masking isolates a range of pixel values within a defined lower–upper t
 
 Switch 1 selects between two modes:
 
-- **Normal (S1 Off):** Each channel is gated independently. A channel passing its window outputs the original pixel value on that channel; a failing channel outputs black (0). S2, S3, and S4 are ignored. This is the primary use mode.
-- **Matte (S1 On):** A combined greyscale matte is computed from S2/S3/S4 and displayed on all three channels (R=G=B → true monochrome after downstream YUV conversion). Use this mode to preview and tune the matte before switching to Normal.
+- **Normal (S1 Off):** Each channel is gated independently. A channel passing its window outputs the original pixel value on that channel; a failing channel outputs black (0). S2, S3, and S4 are ignored.
+- **Matte (S1 On):** A combined greyscale matte is computed from S2/S3/S4 and displayed on all three channels (R=G=B → true monochrome after downstream YUV conversion).
 
 ## Controls
 
@@ -38,8 +38,8 @@ Switch 1 selects between two modes:
 |  0 |  1 |  0 | Logical AND  | White (1023) if all channels are in-window, else black (default)           |
 |  0 |  1 |  1 | Bitwise AND  | AND of masked channel values (original value if gate passed, else 0)       |
 |  1 |  0 |  0 | Luma         | BT.601 luma of the pixel (greyscale)                                       |
-|  1 |  0 |  1 | LFSR         | Frame-locked noise (AND gated, greyscale)                                  |
-|  1 |  1 |  0 | PRNG         | Free-running noise (AND gated, greyscale)                                  |
+|  1 |  0 |  1 | LFSR         | Frame-locked noise (OR gated, greyscale)                                   |
+|  1 |  1 |  0 | PRNG         | Free-running noise (OR gated, greyscale)                                   |
 |  1 |  1 |  1 | Passthrough  | Original pixel R, G, B (colour; only active in Matte mode)                 |
 
 | S5 | Operation | Description                                         |
@@ -65,7 +65,7 @@ This means the R, G, and B outputs can be mixed — for example, a pixel where o
 
 ## Matte Mode (S1 On)
 
-The three per-channel window results are combined by S2/S3/S4 into a single greyscale matte, output identically on all three channels (R=G=B). The downstream YUV conversion produces a true monochrome signal. Use this mode to visualise exactly what the mask is doing before switching to Normal mode.
+The three per-channel window results are combined by S2/S3/S4 into a single greyscale matte, output identically on all three channels (R=G=B). The downstream YUV conversion produces a true monochrome signal.
 
 **Logical OR** — white (1023) for any pixel where at least one channel is in-window.
 
@@ -75,13 +75,21 @@ The three per-channel window results are combined by S2/S3/S4 into a single grey
 
 **Bitwise AND** — bitwise AND of the three masked channel values, producing a greyscale result.
 
-**Luma** — BT.601 luma (`Y = (77R + 150G + 29B) >> 8`) computed from the full unmasked pixel, gated by logical AND.
+**Luma** — BT.601 luma (`Y = (77R + 150G + 29B) >> 8`) computed from the full unmasked pixel, gated by logical OR.
 
-**LFSR** — a 10-bit frame-locked noise value (Fibonacci LFSR, polynomial x¹⁰ + x⁷ + 1, reseeded each frame). Gated by logical AND — noise appears only where all three channels are simultaneously in-window.
+**LFSR** — a 10-bit frame-locked noise value (Fibonacci LFSR, polynomial x¹⁰ + x⁷ + 1, reseeded each frame). Gated by logical OR — noise appears only where at least one channel is in-window.
 
-**PRNG** — the same polynomial as LFSR but never reseeded. The noise pattern shifts by the number of active pixels each frame, producing a different phase every frame. Gated by logical AND.
+**PRNG** — the same polynomial as LFSR but never reseeded. The noise pattern shifts by the number of active pixels each frame, producing a different phase every frame. Gated by logical OR.
 
 **Passthrough** — the original pixel R, G, B is output directly on all three channels. Window checks are still performed but the output is always the original colour.
+
+## Using with a Keyer
+
+The Window Mask output can be used as input to an external keyer, such as the LZX FKG3 module. This can be done using either Matte (greyscale) or Normal (colour) modes.
+
+The simplest approach uses a greyscale Matte. Set the FKG3 Key Source switch (S2) to External Key, then patch the monochrome Matte output to FKG3 input J5. J5 is the external key source for the Red channel and is normalled to the Green and Blue channels, so a single patch cable keys all three. This lets the Window Mask define the key shape while the FKG3 handles the mix and fill. Typical use would set the FKG3 S3 switch (mode) to the Luma position.
+
+More complex keying can be performed using the Normal output. Set the FKG3 Key Source switch (S2) to External Key, then patch the Red, Green, and Blue outputs to FKG3 inputs J5, J9, and J13. These are the external key sources for the three colour channels. This lets the Window Mask define the key shape separately for each colour channel while the FKG3 handles the mix and fill. Experiment with the FKG3 S3 switch to find which mode gives the best results.
 
 ## Fine Mode
 

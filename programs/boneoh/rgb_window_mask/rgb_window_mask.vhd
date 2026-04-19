@@ -27,9 +27,9 @@
 --       001  Bitwise OR    - OR of channel values; failing channels contribute 0
 --       010  Logical AND   - white (1023) if all channels in-window, else black
 --       011  Bitwise AND   - AND of channel values; failing channels contribute 0
---       100  Luma          - BT.601 luma of the full pixel, gated by logical AND
---       101  LFSR synced   - frame-locked noise value, gated by logical AND
---       110  PRNG          - free-running noise value, gated by logical AND
+--       100  Luma          - BT.601 luma of the full pixel, gated by logical OR
+--       101  LFSR synced   - frame-locked noise OR masked channel values, gated by logical OR
+--       110  PRNG          - free-running noise OR masked channel values, gated by logical OR
 --       111  Passthrough   - original pixel on all channels (no keying)
 --
 --   Colour conversion uses the same pre-computed BT.601 BRAM tables as the
@@ -1026,6 +1026,10 @@ architecture rgb_window_key of program_top is
     signal s_wf_matte_mode   : std_logic_vector(2 downto 0);
     signal s_wf_lfsr         : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_wf_prng         : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    -- Pre-computed matte values for LFSR/PRNG modes (noise OR masked channels, gated by OR).
+    -- Computed in Stage 1a so Stage 1b sees a registered signal, not an expression.
+    signal s_wf_lfsr_m       : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s_wf_prng_m       : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
 
     --------------------------------------------------------------------------------
     -- Stage 1b: Window Key Outputs (T+6)
@@ -1282,6 +1286,8 @@ begin
     --------------------------------------------------------------------------------
     p_window_check : process(clk)
         variable v_in_r, v_in_g, v_in_b : std_logic;
+        variable v_in_any                : std_logic;
+        variable v_r_m, v_g_m, v_b_m    : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
         variable v_luma_wide             : unsigned(17 downto 0);
     begin
         if rising_edge(clk) then
@@ -1289,17 +1295,34 @@ begin
             v_in_r := window_check(s_0c_rgb_r, s_low_r, s_high_r);
             v_in_g := window_check(s_0c_rgb_g, s_low_g, s_high_g);
             v_in_b := window_check(s_0c_rgb_b, s_low_b, s_high_b);
+            v_in_any := v_in_r or v_in_g or v_in_b;
 
             s_wf_in_r   <= v_in_r;
             s_wf_in_g   <= v_in_g;
             s_wf_in_b   <= v_in_b;
-            s_wf_in_any <= v_in_r or  v_in_g or  v_in_b;
+            s_wf_in_any <= v_in_any;
             s_wf_in_all <= v_in_r and v_in_g and v_in_b;
 
-            -- Masked values: failing channel contributes 0
-            if v_in_r = '1' then s_wf_r_m <= s_0c_rgb_r; else s_wf_r_m <= (others => '0'); end if;
-            if v_in_g = '1' then s_wf_g_m <= s_0c_rgb_g; else s_wf_g_m <= (others => '0'); end if;
-            if v_in_b = '1' then s_wf_b_m <= s_0c_rgb_b; else s_wf_b_m <= (others => '0'); end if;
+            -- Masked values: failing channel contributes 0 (as variables for reuse below)
+            if v_in_r = '1' then v_r_m := s_0c_rgb_r; else v_r_m := (others => '0'); end if;
+            if v_in_g = '1' then v_g_m := s_0c_rgb_g; else v_g_m := (others => '0'); end if;
+            if v_in_b = '1' then v_b_m := s_0c_rgb_b; else v_b_m := (others => '0'); end if;
+            s_wf_r_m <= v_r_m;
+            s_wf_g_m <= v_g_m;
+            s_wf_b_m <= v_b_m;
+
+            -- Compute noise OR shifted masked channels without gate.  With the gate
+            -- removed the 4-input OR (lfsr + 3 shifted channels) fits in 1 LUT4:
+            -- carry chains -> v_r_m (1 LUT) -> 4-input OR (1 LUT) = 2 LUT levels.
+            -- The any-gate is applied in Stage 1b on registered s_wf_in_any (1 LUT).
+            s_wf_lfsr_m <= unsigned(s_0c_lfsr)
+                         or shift_right(v_r_m, 4)
+                         or shift_right(v_g_m, 4)
+                         or shift_right(v_b_m, 4);
+            s_wf_prng_m <= unsigned(s_0c_prng)
+                         or shift_right(v_r_m, 4)
+                         or shift_right(v_g_m, 4)
+                         or shift_right(v_b_m, 4);
 
             -- Sum luma partial products; take bits [17:8] for 10-bit BT.601 luma.
             -- rg_sum (R*77+G*150, max 232221) + B*29 (max 29667) = max 261888 < 2^18.
@@ -1340,9 +1363,9 @@ begin
     --   "001" Bitwise OR  : OR of channel values, failing channels = 0
     --   "010" Logical AND : 1023 if all channels in-window, else 0
     --   "011" Bitwise AND : AND of channel values, failing channels = 0
-    --   "100" Luma        : BT.601 luma of full pixel, gated by AND
-    --   "101" LFSR synced : frame-seeded noise XOR luma, gated by AND
-    --   "110" PRNG        : line-seeded noise XOR luma, gated by AND
+    --   "100" Luma        : BT.601 luma of full pixel, gated by OR
+    --   "101" LFSR synced : frame-seeded noise OR masked channels, gated by OR
+    --   "110" PRNG        : free-running noise OR masked channels, gated by OR
     --   "111" Passthrough : original pixel, no keying
     --------------------------------------------------------------------------------
     p_window_key : process(clk)
@@ -1367,21 +1390,21 @@ begin
                     end if;
                 when "011" =>  -- Bitwise AND: AND of masked values
                     v_matte := s_wf_r_m and s_wf_g_m and s_wf_b_m;
-                when "100" =>  -- Luma: BT.601, gated by AND
-                    if s_wf_in_all = '1' then
+                when "100" =>  -- Luma: BT.601, gated by OR
+                    if s_wf_in_any = '1' then
                         v_matte := s_wf_luma;
                     else
                         v_matte := (others => '0');
                     end if;
-                when "101" =>  -- LFSR synced: frame-seeded noise XOR luma, gated by AND
-                    if s_wf_in_all = '1' then
-                        v_matte := unsigned(s_wf_lfsr) xor s_wf_luma;
+                when "101" =>  -- LFSR synced: noise OR masked channels, gated by OR
+                    if s_wf_in_any = '1' then
+                        v_matte := s_wf_lfsr_m;
                     else
                         v_matte := (others => '0');
                     end if;
-                when "110" =>  -- PRNG: line-seeded noise XOR luma, gated by AND
-                    if s_wf_in_all = '1' then
-                        v_matte := unsigned(s_wf_prng) xor s_wf_luma;
+                when "110" =>  -- PRNG: noise OR masked channels, gated by OR
+                    if s_wf_in_any = '1' then
+                        v_matte := s_wf_prng_m;
                     else
                         v_matte := (others => '0');
                     end if;
