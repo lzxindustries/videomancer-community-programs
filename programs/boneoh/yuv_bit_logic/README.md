@@ -6,13 +6,6 @@ A per-channel bitwise logic video effect for the [LZX Industries Videomancer](ht
 
 This is a flexible and powerful effect that provides a lot of creative control.
 
-This effect program is designed with a layout that resembles a simple audio mixer.
-There are three vertical channels, one each for Y (luminance), U (blue-yellow chroma), and V (red-cyan chroma).
-
-Knobs 1, 2, 3 control the 10-bit mask that determines which bit planes are affected by the logic operation.
-Knobs 4, 5, 6 control the wet/dry amount of video that is sent to the master output bus.
-The Slider is the master wet/dry fade.
-
 The main processing applies a bitwise logic operation between each channel and its mask. The operation is selected using Switches 2, 3, and 4 as a 3-bit encoded value. Six deterministic operations are available (AND, OR, XOR, NAND, NOR, NXOR), plus two random modes driven by onboard LFSRs. In random modes the mask knobs gate which bit planes the random value can reach.
 
 Switch 1 has a dual role: for deterministic operations (AND–NXOR) it inverts all three masks before applying them; for the LFSR mode it selects whether the LFSR is reseeded from the PRNG at each vsync or runs freely from power-on.

@@ -6,13 +6,6 @@ A per-channel bit rotation video effect for the [LZX Industries Videomancer](htt
 
 This is a flexible and powerful effect that provides a lot of creative control.
 
-This effect program is designed with a layout that resembles a simple audio mixer.
-There are three vertical channels, one each for Red, Green, and Blue.
-
-Knobs 1, 2, 3 control the number of bits used in the processing.
-Knobs 4, 5, 6 control the wet/dry amount of video that is sent to the master output bus.
-The Slider is the master wet/dry fade.
-
 The main processing allows for bit rotation of each colour channel using knobs 1, 2, and 3.
 The shifts are performed using a wrap-around and can be set independently for the Red, Green, and Blue channels.
 The knobs for rotation will not perform a shift when rotated either fully clockwise or fully counter-clockwise.
