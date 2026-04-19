@@ -81,7 +81,7 @@ Once you understand one, the rest are easy.
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
-- **HD timing:** All six variants meet 74.25 MHz (worst case ~77 MHz)
+- **HD timing:** All six variants meet 74.25 MHz (worst case ~81 MHz)
 - **LC utilisation:** ~25% (routing-friendly)
 
 ## Hardware Requirements

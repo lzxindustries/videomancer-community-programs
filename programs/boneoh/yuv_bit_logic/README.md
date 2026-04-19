@@ -78,7 +78,7 @@ Once you understand one, the rest are easy.
 - **BRAM usage:** 0 block RAMs (no colour conversion)
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
-- **HD timing:** All six variants meet 74.25 MHz with significant headroom
+- **HD timing:** All six variants meet 74.25 MHz (worst case ~80 MHz)
 - **LC utilisation:** Low (no BRAM colour conversion tables)
 
 ## Hardware Requirements

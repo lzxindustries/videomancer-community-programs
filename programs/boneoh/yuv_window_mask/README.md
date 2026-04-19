@@ -125,6 +125,7 @@ Use YUV Window Mask when your threshold decisions map naturally onto luma or chr
 - **BRAM usage:** 0 (no lookup tables required)
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
+- **HD timing:** All six HD variants meet 74.25 MHz (worst case ~77 MHz)
 - **UV convention:** U = Cr (red-difference), V = Cb (blue-difference) — Videomancer hardware convention; thresholds apply to the raw hardware values
 - **Neutral chroma:** U = V = 512 (50%)
 

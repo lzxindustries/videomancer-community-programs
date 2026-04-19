@@ -176,3 +176,4 @@ These decisions were reached through pseudocode review and confirmed in testing.
 
 *Maintained by Pete Appleby. Last updated during development of rgb_window_mask and yuv_window_mask.*
 4/19/2026 added general rules from https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md
+4/19/2026 README Technical Notes sections for all 8 programs verified and updated against clean build results (Clean and Build.2026.04.19.txt). Pipeline latencies, BRAM usage, IOs, PLLs, and HD worst-case timing figures are current as of this date.

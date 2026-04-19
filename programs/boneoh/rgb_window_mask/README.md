@@ -111,6 +111,7 @@ With Fine **On**, the current knob positions are latched as reference values at 
 - **BRAM usage:** 11 block RAMs (BT.601 colour conversion LUTs; 31 / 32 total including SDK)
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
+- **HD timing:** All six HD variants meet 74.25 MHz (worst case ~75 MHz)
 - **Window inversion:** Handled inside the `window_check` function — no extra hardware
 
 ## Hardware Requirements

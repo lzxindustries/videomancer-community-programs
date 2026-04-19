@@ -94,6 +94,7 @@ The knob is divided into 8 equal bands of 128 counts each (step_idx = knob / 128
 - **BRAM usage:** 11 block RAMs (BT.601 colour conversion LUTs; 31 / 32 total including SDK)
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
+- **HD timing:** All six HD variants meet 74.25 MHz (worst case ~78 MHz)
 - **Rounding:** Round-to-nearest adds step/2 before quantising with overflow saturation to the largest representable multiple of the step
 - **Steps 48 and 96:** Non-power-of-2; implemented via shift-and-reciprocal (floor(x/48)=floor((x>>4)×171>>9)), no extra BRAMs required
 
