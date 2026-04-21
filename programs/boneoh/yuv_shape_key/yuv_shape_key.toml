@@ -1,0 +1,149 @@
+# Copyright (C) 2026 Pete Appleby
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# YUV Shape Key Program Configuration
+#
+# Effect: Shape-based keyer operating directly in YUV space (no colour conversion).
+#   For each pixel, a shape test determines inside/outside. Inside pixels pass the
+#   original image at full strength; outside pixels output black (Y=0, U=512, V=512).
+#   Gradient fill modes dither the boundary. Global blend mixes keyed with original.
+#
+# Controls:
+#   Knob 1  — Centre X   (0=left edge, 512=centre, 1023=right edge)
+#   Knob 2  — Centre Y   (0=top edge,  512=centre, 1023=bottom edge)
+#   Knob 3  — Width      (horizontal radius / half-extent of shape)
+#   Knob 4  — Height     (vertical radius / half-extent of shape)
+#   Knob 5  — Scale      (uniform scale on width and height; 512=1x, 1023≈2x)
+#   Knob 6  — Inflate/Pinch (norm blend: low=pinch/diamond, mid=ellipse, high=inflate/rect)
+#   S1      — Invert     (swap inside/outside)
+#   S2+S3   — Shape:     00=Rectangle, 01=Ellipse, 10=Diamond, 11=Cross
+#   S4+S5   — Fill:      00=Solid, 01=Slight dither, 10=More dither, 11=Max dither
+#   Slider  — Wet/dry    (0=original, 1023=full keyed output)
+#
+# Note: No hardware bypass switch; use Slider at 0 to pass original image through.
+# Note: Cross shape always uses solid fill; dither modes fall back to solid for Cross.
+
+[program]
+program_id = "com.peteappleby.yuv_shape_key"
+program_name = "YUV Shape Key"
+program_version = "0.1.0"
+abi_version = ">=1.0,<2.0"
+author = "Pete Appleby"
+license = "GPL-3.0"
+categories = ["Mask", "Color"]
+program_type = "processing"
+description = "Shape-based YUV keyer with 4 shapes, inflate/pinch norm control, dither fill, and global blend"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# ---------------------------------------------------------------------------
+# KNOBS (Rotary Potentiometers)
+# ---------------------------------------------------------------------------
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Centre X"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Centre Y"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Width"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Height"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Scale"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 200
+initial_value = 512
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Inflate/Pinch"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+display_float_digits = 1
+suffix_label = "%"
+
+# ---------------------------------------------------------------------------
+# SWITCHES (Toggle Switches)
+# ---------------------------------------------------------------------------
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Shape Hi"
+value_labels = ["0", "1"]
+initial_value_label = "0"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Shape Lo"
+value_labels = ["0", "1"]
+initial_value_label = "0"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Fill Hi"
+value_labels = ["0", "1"]
+initial_value_label = "0"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Fill Lo"
+value_labels = ["0", "1"]
+initial_value_label = "0"
+
+# ---------------------------------------------------------------------------
+# SLIDER (Linear Potentiometer)
+# ---------------------------------------------------------------------------
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Wet/Dry"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"

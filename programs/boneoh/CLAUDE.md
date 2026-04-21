@@ -149,15 +149,43 @@ These decisions were reached through pseudocode review and confirmed in testing.
 - Polynomial: x¹⁰ + x⁷ + 1, 10-bit Fibonacci LFSR
 - **LFSR:** reseeds to `"0101010101"` on vsync falling edge → same noise pattern every frame (frozen static)
 - **PRNG:** never reseeded — free-running from power-on; pattern shifts each frame
-- `lfsr.vhd` in the SDK uses a right-shift Galois architecture; lockup state is **all-ones**, not all-zeros
-- Bit-0 forcing on seed load does not protect against the all-ones lockup state in the Galois variant
+- `lfsr.vhd` in the SDK uses a **Fibonacci XOR right-shift architecture** — lockup state is **all-zeros**, not all-ones
+- Bit-0 forcing on seed load (`seed(9:1) & '1'`) correctly prevents the all-zeros lockup state
+- The `lfsr16.vhd` module handles the all-zeros case internally by substituting `x"ACE1"` when a zero seed is loaded
 
 ---
 
 ## Known Deferred Issues
 
-- **LFSR flashing bug** — RGB Bit Logic and YUV Bit Logic both exhibit occasional single-frame flashes of the original (unprocessed) image, approximately once per second. Suspected cause: Galois LFSR in `lfsr.vhd` hitting the all-ones lockup state. Investigation deferred.
+- **LFSR flashing bug** — RGB Bit Logic and YUV Bit Logic both exhibit occasional single-frame flashes of the original (unprocessed) image, approximately once per second. Root cause is unconfirmed — the earlier diagnosis (Galois LFSR all-ones lockup) was incorrect; the SDK LFSR is Fibonacci XOR and the all-zeros state is already protected. Actual cause may be related to the vsync-triggered reseed producing a high-value output on the first pixel of a frame. Investigation deferred.
 - **LFSR/PRNG texture improvement** — Window Mask LFSR and PRNG modes produce functional but visually rough noise. Texture quality improvement is planned but deferred; both modes are currently marked experimental.
+
+---
+
+## TOML Required Fields
+
+Every program TOML **must** include these fields or the firmware will reject the package:
+
+- `categories` — array of one or more valid category names from `docs/program-categories.md` (up to 8). Field name is plural; `category` (singular) is wrong. `"Video Processing"` is not a valid category name.
+- `program_type` — either `"processing"` (transforms input video) or `"synthesis"` (generates video from scratch)
+
+Common category choices for this project's programs: `"Color"`, `"Glitch"`, `"Mask"`.
+
+---
+
+## Architecture Naming Convention
+
+The VHDL architecture name must match the program file name:
+
+```vhdl
+-- Correct:
+architecture rgb_window_mask of program_top is
+...
+end architecture rgb_window_mask;
+
+-- Wrong (causes confusion, found in window mask programs):
+architecture rgb_window_key of program_top is
+```
 
 ---
 
@@ -168,12 +196,17 @@ These decisions were reached through pseudocode review and confirmed in testing.
 | rgb_bit_crush      | RGB          |                                          |
 | rgb_bit_rotator    | RGB          |                                          |
 | rgb_bit_logic      | RGB          | LFSR flashing bug deferred               |
+| rgb_window_mask    | RGB          | LFSR/PRNG experimental; no bypass switch |
+| yuv_bit_crush      | YUV          |                                          |
+| yuv_bit_rotator    | YUV          |                                          |
 | yuv_bit_logic      | YUV          | LFSR flashing bug deferred               |
-| rgb_window_mask    | RGB          | LFSR/PRNG experimental                   |
-| yuv_window_mask    | YUV          | LFSR/PRNG experimental                   |
+| yuv_window_mask    | YUV          | LFSR/PRNG experimental; no bypass switch |
+| yuv_shape_key      | YUV          | no bypass switch; cross shape solid-only in v1 |
 
 ---
 
 *Maintained by Pete Appleby. Last updated during development of rgb_window_mask and yuv_window_mask.*
 4/19/2026 added general rules from https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md
 4/19/2026 README Technical Notes sections for all 8 programs verified and updated against clean build results (Clean and Build.2026.04.19.txt). Pipeline latencies, BRAM usage, IOs, PLLs, and HD worst-case timing figures are current as of this date.
+4/20/2026 Full improvement scan completed across all 8 programs (see program-improvement-scan.md). LFSR lockup-state diagnosis corrected (Fibonacci XOR, not Galois; all-zeros is the lockup state, not all-ones). TOML required fields rule added. Architecture naming convention added. Program list completed (yuv_bit_crush and yuv_bit_rotator were missing).
+4/20/2026 yuv_shape_key initial implementation written (yuv_shape_key.vhd + yuv_shape_key.toml). 10-clock pipeline; inline pixel counter; 4 shapes; Knob 6 3-mux norm; dither via norm-space bias; lfsr16 free-running. Pending: build and test.
