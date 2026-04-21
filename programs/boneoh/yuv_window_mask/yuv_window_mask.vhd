@@ -277,10 +277,10 @@ begin
             s_u_d1    <= data_in.u;
             s_v_d1    <= data_in.v;
             s_avid_d1 <= data_in.avid;
-            -- Pre-compute noise OR Y>>4: 1 LUT per bit, same depth as original XOR.
-            -- Gate mux is deferred to Stage 1b where it runs on registered signals.
-            s_lfsr_or_y_d1 <= unsigned(s_lfsr) or shift_right(unsigned(data_in.y), 4);
-            s_prng_or_y_d1 <= unsigned(s_prng) or shift_right(unsigned(data_in.y), 4);
+            -- Pre-compute Y OR noise>>4: channel content dominant, noise adds low-bit
+            -- texture (max 63/1023).  Gate mux deferred to Stage 1b on registered signals.
+            s_lfsr_or_y_d1 <= unsigned(data_in.y) or shift_right(unsigned(s_lfsr), 4);
+            s_prng_or_y_d1 <= unsigned(data_in.y) or shift_right(unsigned(s_prng), 4);
             -- Pre-compute per-channel window comparison bits (carry chains here,
             -- not in Stage 1a).  Reads current s_low_*/s_high_* (previous clock's
             -- registered values) vs data_in port inputs.

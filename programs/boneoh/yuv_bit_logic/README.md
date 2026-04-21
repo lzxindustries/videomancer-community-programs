@@ -79,7 +79,7 @@ Once you understand one, the rest are easy.
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
 - **HD timing:** All six variants meet 74.25 MHz (worst case ~80 MHz)
-- **LC utilisation:** Low (no BRAM colour conversion tables)
+- **LC utilisation:** 4831–4850 of 7680 (~63%)
 
 ## Hardware Requirements
 

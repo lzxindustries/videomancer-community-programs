@@ -4,6 +4,12 @@ Behavioral guidelines to reduce common LLM coding mistakes. Merge with project-s
 
 **Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
 
+## Session Protocol
+
+When Pete says "quit," pause and check whether any lessons learned from the session belong in CLAUDE.md. Summarize the gist and ask before updating. If nothing is worth recording, say so.
+
+---
+
 ## 1. Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
@@ -158,7 +164,59 @@ These decisions were reached through pseudocode review and confirmed in testing.
 ## Known Deferred Issues
 
 - **LFSR flashing bug** — RGB Bit Logic and YUV Bit Logic both exhibit occasional single-frame flashes of the original (unprocessed) image, approximately once per second. Root cause is unconfirmed — the earlier diagnosis (Galois LFSR all-ones lockup) was incorrect; the SDK LFSR is Fibonacci XOR and the all-zeros state is already protected. Actual cause may be related to the vsync-triggered reseed producing a high-value output on the first pixel of a frame. Investigation deferred.
-- **LFSR/PRNG texture improvement** — Window Mask LFSR and PRNG modes produce functional but visually rough noise. Texture quality improvement is planned but deferred; both modes are currently marked experimental.
+
+---
+
+## Shared VHDL Package Files
+
+RGB programs share a common set of YUV↔RGB conversion tables via `programs/boneoh/rgb_yuv_tables_pkg.vhd`. This file is **not** in any program directory — it lives one level up at `boneoh/` and is symlinked into each RGB program directory:
+
+```
+programs/boneoh/rgb_bit_rotator/rgb_yuv_tables_pkg.vhd -> ../rgb_yuv_tables_pkg.vhd
+```
+
+**How discovery works:** The SDK build system globs `*.vhd` in the program directory and follows symlinks, so the package is found and compiled automatically. Because the package filename sorts before the main architecture file alphabetically, and the build system always moves the `architecture ... of program_top` file to last, the package compiles in the correct order with no extra configuration.
+
+**To add a new shared package:** create the `.vhd` file at `programs/boneoh/`, then `ln -sf ../filename.vhd` in each program directory that needs it.
+
+---
+
+## LFSR/PRNG Texture Design
+
+**Noise as modulator = pleasing. Noise as output = harsh static.**
+
+- **Bit Logic** (correct): `pixel XOR (noise AND mask_knob)` — noise randomly flips low-order bits of the pixel. The image content is the carrier; the noise scintillates on top. With a moderate mask, color and structure are preserved.
+
+- **Window Mask** (original, wrong): `noise OR (channel >> 4)` — the full-range LFSR output (0–1023) was used directly as matte brightness. Since a 10-bit LFSR has a flat distribution across the full range, this produced TV static. The channel contribution (`>> 4`, max 63/1023) was invisible against it.
+
+- **Window Mask** (fixed): `channel OR (noise >> 4)` — channel content occupies the full brightness range; noise contributes at most 63/1023 in the low bits. The in-window image is clearly visible with a scintillating low-bit texture.
+
+**Rule:** whenever LFSR/PRNG output feeds a brightness or matte value, shift the noise down (`>> 4` or more) so it adds texture to the content rather than replacing it.
+
+---
+
+## Toggle Switch Patterns
+
+**Switch naming layers** — there are three naming layers that must all agree:
+
+| Layer | Example |
+|-------|---------|
+| Hardware switch number | S1, S2, S3 … (physical front-panel left-to-right) |
+| ABI parameter_id | `toggle_switch_7`, `toggle_switch_8` … |
+| TOML `name_label` / program label | "Direction", "Depth S1", "Depth S2" … |
+
+S1 = `toggle_switch_7` (bit 0 of register 6), S2 = `toggle_switch_8` (bit 1), S3 = `toggle_switch_9` (bit 2), S4 = `toggle_switch_10` (bit 3), S5 = `toggle_switch_11` (bit 4 — Bypass by convention).
+
+**`get_bit_depth` concatenation order** — when encoding N switches into a case selector, put the **highest-impact switch first (MSB)**:
+
+```vhdl
+-- Correct: s1 is MSB → flipping S1 has the biggest effect
+case std_logic_vector'(s1 & s2 & s3) is
+```
+
+Reversing this (`s3 & s2 & s1`) makes the last switch the MSB. With the last switch off (the common case), only the low half of the case table is reachable — the milder bit depths — so the effect appears broken. This bug was found in both bit rotator programs: S2 and S3 appeared ignored whenever S4 was off, because S4 (mapped to `s3`) was the MSB and its `0` value confined the selector to depths 10/8/6/5 (too subtle to notice on rotating content).
+
+**TOML comment tables** — when documenting switch combinations in a TOML comment, always write the table in the same order as the `get_bit_depth` case statement. If the code uses `s1 & s2 & s3`, the table rows should be in `s1 s2 s3` binary order (000=10bit, 001=8bit, … 111=1bit). A mismatch between the code and the TOML comment is how this bug went undetected.
 
 ---
 
@@ -196,11 +254,11 @@ architecture rgb_window_key of program_top is
 | rgb_bit_crush      | RGB          |                                          |
 | rgb_bit_rotator    | RGB          |                                          |
 | rgb_bit_logic      | RGB          | LFSR flashing bug deferred               |
-| rgb_window_mask    | RGB          | LFSR/PRNG experimental; no bypass switch |
+| rgb_window_mask    | RGB          | no bypass switch                         |
 | yuv_bit_crush      | YUV          |                                          |
 | yuv_bit_rotator    | YUV          |                                          |
 | yuv_bit_logic      | YUV          | LFSR flashing bug deferred               |
-| yuv_window_mask    | YUV          | LFSR/PRNG experimental; no bypass switch |
+| yuv_window_mask    | YUV          | no bypass switch                         |
 | yuv_shape_key      | YUV          | no bypass switch; cross shape solid-only in v1 |
 
 ---
@@ -210,3 +268,4 @@ architecture rgb_window_key of program_top is
 4/19/2026 README Technical Notes sections for all 8 programs verified and updated against clean build results (Clean and Build.2026.04.19.txt). Pipeline latencies, BRAM usage, IOs, PLLs, and HD worst-case timing figures are current as of this date.
 4/20/2026 Full improvement scan completed across all 8 programs (see program-improvement-scan.md). LFSR lockup-state diagnosis corrected (Fibonacci XOR, not Galois; all-zeros is the lockup state, not all-ones). TOML required fields rule added. Architecture naming convention added. Program list completed (yuv_bit_crush and yuv_bit_rotator were missing).
 4/20/2026 yuv_shape_key initial implementation written (yuv_shape_key.vhd + yuv_shape_key.toml). 10-clock pipeline; inline pixel counter; 4 shapes; Knob 6 3-mux norm; dither via norm-space bias; lfsr16 free-running. Pending: build and test.
+4/21/2026 Fixed get_bit_depth concatenation order bug in both bit rotators (s3&s2&s1 → s1&s2&s3). Added Toggle Switch Patterns section to CLAUDE.md. Consolidated YUV<->RGB LUT tables from all 4 RGB programs into shared rgb_yuv_tables_pkg.vhd (symlinked into each program directory); ~747 lines removed per program. Fixed Window Mask LFSR/PRNG texture (noise OR channel>>4 → channel OR noise>>4); removed LFSR/PRNG experimental flag from both window masks. Added Shared VHDL Package Files and LFSR/PRNG Texture Design sections to CLAUDE.md.

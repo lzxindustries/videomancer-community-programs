@@ -28,7 +28,7 @@
 [program]
 program_id = "com.peteappleby.yuv_window_mask"
 program_name = "YUV Window Mask"
-program_version = "0.1.5"
+program_version = "0.1.6"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"

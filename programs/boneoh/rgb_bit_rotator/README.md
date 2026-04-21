@@ -82,7 +82,7 @@ Once you understand one, the rest are easy.
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
 - **HD timing:** All six variants meet 74.25 MHz (worst case ~81 MHz)
-- **LC utilisation:** ~25% (routing-friendly)
+- **LC utilisation:** 6026–6055 of 7680 (~79%)
 
 ## Hardware Requirements
 

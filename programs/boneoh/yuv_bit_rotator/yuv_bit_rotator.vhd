@@ -60,9 +60,11 @@
 --     bit 4: Bypass enable (0=Process, 1=Bypass)   toggle_switch_11
 --   Register  7: Global blend  (0=fully dry, 1023=fully wet) linear_potentiometer_12
 --
--- Bit Depth Mode (S3:S2:S1 -> active bit depth):
+-- Bit Depth Mode (S1:S2:S3 -> active bit depth, S1=Depth S1=MSB, S3=Depth S3=LSB):
 --   000=10bit  001=8bit  010=6bit  011=5bit
 --   100=4bit   101=3bit  110=2bit  111=1bit
+-- Depth S1 (hardware S2) is MSB: gives 4-bit effect alone.
+-- Depth S3 (hardware S4) is LSB: fine-tune only (8-bit alone).
 --
 -- Timing:
 --   Total pipeline latency: 10 clock cycles
@@ -174,18 +176,22 @@ architecture yuv_bit_rotator of program_top is
         end if;
     end function;
 
-    -- Decode active bit depth from three switch bits (S3:S2:S1).
+    -- Decode active bit depth from three switch bits.
+    -- Bit order: s1 (Depth S1 / hardware S2) is MSB, s3 (Depth S3 / hardware S4) is LSB.
+    -- This makes Depth S1 the highest-impact switch (4-bit alone) and Depth S3 a
+    -- fine-tune step.  With Depth S3 off, Depth S1 and Depth S2 alone give 4-bit and
+    -- 6-bit effects that are clearly visible in rotating content.
     function get_bit_depth(s1, s2, s3 : std_logic) return integer is
     begin
-        case std_logic_vector'(s3 & s2 & s1) is
-            when "000"  => return 10;
-            when "001"  => return 8;
-            when "010"  => return 6;
-            when "011"  => return 5;
-            when "100"  => return 4;
-            when "101"  => return 3;
-            when "110"  => return 2;
-            when "111"  => return 1;
+        case std_logic_vector'(s1 & s2 & s3) is
+            when "000"  => return 10;  -- all off: full quality
+            when "001"  => return 8;   -- Depth S3 alone: mild fine-tune
+            when "010"  => return 6;   -- Depth S2 alone: visible
+            when "011"  => return 5;   -- Depth S2 + S3
+            when "100"  => return 4;   -- Depth S1 alone: heavy
+            when "101"  => return 3;   -- Depth S1 + S3
+            when "110"  => return 2;   -- Depth S1 + S2: very aggressive
+            when "111"  => return 1;   -- all on: extreme
             when others => return 10;
         end case;
     end function;

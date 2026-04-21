@@ -18,7 +18,7 @@
 [program]
 program_id = "com.peteappleby.yuv_bit_rotator"
 program_name = "YUV Bit Rotato"
-program_version = "0.1.5"
+program_version = "0.1.6"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
@@ -107,14 +107,15 @@ value_labels = ["Left", "Right"]
 initial_value_label = "Left"
 
 # Bit depth mode: 3 switches = 8 combinations
+# Depth S1 (hardware S2) is the highest-impact switch; Depth S3 is a fine-tune step.
 # S1=Off S2=Off S3=Off -> 10-bit (full quality)
-# S1=On  S2=Off S3=Off ->  8-bit (mild crunch)
-# S1=Off S2=On  S3=Off ->  6-bit (lo-fi)
-# S1=On  S2=On  S3=Off ->  5-bit (medium lo-fi)
-# S1=Off S2=Off S3=On  ->  4-bit (heavy crunch)
-# S1=On  S2=Off S3=On  ->  3-bit (very aggressive)
-# S1=Off S2=On  S3=On  ->  2-bit (extreme)
-# S1=On  S2=On  S3=On  ->  1-bit (pure posterise)
+# S1=Off S2=Off S3=On  ->  8-bit (Depth S3 alone: mild fine-tune)
+# S1=Off S2=On  S3=Off ->  6-bit (Depth S2 alone: visible)
+# S1=Off S2=On  S3=On  ->  5-bit (Depth S2 + S3)
+# S1=On  S2=Off S3=Off ->  4-bit (Depth S1 alone: heavy crunch)
+# S1=On  S2=Off S3=On  ->  3-bit (Depth S1 + S3)
+# S1=On  S2=On  S3=Off ->  2-bit (Depth S1 + S2: very aggressive)
+# S1=On  S2=On  S3=On  ->  1-bit (all on: extreme/pure posterise)
 
 [[parameter]]
 parameter_id = "toggle_switch_8"
