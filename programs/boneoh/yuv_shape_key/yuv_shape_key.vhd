@@ -42,13 +42,14 @@
 --   Stage 0   — Pixel counter; register data_in; decode controls; get
 --               h/v_active from resolution_pkg; advance LFSR        (1 clk) → T+1
 --   Stage 1   — cx, cy, w, h: four 8×8 multiplications (knob>>2 × res>>4)   (1 clk) → T+2
---   Stage 2   — dx, dy, abs_dx, abs_dy (8-bit >>3 scales); cross arms       (1 clk) → T+3
---   Stage 3   — norm products + threshold: three 8×8 → 16-bit multiplies    (1 clk) → T+4
---   Stage 4   — L1, L-inf, mid; norm mux; shape test; dither comparison    (1 clk) → T+5
---   Stage 5   — invert; matte select; keyed output mux                      (1 clk) → T+6
---   Stage 6   — Global blend (3x interpolator_u)                           (4 clks) → T+10
+--   Stage 2   — dx, dy, abs_dx, abs_dy (8-bit >>3 scales); w/h passthrough  (1 clk) → T+3
+--   Stage 3   — norm products + threshold; cross arm comparisons             (1 clk) → T+4
+--   Stage 4a  — L1, L-inf, noise scaling (all independent carry chains)      (1 clk) → T+5
+--   Stage 4b  — midpoint blend; norm mux; shape test; dither comparison      (1 clk) → T+6
+--   Stage 5   — invert; matte select; keyed output mux                      (1 clk) → T+7
+--   Stage 6   — Global blend (3x interpolator_u)                           (4 clks) → T+11
 --
--- Latency: 10 clock cycles.
+-- Latency: 11 clock cycles.
 --
 -- Videomancer UV Convention:
 --   data_in.u = Cr (red-difference), data_in.v = Cb. Swapped vs standard.
@@ -86,11 +87,11 @@ use work.resolution_pkg.all;
 
 architecture yuv_shape_key of program_top is
 
-    -- Total pipeline latency: 1+1+1+1+1+1+4 = 10 clocks
-    constant C_PROCESSING_DELAY_CLKS : integer := 10;
+    -- Total pipeline latency: 1+1+1+1+1+1+1+4 = 11 clocks
+    constant C_PROCESSING_DELAY_CLKS : integer := 11;
     -- Original data delayed this many clocks for global blend dry input.
-    -- Processed output valid at T+6; delay raw data by 6 clocks.
-    constant C_PRE_GLOBAL_DELAY_CLKS : integer := 6;
+    -- Processed output valid at T+7; delay raw data by 7 clocks.
+    constant C_PRE_GLOBAL_DELAY_CLKS : integer := 7;
 
     -- Neutral chroma for "black" output (U=512, V=512 in YUV space)
     constant C_CHROMA_ZERO : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) :=
@@ -163,8 +164,8 @@ architecture yuv_shape_key of program_top is
     signal s1_noise    : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
 
     --------------------------------------------------------------------------------
-    -- Stage 2 → Stage 3 (T+3): abs_dx, abs_dy, scaled 8-bit values, cross arms
-    -- Threshold is NOT computed here — moved to Stage 3 to ease timing.
+    -- Stage 2 → Stage 3 (T+3): abs_dx, abs_dy, scaled 8-bit values, w/h passthrough
+    -- Cross arm comparisons moved to Stage 3 (use registered s2_abs_dx/abs_dy/w/h).
     -- 8-bit scaled values (>>3) are used for norm products in Stage 3.
     -- All four quantities (abs_dx8, abs_dy8, w8, h8) are shifted by the same K=3,
     -- so the comparison abs_dx8*h8 <= w8*h8 is equivalent to abs_dx*h <= w*h.
@@ -175,8 +176,8 @@ architecture yuv_shape_key of program_top is
     signal s2_abs_dy8  : unsigned(7 downto 0)  := (others => '0');  -- abs_dy >> 3
     signal s2_w8       : unsigned(7 downto 0)  := (others => '0');  -- w >> 3
     signal s2_h8       : unsigned(7 downto 0)  := (others => '0');  -- h >> 3
-    signal s2_arm_h    : std_logic := '0';  -- cross horizontal arm flag
-    signal s2_arm_v    : std_logic := '0';  -- cross vertical arm flag
+    signal s2_w        : unsigned(10 downto 0) := (others => '0');  -- full-precision half-width
+    signal s2_h        : unsigned(10 downto 0) := (others => '0');  -- full-precision half-height
     -- Pixel data delay
     signal s2_y        : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s2_u        : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
@@ -210,7 +211,25 @@ architecture yuv_shape_key of program_top is
     signal s3_arm_v    : std_logic := '0';
 
     --------------------------------------------------------------------------------
-    -- Stage 4 → Stage 5 (T+5): shape test, dither comparison
+    -- Stage 4a → Stage 4b (T+5): independent ops (L1, L-inf, noise scaling)
+    --------------------------------------------------------------------------------
+    signal s4a_l1       : unsigned(16 downto 0) := (others => '0');  -- 17-bit L1 norm
+    signal s4a_linf     : unsigned(15 downto 0) := (others => '0');  -- 16-bit L-inf
+    signal s4a_noise_sc : unsigned(9 downto 0)  := (others => '0');  -- scaled noise
+    signal s4a_threshold: unsigned(15 downto 0) := (others => '0');  -- threshold passthrough
+    signal s4a_norm_sel : std_logic_vector(1 downto 0) := "10";
+    signal s4a_shape    : std_logic_vector(1 downto 0) := "00";
+    signal s4a_fill     : std_logic_vector(1 downto 0) := "00";
+    signal s4a_arm_h    : std_logic := '0';
+    signal s4a_arm_v    : std_logic := '0';
+    signal s4a_inv      : std_logic := '0';
+    signal s4a_y        : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s4a_u        : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s4a_v        : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s4a_avid     : std_logic := '0';
+
+    --------------------------------------------------------------------------------
+    -- Stage 4b → Stage 5 (T+6): shape test, dither comparison
     --------------------------------------------------------------------------------
     signal s4_in_shape : std_logic := '0';  -- solid shape test result
     signal s4_in_dith  : std_logic := '0';  -- dithered shape test result
@@ -224,7 +243,7 @@ architecture yuv_shape_key of program_top is
     signal s4_inv      : std_logic := '0';
 
     --------------------------------------------------------------------------------
-    -- Stage 5 → Stage 6 (T+6): processed pixel output
+    -- Stage 5 → Stage 6 (T+7): processed pixel output
     --------------------------------------------------------------------------------
     signal s5_y        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s5_u        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
@@ -232,7 +251,7 @@ architecture yuv_shape_key of program_top is
     signal s5_valid    : std_logic := '0';
 
     --------------------------------------------------------------------------------
-    -- Stage 6: Global Blend outputs (T+10)
+    -- Stage 6: Global Blend outputs (T+11)
     --------------------------------------------------------------------------------
     signal s_global_y       : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_global_u       : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -241,7 +260,7 @@ architecture yuv_shape_key of program_top is
     signal s_global_u_valid : std_logic;
     signal s_global_v_valid : std_logic;
 
-    -- Global blend dry input (original data delayed to T+6)
+    -- Global blend dry input (original data delayed to T+7)
     signal s_y_for_global   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_u_for_global   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_v_for_global   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
@@ -333,15 +352,16 @@ begin
             s0_shape <= registers_in(6)(1) & registers_in(6)(2);  -- {S2, S3}
             s0_fill  <= registers_in(6)(3) & registers_in(6)(4);  -- {S4, S5}
 
-            -- Knob 6 → norm selector (carry-chain comparisons, done here in Stage 0)
-            v_knob6 := unsigned(registers_in(5));
-            if v_knob6 < 341 then
-                s0_norm_sel <= "00";   -- L1 norm (pinch / diamond tendency)
-            elsif v_knob6 < 683 then
-                s0_norm_sel <= "01";   -- midpoint blend (ellipse-like)
-            else
-                s0_norm_sel <= "10";   -- L-inf norm (inflate / rectangle tendency)
-            end if;
+             -- Knob 6 → norm selector (optimized: use comparisons to avoid carry chains in critical path)
+             v_knob6 := unsigned(registers_in(5));
+             -- Use simple comparisons instead of case statement to reduce carry chain depth
+             if v_knob6 < 341 then
+                 s0_norm_sel <= "00";   -- L1 norm (pinch / diamond tendency)
+             elsif v_knob6 < 683 then
+                 s0_norm_sel <= "01";   -- midpoint blend (ellipse-like)
+             else
+                 s0_norm_sel <= "10";   -- L-inf norm (inflate / rectangle tendency)
+             end if;
 
             -- Dither noise: register lfsr16[9:0] for use downstream
             s0_noise <= unsigned(s_lfsr_q(9 downto 0));
@@ -479,19 +499,11 @@ begin
             s2_w8      <= s1_w(10 downto 3);
             s2_h8      <= s1_h(10 downto 3);
 
-            -- Cross arm flags: full-precision comparisons (carry chains, not multiplies)
-            -- arm_h: horizontal arm — abs_dx <= w AND abs_dy <= h
-            -- arm_v: vertical arm  — abs_dx <= h AND abs_dy <= w
-            if v_abs_dx <= s1_w and v_abs_dy <= s1_h then
-                s2_arm_h <= '1';
-            else
-                s2_arm_h <= '0';
-            end if;
-            if v_abs_dx <= s1_h and v_abs_dy <= s1_w then
-                s2_arm_v <= '1';
-            else
-                s2_arm_v <= '0';
-            end if;
+            -- Pass full-precision w/h through for cross arm comparisons in Stage 3.
+            -- Cross arm comparisons moved to Stage 3 so they use registered abs values
+            -- rather than chaining directly after abs subtraction (saves ~3 carry depths).
+            s2_w <= s1_w;
+            s2_h <= s1_h;
 
             -- Delay pixel data and controls
             s2_y        <= s1_y;
@@ -507,16 +519,20 @@ begin
     end process p_stage2;
 
     --------------------------------------------------------------------------------
-    -- Stage 3: Norm Products + Threshold
+    -- Stage 3: Norm Products + Threshold + Cross Arm Comparisons
     -- Latency: 1 clock. Input T+3, output T+4.
     -- Three independent 8×8 → 16-bit multiplications (carry chains).
+    -- Cross arm comparisons now use registered s2_abs_dx/s2_abs_dy/s2_w/s2_h so
+    -- they do not chain with the abs subtraction logic in Stage 2.
     --
     --   prod_dxh  = abs_dx8 * h8   (abs_dx >> 3 × h >> 3)
     --   prod_dyw  = abs_dy8 * w8   (abs_dy >> 3 × w >> 3)
-    --   threshold = w8 * h8        (moved here from Stage 2 to share multiply stage)
+    --   threshold = w8 * h8
+    --   arm_h     = (abs_dx <= w) AND (abs_dy <= h)
+    --   arm_v     = (abs_dx <= h) AND (abs_dy <= w)
     --
-    -- All four operands shifted by K=3 so comparison prod_dxh <= threshold is
-    -- equivalent to abs_dx*h <= w*h. 8×8 products fit comfortably at 74.25 MHz.
+    -- All four multiply operands shifted by K=3 so comparison prod_dxh <= threshold
+    -- is equivalent to abs_dx*h <= w*h. 8×8 products fit comfortably at 74.25 MHz.
     --------------------------------------------------------------------------------
     p_stage3 : process(clk)
     begin
@@ -524,9 +540,23 @@ begin
             -- Three independent 8×8 → 16-bit multiplications (much faster than 12×11).
             -- All four operands shifted by K=3: comparison (prod_dxh <= threshold) is
             -- equivalent to the full-precision (abs_dx*h <= w*h) up to 3-bit truncation.
-            s3_prod_dxh <= s2_abs_dx8 * s2_h8;   -- 8×8 = 16-bit
-            s3_prod_dyw <= s2_abs_dy8 * s2_w8;   -- 8×8 = 16-bit
-            s3_threshold <= s2_w8 * s2_h8;        -- 8×8 = 16-bit
+            s3_prod_dxh  <= s2_abs_dx8 * s2_h8;   -- 8×8 = 16-bit
+            s3_prod_dyw  <= s2_abs_dy8 * s2_w8;   -- 8×8 = 16-bit
+            s3_threshold <= s2_w8 * s2_h8;         -- 8×8 = 16-bit
+
+            -- Cross arm flags: now on registered Stage 2 values (no carry chain chaining).
+            -- arm_h: horizontal arm — abs_dx <= w AND abs_dy <= h
+            -- arm_v: vertical arm  — abs_dx <= h AND abs_dy <= w
+            if s2_abs_dx <= s2_w and s2_abs_dy <= s2_h then
+                s3_arm_h <= '1';
+            else
+                s3_arm_h <= '0';
+            end if;
+            if s2_abs_dx <= s2_h and s2_abs_dy <= s2_w then
+                s3_arm_v <= '1';
+            else
+                s3_arm_v <= '0';
+            end if;
 
             -- Delay through-signals
             s3_y        <= s2_y;
@@ -538,107 +568,134 @@ begin
             s3_fill     <= s2_fill;
             s3_norm_sel <= s2_norm_sel;
             s3_noise    <= s2_noise;
-            s3_arm_h    <= s2_arm_h;
-            s3_arm_v    <= s2_arm_v;
         end if;
     end process p_stage3;
 
     --------------------------------------------------------------------------------
-    -- Stage 4: Norm Selection, Shape Test, Dither Comparison
+    -- Stage 4a: Independent Norm Additions + Noise Scaling
     -- Latency: 1 clock. Input T+4, output T+5.
     --
-    -- L1   = prod_dxh + prod_dyw                (diamond norm, 24-bit)
-    -- Linf = max(prod_dxh, prod_dyw)            (rectangle norm, 23-bit)
-    -- mid  = (L1 + Linf) >> 1                   (ellipse approximation, 23-bit)
-    -- norm = mux(L1, mid, Linf) by norm_sel
+    -- Three independent operations — no carry chains share logic levels:
+    --   L1       = prod_dxh + prod_dyw     (single 17-bit adder)
+    --   Linf     = max(prod_dxh, prod_dyw) (16-bit comparator + mux)
+    --   noise_sc = noise >> fill_shift      (shift only, zero depth)
     --
-    -- Solid shape test: norm <= threshold (resize threshold to 24-bit for compare)
-    -- Cross shape:      in_shape = arm_h OR arm_v (no norm used)
-    --
-    -- Dither (non-cross shapes only):
-    --   noise_scaled = noise >> fill_shift   (shift: slight=2, more=1, max=0)
-    --   pass = norm <= resize(threshold, 24) + noise_scaled
-    -- Comparing norm against a widened threshold avoids underflow issues.
-    -- Cross shape: dither not supported — always uses solid in_shape.
+    -- Midpoint blend deferred to Stage 4b (depends on both L1 and Linf).
     --------------------------------------------------------------------------------
-    p_stage4 : process(clk)
-        -- Products and threshold are 16-bit (from 8×8 multiplies in Stage 3).
-        -- L1 = prod_dxh + prod_dyw → 17-bit.  All arithmetic stays ≤ 17 bits.
-        variable v_l1          : unsigned(16 downto 0);  -- 17-bit L1 norm
-        variable v_linf        : unsigned(15 downto 0);  -- 16-bit L-inf norm
+    p_stage4a : process(clk)
+    begin
+        if rising_edge(clk) then
+            -- L1 norm: single 17-bit adder
+            s4a_l1 <= resize(s3_prod_dxh, 17) + resize(s3_prod_dyw, 17);
+
+            -- L-inf norm: 16-bit comparator + mux
+            if s3_prod_dxh >= s3_prod_dyw then
+                s4a_linf <= s3_prod_dxh;
+            else
+                s4a_linf <= s3_prod_dyw;
+            end if;
+
+            -- Noise scaling (barrel shift — zero carry depth)
+            if s3_fill = "01" then      -- slight: /4
+                s4a_noise_sc <= shift_right(s3_noise, 2);
+            elsif s3_fill = "10" then   -- more:   /2
+                s4a_noise_sc <= shift_right(s3_noise, 1);
+            else                        -- max:    full
+                s4a_noise_sc <= s3_noise;
+            end if;
+
+            -- Pass-through signals
+            s4a_threshold <= s3_threshold;
+            s4a_norm_sel  <= s3_norm_sel;
+            s4a_shape     <= s3_shape;
+            s4a_fill      <= s3_fill;
+            s4a_arm_h     <= s3_arm_h;
+            s4a_arm_v     <= s3_arm_v;
+            s4a_inv       <= s3_inv;
+            s4a_y         <= s3_y;
+            s4a_u         <= s3_u;
+            s4a_v         <= s3_v;
+            s4a_avid      <= s3_avid;
+        end if;
+    end process p_stage4a;
+
+    --------------------------------------------------------------------------------
+    -- Stage 4b: Midpoint Blend, Norm Mux, Shape Test, Dither Comparison
+    -- Latency: 1 clock. Input T+5, output T+6.
+    --
+    -- All inputs are registered Stage 4a outputs.
+    -- mid  = (L1 + Linf) >> 1   — single adder, independent of stage 4a adder
+    -- norm = mux(L1, mid, Linf) by norm_sel
+    -- solid = norm <= threshold
+    -- dith  = norm <= threshold + noise_sc
+    -- Each test is a single comparator: no chained carry chains.
+    --
+    -- Dither: noise added to threshold side (avoids underflow).
+    -- max threshold=65025 + max noise=1023 = 66048 < 131072 = 2^17 ✓
+    -- Cross shape: no dither — always uses solid arm union test.
+    --------------------------------------------------------------------------------
+    p_stage4b : process(clk)
         variable v_mid         : unsigned(16 downto 0);  -- 17-bit midpoint
         variable v_norm        : unsigned(16 downto 0);  -- selected norm
         variable v_thresh17    : unsigned(16 downto 0);  -- threshold padded to 17-bit
-        variable v_noise_sc    : unsigned(9 downto 0);   -- scaled noise (10-bit)
         variable v_thresh_dith : unsigned(16 downto 0);  -- dithered threshold
         variable v_solid       : std_logic;
         variable v_dith        : std_logic;
     begin
         if rising_edge(clk) then
-            -- L1 = prod_dxh + prod_dyw (16-bit + 16-bit → 17-bit)
-            v_l1 := resize(s3_prod_dxh, 17) + resize(s3_prod_dyw, 17);
-            -- L-inf = max(prod_dxh, prod_dyw) — 16-bit
-            if s3_prod_dxh >= s3_prod_dyw then
-                v_linf := s3_prod_dxh;
-            else
-                v_linf := s3_prod_dyw;
-            end if;
-            -- Midpoint: (L1 + L-inf) >> 1 — stays 17-bit
-            v_mid := shift_right(v_l1 + resize(v_linf, 17), 1);
+            -- Midpoint: (L1 + Linf) >> 1 — single adder (independent from Stage 4a adder)
+            v_mid := shift_right(s4a_l1 + resize(s4a_linf, 17), 1);
 
             -- Norm mux by knob6 range (L1 pinch / mid ellipse / L-inf inflate)
-            case s3_norm_sel is
-                when "00"   => v_norm := v_l1;
+            case s4a_norm_sel is
+                when "00"   => v_norm := s4a_l1;
                 when "01"   => v_norm := v_mid;
-                when others => v_norm := resize(v_linf, 17);
+                when others => v_norm := resize(s4a_linf, 17);
             end case;
 
             -- Threshold resized to 17-bit for comparison
-            v_thresh17 := resize(s3_threshold, 17);
+            v_thresh17 := resize(s4a_threshold, 17);
 
-            -- Solid shape test
-            case s3_shape is
-                when "11"   =>  -- Cross: arm union (no norm needed)
-                    v_solid := s3_arm_h or s3_arm_v;
-                when others =>
-                    if v_norm <= v_thresh17 then v_solid := '1';
-                    else                         v_solid := '0'; end if;
-            end case;
-
-            -- Dither: noise added to threshold side (avoids underflow).
-            -- noise_scaled << threshold so the addition doesn't overflow 17-bit
-            -- (max threshold=65025 + max noise=1023 = 66048 < 131072 = 2^17 ✓).
-            case s3_fill is
-                when "01"   => v_noise_sc := shift_right(s3_noise, 2);  -- slight: /4
-                when "10"   => v_noise_sc := shift_right(s3_noise, 1);  -- more:  /2
-                when others => v_noise_sc := s3_noise;                   -- max:   full
-            end case;
-            v_thresh_dith := v_thresh17 + resize(v_noise_sc, 17);
-            if s3_shape = "11" then
-                v_dith := v_solid;  -- Cross: no dither
-            elsif v_norm <= v_thresh_dith then
-                v_dith := '1';
+            -- Solid shape test: single comparator
+            if s4a_shape = "11" then  -- Cross: arm union (no norm needed)
+                v_solid := s4a_arm_h or s4a_arm_v;
             else
-                v_dith := '0';
+                if v_norm <= v_thresh17 then
+                    v_solid := '1';
+                else
+                    v_solid := '0';
+                end if;
+            end if;
+
+            -- Dither test: single comparator against widened threshold
+            v_thresh_dith := v_thresh17 + resize(s4a_noise_sc, 17);
+            if s4a_shape = "11" then
+                v_dith := v_solid;  -- Cross: no dither
+            else
+                if v_norm <= v_thresh_dith then
+                    v_dith := '1';
+                else
+                    v_dith := '0';
+                end if;
             end if;
 
             s4_in_shape <= v_solid;
             s4_in_dith  <= v_dith;
 
             -- Delay through-signals
-            s4_y     <= s3_y;
-            s4_u     <= s3_u;
-            s4_v     <= s3_v;
-            s4_avid  <= s3_avid;
-            s4_inv   <= s3_inv;
-            s4_shape <= s3_shape;
-            s4_fill  <= s3_fill;
+            s4_y     <= s4a_y;
+            s4_u     <= s4a_u;
+            s4_v     <= s4a_v;
+            s4_avid  <= s4a_avid;
+            s4_inv   <= s4a_inv;
+            s4_shape <= s4a_shape;
+            s4_fill  <= s4a_fill;
         end if;
-    end process p_stage4;
+    end process p_stage4b;
 
     --------------------------------------------------------------------------------
     -- Stage 5: Invert, Matte Select, Output Mux
-    -- Latency: 1 clock. Input T+5, output T+6.
+    -- Latency: 1 clock. Input T+6, output T+7.
     -- All inputs are registered — pure LUT logic, no carry chains.
     --
     -- Apply invert (S1): flip in_shape and in_dith if s4_inv='1'.
@@ -715,7 +772,7 @@ begin
 
     --------------------------------------------------------------------------------
     -- Stage 6: Global Wet/Dry Blend
-    -- Latency: 4 clocks. Input T+6, output T+10.
+    -- Latency: 4 clocks. Input T+7, output T+11.
     -- a=original (dry), b=processed (wet), t=global_blend slider.
     --------------------------------------------------------------------------------
     interp_global_y : entity work.interpolator_u

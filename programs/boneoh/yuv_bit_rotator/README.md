@@ -12,8 +12,9 @@ The knobs for rotation will not perform a shift when rotated either fully clockw
 
 Performs circular bit rotation (Left/Right) directly on the Y, U, and V components of the video signal — no colour space conversion needed.
 Rotating Y scrambles brightness; rotating U/V scrambles hue and saturation.
-Reducing the bit depth before rotation creates lo-fi posterisation effects.
 Per-channel and global wet/dry blend controls allow the effect to be mixed with the original signal.
+
+A dark suppress threshold is set by switches S2/S3/S4 using different filter characteristics per channel. Y is a high-pass filter — values at or below the threshold are held at black rather than being rotated. U and V are notch filters — values within ±threshold of neutral 512 are held at neutral chroma rather than being rotated, leaving only pixels with strong colour to be processed. With all three switches off the full range is rotated.
 
 ## Notes
 
@@ -51,16 +52,16 @@ Once you understand one, the rest are easy.
 |  0 | Left      | Rotate bits left — applies to all channels             |
 |  1 | Right     | Rotate bits right — applies to all channels            |
 
-| S2 | S3 | S4 | Operation | Description               |
-|----|----|----|-----------|---------------------------|
-|  0 |  0 |  0 | 10-bit    | Full quality (no masking) |
-|  0 |  0 |  1 |  8-bit    | Mild crunch               |
-|  0 |  1 |  0 |  6-bit    | Lo-fi                     |
-|  0 |  1 |  1 |  5-bit    | Medium lo-fi              |
-|  1 |  0 |  0 |  4-bit    | Heavy crunch              |
-|  1 |  0 |  1 |  3-bit    | Very aggressive           |
-|  1 |  1 |  0 |  2-bit    | Extreme                   |
-|  1 |  1 |  1 |  1-bit    | Pure posterise            |
+| S2 | S3 | S4 | Y suppresses | UV suppresses | Description                                         |
+|----|----|----|--------------|---------------|-----------------------------------------------------|
+|  0 |  0 |  0 | nothing      | nothing       | All pass — full range rotated                       |
+|  0 |  0 |  1 | 0–3          | ±3            | Slight — removes noise floor only                   |
+|  0 |  1 |  0 | 0–15         | ±15           | Mild                                                |
+|  0 |  1 |  1 | 0–31         | ±31           | Moderate                                            |
+|  1 |  0 |  0 | 0–63         | ±63           | Strong                                              |
+|  1 |  0 |  1 | 0–127        | ±127          | Heavy                                               |
+|  1 |  1 |  0 | 0–255        | ±255          | Very heavy                                          |
+|  1 |  1 |  1 | 0–511        | ±511          | Extreme — Y > 50%, UV must be strongly coloured     |
 
 | S5 | Operation | Description                                            |
 |----|-----------|--------------------------------------------------------|
@@ -81,8 +82,8 @@ Once you understand one, the rest are easy.
 - **BRAM usage:** 0 block RAMs (no colour conversion)
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
-- **HD timing:** All six variants meet 74.25 MHz (worst case ~80 MHz)
-- **LC utilisation:** 5339–5344 of 7680 (~70%)
+- **HD timing:** All six HD variants meet 74.25 MHz (worst case ~78.76 MHz)
+- **LC utilisation:** 5408–5435 of 7680 (~71%)
 
 ## Hardware Requirements
 

@@ -4,16 +4,9 @@ A per-channel bit rotation video effect for the [LZX Industries Videomancer](htt
 
 ## Effect
 
-This is a flexible and powerful effect that provides a lot of creative control.
+Performs circular bit rotation (Left/Right) independently on the Red, Green, and Blue channels of the video signal. The input YUV signal is converted to RGB, the rotation is applied, and the result is converted back to YUV. Per-channel and global wet/dry blend controls allow the effect to be mixed with the original signal.
 
-The main processing allows for bit rotation of each colour channel using knobs 1, 2, and 3.
-The shifts are performed using a wrap-around and can be set independently for the Red, Green, and Blue channels.
-The knobs for rotation will not perform a shift when rotated either fully clockwise or fully counter-clockwise.
-
-Performs circular bit rotation (Left/Right) independently on the Red, Green, and Blue channels of the video signal.
-The input YUV signal is converted to RGB, the rotation is applied, and the result is converted back to YUV.
-Reducing the bit depth before rotation creates lo-fi posterisation effects.
-Per-channel and global wet/dry blend controls allow the effect to be mixed with the original signal.
+A dark suppress (high-pass) threshold is set by switches S2/S3/S4. Channels at or below the threshold are held at black rather than being rotated — this prevents the characteristic repeating pattern that appears in near-black regions when small pixel values have their low-order bits rotated into high-significance positions. Values above the threshold are rotated at full 10-bit quality with no bit reduction. With all three switches off the full range is rotated.
 
 ## Notes
 
@@ -51,16 +44,16 @@ Once you understand one, the rest are easy.
 |  0 | Left      | Rotate bits left — applies to all channels             |
 |  1 | Right     | Rotate bits right — applies to all channels            |
 
-| S2 | S3 | S4 | Operation | Description               |
-|----|----|----|-----------|---------------------------|
-|  0 |  0 |  0 | 10-bit    | Full quality (no masking) |
-|  0 |  0 |  1 |  8-bit    | Mild crunch               |
-|  0 |  1 |  0 |  6-bit    | Lo-fi                     |
-|  0 |  1 |  1 |  5-bit    | Medium lo-fi              |
-|  1 |  0 |  0 |  4-bit    | Heavy crunch              |
-|  1 |  0 |  1 |  3-bit    | Very aggressive           |
-|  1 |  1 |  0 |  2-bit    | Extreme                   |
-|  1 |  1 |  1 |  1-bit    | Pure posterise            |
+| S2 | S3 | S4 | Suppresses | Description                                    |
+|----|----|----|------------|------------------------------------------------|
+|  0 |  0 |  0 | nothing    | All pass — full range rotated                  |
+|  0 |  0 |  1 | 0–3        | Slight — removes noise floor only              |
+|  0 |  1 |  0 | 0–15       | Mild                                           |
+|  0 |  1 |  1 | 0–31       | Moderate                                       |
+|  1 |  0 |  0 | 0–63       | Strong                                         |
+|  1 |  0 |  1 | 0–127      | Heavy                                          |
+|  1 |  1 |  0 | 0–255      | Very heavy                                     |
+|  1 |  1 |  1 | 0–511      | Extreme — only values above 50% rotate         |
 
 | S5 | Operation | Description                                            |
 |----|-----------|--------------------------------------------------------|
@@ -81,8 +74,8 @@ Once you understand one, the rest are easy.
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
-- **HD timing:** All six variants meet 74.25 MHz (worst case ~81 MHz)
-- **LC utilisation:** 6026–6055 of 7680 (~79%)
+- **HD timing:** All six HD variants meet 74.25 MHz (worst case ~76.22 MHz)
+- **LC utilisation:** 6083–6089 of 7680 (~79%)
 
 ## Hardware Requirements
 

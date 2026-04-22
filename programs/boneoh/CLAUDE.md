@@ -195,6 +195,31 @@ programs/boneoh/rgb_bit_rotator/rgb_yuv_tables_pkg.vhd -> ../rgb_yuv_tables_pkg.
 
 ---
 
+## VHDL Pipeline Split Strategy
+
+When a pipeline stage fails timing due to chained carry chains, split it into two stages.
+
+**How to identify the split point:** Operations that are *independent* of each other (e.g. L1 add, L-inf compare, noise shift) are safe to pull into an earlier stage — they each have their own carry chain and don't share logic levels. Operations that *depend on both* results (e.g. `mid = (L1 + Linf) >> 1`) must wait in the later stage until both inputs are registered.
+
+**Cross-arm comparison placement:** Computing comparisons on *variables calculated in the same stage* chains carry chains with the preceding logic. The fix is to pass the full-precision values through as registered signals and compute the comparisons on them in the *next* stage. Example: arm membership tests that depend on `abs_dx`/`abs_dy` should not be computed in the same stage as the abs subtraction — register `abs_dx`/`abs_dy` and run the comparisons one stage later.
+
+**Prefer direct Edit calls over Python scripts for multi-step VHDL restructuring.** Python transformation scripts are fragile: if one step modifies text that a later step is searching for, the later step silently fails to match and the file is left unmodified with no error. Direct Edit calls are atomic and any mismatch is immediately visible as a tool error. Use scripts only for purely additive changes (e.g. inserting a new block at a known anchor that no other step touches).
+
+---
+
+## YUV Dark Suppress Filter Types
+
+When adding a dark suppress (threshold gate) to a YUV program, Y and U/V have different filter characteristics:
+
+- **Y — high-pass:** Y = 0 is black, Y = 1023 is white. Suppress values *at or below* the threshold (output 0). Pass values above. Standard high-pass in the amplitude domain.
+- **U/V — notch (band-stop):** U = V = 512 is neutral chroma (no colour). Suppress values *within ±threshold of 512* (output 512). Pass values *outside* that band. This is a notch filter centred on neutral — it leaves only pixels with strong colour to be processed.
+
+**Do not call U/V dark suppress "bandpass."** Bandpass passes the centre band and blocks the extremes — the opposite of what this gate does. Using the wrong term led to incorrect comments, TOML text, and README copy that had to be corrected after the fact. Notch or band-stop is correct.
+
+**Pre-register chroma neutral bounds.** To keep Stage 0b comparisons to one carry chain each, compute and register `s_neutral_plus = 512 + threshold` and `s_neutral_minus = 512 - threshold` in Stage 0a. The carry chains for the additions land in Stage 0a; Stage 0b comparisons then start from registered FFs with no chaining.
+
+---
+
 ## Toggle Switch Patterns
 
 **Switch naming layers** — there are three naming layers that must all agree:
@@ -269,3 +294,5 @@ architecture rgb_window_key of program_top is
 4/20/2026 Full improvement scan completed across all 8 programs (see program-improvement-scan.md). LFSR lockup-state diagnosis corrected (Fibonacci XOR, not Galois; all-zeros is the lockup state, not all-ones). TOML required fields rule added. Architecture naming convention added. Program list completed (yuv_bit_crush and yuv_bit_rotator were missing).
 4/20/2026 yuv_shape_key initial implementation written (yuv_shape_key.vhd + yuv_shape_key.toml). 10-clock pipeline; inline pixel counter; 4 shapes; Knob 6 3-mux norm; dither via norm-space bias; lfsr16 free-running. Pending: build and test.
 4/21/2026 Fixed get_bit_depth concatenation order bug in both bit rotators (s3&s2&s1 → s1&s2&s3). Added Toggle Switch Patterns section to CLAUDE.md. Consolidated YUV<->RGB LUT tables from all 4 RGB programs into shared rgb_yuv_tables_pkg.vhd (symlinked into each program directory); ~747 lines removed per program. Fixed Window Mask LFSR/PRNG texture (noise OR channel>>4 → channel OR noise>>4); removed LFSR/PRNG experimental flag from both window masks. Added Shared VHDL Package Files and LFSR/PRNG Texture Design sections to CLAUDE.md.
+4/21/2026 Fixed yuv_shape_key timing failure (62.45 MHz → 76.71 MHz worst-case HD): split Stage 4 into Stage 4a (L1 add + Linf max + noise shift, all independent) and Stage 4b (mid blend + norm mux + solid/dither tests); moved cross-arm comparisons from Stage 2 (on variables) to Stage 3 (on registered signals). Pipeline latency 10→11 clocks. Created yuv_shape_key README.md. Added VHDL Pipeline Split Strategy section to CLAUDE.md.
+4/22/2026 Added dark suppress (high-pass Y, notch U/V) to both bit rotators. rgb_bit_rotator v0.1.7: worst-case HD ~76.22 MHz, LC 6083–6089 (~79%). yuv_bit_rotator v0.1.7: worst-case HD ~78.76 MHz, LC 5408–5435 (~71%). Added YUV Dark Suppress Filter Types section to CLAUDE.md (notch vs bandpass terminology; pre-register neutral bounds pattern).

@@ -8,18 +8,19 @@
 #   - Per-channel wet/dry blend
 #   - Global wet/dry blend (applied after per-channel blend)
 #   - Global ROL/ROR direction switch
-#   - 3-switch bit depth mode (10, 8, 6, 5, 4, 3, 2, 1 bit)
+#   - 3-switch dark suppress (high-pass) threshold: values at or below threshold
+#     are held at black rather than rotated; values above rotate at full 10-bit quality
 #   - Bypass switch (last switch, follows Videomancer convention)
 
 [program]
 program_id = "com.peteappleby.rgb_bit_rotator"
 program_name = "RGB Bit Rotato"
-program_version = "0.1.6"
+program_version = "0.1.7"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
 category = "Video Processing"
-description = "Per-channel RGB bit rotation with blend and lo-fi bit depth modes"
+description = "Per-channel RGB bit rotation with blend and dark suppress threshold"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"
 
@@ -102,32 +103,33 @@ name_label = "Direction"
 value_labels = ["Left", "Right"]
 initial_value_label = "Left"
 
-# Bit depth mode: 3 switches = 8 combinations
-# Depth S1 (hardware S2) is the highest-impact switch; Depth S3 is a fine-tune step.
-# S1=Off S2=Off S3=Off -> 10-bit (full quality)
-# S1=Off S2=Off S3=On  ->  8-bit (Depth S3 alone: mild fine-tune)
-# S1=Off S2=On  S3=Off ->  6-bit (Depth S2 alone: visible)
-# S1=Off S2=On  S3=On  ->  5-bit (Depth S2 + S3)
-# S1=On  S2=Off S3=Off ->  4-bit (Depth S1 alone: heavy crunch)
-# S1=On  S2=Off S3=On  ->  3-bit (Depth S1 + S3)
-# S1=On  S2=On  S3=Off ->  2-bit (Depth S1 + S2: very aggressive)
-# S1=On  S2=On  S3=On  ->  1-bit (all on: extreme/pure posterise)
+# Dark suppress threshold: 3 switches = 8 cutoff levels (high-pass filter on channel value).
+# Cutoff S1 (hardware S2) is the highest-impact switch; Cutoff S3 is a fine step.
+# Channels at or below the threshold output zero; channels above rotate at full 10-bit quality.
+# S1=Off S2=Off S3=Off -> suppress nothing  (all pass)
+# S1=Off S2=Off S3=On  -> suppress 0–3      (slight: removes noise floor)
+# S1=Off S2=On  S3=Off -> suppress 0–15     (mild)
+# S1=Off S2=On  S3=On  -> suppress 0–31     (moderate)
+# S1=On  S2=Off S3=Off -> suppress 0–63     (strong)
+# S1=On  S2=Off S3=On  -> suppress 0–127    (heavy)
+# S1=On  S2=On  S3=Off -> suppress 0–255    (very heavy)
+# S1=On  S2=On  S3=On  -> suppress 0–511    (extreme: only values above 50% rotate)
 
 [[parameter]]
 parameter_id = "toggle_switch_8"
-name_label = "Depth S1"
+name_label = "Cutoff S1"
 value_labels = ["Off", "On"]
 initial_value_label = "Off"
 
 [[parameter]]
 parameter_id = "toggle_switch_9"
-name_label = "Depth S2"
+name_label = "Cutoff S2"
 value_labels = ["Off", "On"]
 initial_value_label = "Off"
 
 [[parameter]]
 parameter_id = "toggle_switch_10"
-name_label = "Depth S3"
+name_label = "Cutoff S3"
 value_labels = ["Off", "On"]
 initial_value_label = "Off"
 

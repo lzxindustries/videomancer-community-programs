@@ -29,7 +29,8 @@
 --     - B = clamp(Y + b_offset)
 --     (No division needed; offsets are pre-divided in the LUT)
 --
---   Stage 1 - Bit Depth Mask + Rotation (1 clock)
+--   Stage 1a - Bit Rotation + dark suppress threshold comparison (1 clock)
+--   Stage 1b - Dark suppress gate: zero channels at or below threshold (1 clock)
 --   Stage 2 - Per-Channel Blend (4 clocks, 3x interpolator_u)
 --   Stage 3 - Global Blend (4 clocks, 3x interpolator_u)
 --
@@ -65,9 +66,9 @@
 --   Register  5: B channel blend   (0=fully dry, 1023=fully wet) rotary_potentiometer_6
 --   Register  6: Packed toggle bits (one bit per switch):
 --     bit 0: Direction     (0=ROL, 1=ROR)          toggle_switch_7
---     bit 1: Bit depth S1  (0=Off, 1=On)           toggle_switch_8
---     bit 2: Bit depth S2  (0=Off, 1=On)           toggle_switch_9
---     bit 3: Bit depth S3  (0=Off, 1=On)           toggle_switch_10
+--     bit 1: Cutoff S1  (MSB, 0=Off, 1=On)         toggle_switch_8
+--     bit 2: Cutoff S2  (0=Off, 1=On)              toggle_switch_9
+--     bit 3: Cutoff S3  (LSB, 0=Off, 1=On)         toggle_switch_10
 --     bit 4: Bypass enable (0=Process, 1=Bypass)   toggle_switch_11
 --   Register  7: Global blend  (0=fully dry, 1023=fully wet) linear_potentiometer_12
 --
@@ -149,23 +150,6 @@ architecture rgb_bit_rotator of program_top is
         end if;
     end function;
 
-    function apply_mask(value : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
-                        depth : integer)
-        return unsigned is
-    begin
-        case depth is
-            when 10    => return value;
-            when 8     => return value and to_unsigned(16#3FC#, C_VIDEO_DATA_WIDTH);
-            when 6     => return value and to_unsigned(16#3F0#, C_VIDEO_DATA_WIDTH);
-            when 5     => return value and to_unsigned(16#3E0#, C_VIDEO_DATA_WIDTH);
-            when 4     => return value and to_unsigned(16#3C0#, C_VIDEO_DATA_WIDTH);
-            when 3     => return value and to_unsigned(16#380#, C_VIDEO_DATA_WIDTH);
-            when 2     => return value and to_unsigned(16#300#, C_VIDEO_DATA_WIDTH);
-            when 1     => return value and to_unsigned(16#200#, C_VIDEO_DATA_WIDTH);
-            when others => return value;
-        end case;
-    end function;
-
     function rol10(value : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
                    n     : integer)
         return unsigned is
@@ -198,39 +182,22 @@ architecture rgb_bit_rotator of program_top is
         end if;
     end function;
 
-    -- Bit order: s1 (Depth S1 / hardware S2) is MSB, s3 (Depth S3 / hardware S4) is LSB.
-    -- This makes Depth S1 the highest-impact switch (4-bit alone) and Depth S3 a
-    -- fine-tune step.  With Depth S3 off, Depth S1 and Depth S2 alone give 4-bit and
-    -- 6-bit effects that are clearly visible in rotating content.
-    function get_bit_depth(s1, s2, s3 : std_logic) return integer is
+    -- Dark suppress threshold: values <= threshold are gated to zero before output.
+    -- s1 (Cutoff S1 / hardware S2) is MSB — highest-impact switch.
+    -- 000 = all pass; each step doubles the suppressed range.
+    function get_threshold(s1, s2, s3 : std_logic)
+        return unsigned is
     begin
         case std_logic_vector'(s1 & s2 & s3) is
-            when "000"  => return 10;  -- all off: full quality
-            when "001"  => return 8;   -- Depth S3 alone: mild fine-tune
-            when "010"  => return 6;   -- Depth S2 alone: visible
-            when "011"  => return 5;   -- Depth S2 + S3
-            when "100"  => return 4;   -- Depth S1 alone: heavy
-            when "101"  => return 3;   -- Depth S1 + S3
-            when "110"  => return 2;   -- Depth S1 + S2: very aggressive
-            when "111"  => return 1;   -- all on: extreme
-            when others => return 10;
-        end case;
-    end function;
-
-    -- Returns the 10-bit AND mask corresponding to a bit depth.
-    -- Pre-registering this in Stage 0a removes the case statement from Stage 0b's
-    -- critical path, leaving only: data -> rol/ror mux -> AND registered_mask -> reg.
-    function depth_to_mask(depth : integer) return unsigned is
-    begin
-        case depth is
-            when 8      => return to_unsigned(16#3FC#, C_VIDEO_DATA_WIDTH);
-            when 6      => return to_unsigned(16#3F0#, C_VIDEO_DATA_WIDTH);
-            when 5      => return to_unsigned(16#3E0#, C_VIDEO_DATA_WIDTH);
-            when 4      => return to_unsigned(16#3C0#, C_VIDEO_DATA_WIDTH);
-            when 3      => return to_unsigned(16#380#, C_VIDEO_DATA_WIDTH);
-            when 2      => return to_unsigned(16#300#, C_VIDEO_DATA_WIDTH);
-            when 1      => return to_unsigned(16#200#, C_VIDEO_DATA_WIDTH);
-            when others => return to_unsigned(16#3FF#, C_VIDEO_DATA_WIDTH); -- 10-bit: pass through
+            when "000"  => return to_unsigned(0,   C_VIDEO_DATA_WIDTH);  -- all pass
+            when "001"  => return to_unsigned(3,   C_VIDEO_DATA_WIDTH);  -- suppress 0–3
+            when "010"  => return to_unsigned(15,  C_VIDEO_DATA_WIDTH);  -- suppress 0–15
+            when "011"  => return to_unsigned(31,  C_VIDEO_DATA_WIDTH);  -- suppress 0–31
+            when "100"  => return to_unsigned(63,  C_VIDEO_DATA_WIDTH);  -- suppress 0–63
+            when "101"  => return to_unsigned(127, C_VIDEO_DATA_WIDTH);  -- suppress 0–127
+            when "110"  => return to_unsigned(255, C_VIDEO_DATA_WIDTH);  -- suppress 0–255
+            when "111"  => return to_unsigned(511, C_VIDEO_DATA_WIDTH);  -- suppress 0–511
+            when others => return to_unsigned(0,   C_VIDEO_DATA_WIDTH);
         end case;
     end function;
 
@@ -277,9 +244,9 @@ architecture rgb_bit_rotator of program_top is
     --------------------------------------------------------------------------------
     signal s_bypass_enable  : std_logic;
     signal s_direction      : std_logic;
-    signal s_bit_depth_s1   : std_logic;
-    signal s_bit_depth_s2   : std_logic;
-    signal s_bit_depth_s3   : std_logic;
+    signal s_cutoff_s1      : std_logic;
+    signal s_cutoff_s2      : std_logic;
+    signal s_cutoff_s3      : std_logic;
     signal s_blend_r        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_blend_g        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_blend_b        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -324,7 +291,7 @@ architecture rgb_bit_rotator of program_top is
     signal s_eff_shift_r : integer range 0 to 9 := 0;
     signal s_eff_shift_g : integer range 0 to 9 := 0;
     signal s_eff_shift_b : integer range 0 to 9 := 0;
-    signal s_mask_r      : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '1');
+    signal s_threshold   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
 
     --------------------------------------------------------------------------------
     -- Stage 0b: YUV->RGB Accumulate Outputs (T+2)
@@ -337,12 +304,16 @@ architecture rgb_bit_rotator of program_top is
     --------------------------------------------------------------------------------
     -- Stage 1: Rotation Outputs (T+3)
     --------------------------------------------------------------------------------
-    -- Stage 0c: Rotation outputs (T+3) — rotation only, mask not yet applied
+    -- Stage 1a: Rotation outputs (T+3) — rotation + per-channel above-threshold flags
     signal s_rotated_pre_r     : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_rotated_pre_g     : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_rotated_pre_b     : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_rotated_pre_valid : std_logic;
-    -- Stage 0d: Mask outputs (T+4) — AND with pre-registered mask
+    -- Per-channel above-threshold flags (registered alongside rotation in Stage 1a)
+    signal s_above_r           : std_logic := '0';
+    signal s_above_g           : std_logic := '0';
+    signal s_above_b           : std_logic := '0';
+    -- Stage 1b: Dark suppress gate (T+4) — zero out channels at or below threshold
     signal s_rotated_r      : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_rotated_g      : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_rotated_b      : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -442,9 +413,9 @@ begin
     s_blend_g       <= unsigned(registers_in(4));
     s_blend_b       <= unsigned(registers_in(5));
     s_direction     <= registers_in(6)(0);   -- toggle_switch_7: 0=ROL, 1=ROR
-    s_bit_depth_s1  <= registers_in(6)(1);   -- toggle_switch_8: 0=Off, 1=On
-    s_bit_depth_s2  <= registers_in(6)(2);   -- toggle_switch_9: 0=Off, 1=On
-    s_bit_depth_s3  <= registers_in(6)(3);   -- toggle_switch_10: 0=Off, 1=On
+    s_cutoff_s1     <= registers_in(6)(1);   -- toggle_switch_8: 0=Off, 1=On
+    s_cutoff_s2     <= registers_in(6)(2);   -- toggle_switch_9: 0=Off, 1=On
+    s_cutoff_s3     <= registers_in(6)(3);   -- toggle_switch_10: 0=Off, 1=On
     s_bypass_enable <= registers_in(6)(4);   -- toggle_switch_11: 0=Process, 1=Bypass
     s_global_blend  <= unsigned(registers_in(7));  -- linear_potentiometer_12
 
@@ -475,8 +446,8 @@ begin
             s_eff_shift_r <= to_eff_shift(raw_to_shift(unsigned(registers_in(0))), registers_in(6)(0));
             s_eff_shift_g <= to_eff_shift(raw_to_shift(unsigned(registers_in(1))), registers_in(6)(0));
             s_eff_shift_b <= to_eff_shift(raw_to_shift(unsigned(registers_in(2))), registers_in(6)(0));
-            s_mask_r      <= depth_to_mask(get_bit_depth(registers_in(6)(1), registers_in(6)(2),
-                                           registers_in(6)(3)));
+            s_threshold   <= get_threshold(registers_in(6)(1), registers_in(6)(2),
+                                           registers_in(6)(3));
         end if;
     end process p_yuv_rgb_lut;
 
@@ -529,14 +500,12 @@ begin
     end process p_yuv_rgb_acc;
 
     --------------------------------------------------------------------------------
-    -- Stage 1a: Bit Rotation
+    -- Stage 1a: Bit Rotation + Dark Suppress Threshold Comparison
     -- Latency: 1 clock. Input T+2, output T+3.
-    -- Critical path: data -> 10-way ROL mux -> register.
-    -- Direction is pre-folded into s_eff_shift_* in Stage 0a so only a single
-    -- 10-way ROL mux is needed here (saves ~1 LUT level vs the old 20-way
-    -- ROL/ROR mux).  The blanking else-branch is also removed: the interpolators
-    -- downstream use enable=s_rotated_valid so they hold their last value during
-    -- blanking, making the rotated blanking data unobservable at the output.
+    -- Critical path: data -> 10-way ROL mux -> register (same as before).
+    -- Above-threshold flags are registered in parallel: 10-bit comparator on
+    -- registered inputs, independent of the ROL mux critical path.
+    -- Stage 1b uses the flags to gate the output (pure mux, no carry chain).
     --------------------------------------------------------------------------------
     p_rotation_stage : process(clk)
     begin
@@ -544,26 +513,34 @@ begin
             s_rotated_pre_r <= rol10(s_rgb_r, s_eff_shift_r);
             s_rotated_pre_g <= rol10(s_rgb_g, s_eff_shift_g);
             s_rotated_pre_b <= rol10(s_rgb_b, s_eff_shift_b);
+            -- Per-channel above-threshold flags: registered here alongside rotation.
+            -- Stage 1b uses these to gate the rotated output; this keeps each stage
+            -- at one carry-chain level (comparator here, mux in Stage 1b).
+            s_above_r <= '1' when s_rgb_r > s_threshold else '0';
+            s_above_g <= '1' when s_rgb_g > s_threshold else '0';
+            s_above_b <= '1' when s_rgb_b > s_threshold else '0';
             s_rotated_pre_valid <= s_rgb_valid;
         end if;
     end process p_rotation_stage;
 
     --------------------------------------------------------------------------------
-    -- Stage 1b: Bit Depth Masking
+    -- Stage 1b: Dark Suppress Gate
     -- Latency: 1 clock. Input T+3, output T+4.
-    -- Critical path: registered_pre -> AND registered_mask -> register.
-    -- Splitting rotation and masking into separate stages keeps each critical
-    -- path short enough to meet the 74.25 MHz HD timing requirement.
+    -- Critical path: registered_pre -> 2:1 mux on registered_above_flag -> register.
+    -- Values above threshold pass the full 10-bit rotated value (no bit reduction).
+    -- Values at or below threshold output zero, preserving dark regions as black.
     --------------------------------------------------------------------------------
-    p_mask_stage : process(clk)
+    p_suppress_stage : process(clk)
     begin
         if rising_edge(clk) then
-            s_rotated_r <= s_rotated_pre_r and s_mask_r;
-            s_rotated_g <= s_rotated_pre_g and s_mask_r;
-            s_rotated_b <= s_rotated_pre_b and s_mask_r;
+            -- Gate each channel: pass rotated value if above threshold, else zero.
+            -- Full 10-bit rotation is preserved for values above the cutoff.
+            s_rotated_r <= s_rotated_pre_r when s_above_r = '1' else (others => '0');
+            s_rotated_g <= s_rotated_pre_g when s_above_g = '1' else (others => '0');
+            s_rotated_b <= s_rotated_pre_b when s_above_b = '1' else (others => '0');
             s_rotated_valid <= s_rotated_pre_valid;
         end if;
-    end process p_mask_stage;
+    end process p_suppress_stage;
 
     --------------------------------------------------------------------------------
     -- Stage 2: Per-Channel Wet/Dry Blend
