@@ -1,0 +1,160 @@
+# Copyright (C) 2026 Pete Appleby
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# YUV Window Mask Program Configuration
+#
+# Effect: Per-channel window masking operating directly in YUV space (no colour
+#   conversion). For each channel, a Lower and Upper knob define a threshold window.
+#   Inverting: when a channel's Lower knob exceeds its Upper knob, that channel's
+#   window inverts automatically — no extra switch needed.
+#
+#   Show Matte Off (S1 Off) — Normal mode:
+#     Each output channel is independently gated by its own window check.
+#     A passing channel outputs its original value; a failing channel outputs 0
+#     (Y) or 512 (U/V — neutral chroma). S2/S3/S4 are ignored in this mode.
+#
+#   Show Matte On (S1 On) — Matte mode:
+#     A combined matte is computed from S2/S3/S4 (3-bit word, S2=MSB, S4=LSB)
+#     and output as Y=matte, U=V=512 (neutral chroma, true monochrome).
+#     0,0,0  Logical OR    — white if any channel in-window, else black
+#     0,0,1  Bitwise OR    — OR of channel values; failing channels contribute 0
+#     0,1,0  Logical AND   — white if all channels in-window, else black  (default)
+#     0,1,1  Bitwise AND   — AND of channel values; failing channels contribute 0
+#     1,0,0  Luma          — Y value passed directly, gated by logical AND
+#     1,0,1  LFSR synced   — frame-locked noise, gated by logical AND
+#     1,1,0  PRNG          — free-running noise, gated by logical AND
+#     1,1,1  Passthrough   — original Y/U/V pixel (only active in Matte mode)
+
+[program]
+program_id = "com.peteappleby.yuv_window_mask"
+program_name = "YUV Window Mask"
+program_version = "0.1.6"
+abi_version = ">=1.0,<2.0"
+author = "Pete Appleby"
+license = "GPL-3.0"
+category = "Video Processing"
+description = "Per-channel YUV window masking with independent channel gating and 8 matte modes"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# ---------------------------------------------------------------------------
+# KNOBS (Rotary Potentiometers)
+# ---------------------------------------------------------------------------
+
+# Lower thresholds per channel
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Y Low"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "U Low"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "V Low"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+# Upper thresholds per channel
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Y High"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "U High"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "V High"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+# ---------------------------------------------------------------------------
+# SWITCHES (Toggle Switches)
+# ---------------------------------------------------------------------------
+
+# Switch 1: Show Matte — AND-combined monochrome matte for previewing the key
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Show Matte"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Switch 2: Matte Bit 2 (MSB of matte mode word — see mode table above)
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Matte Bit 2"
+value_labels = ["0", "1"]
+initial_value_label = "0"
+
+# Switch 3: Matte Bit 1 (middle bit of matte mode word)
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Matte Bit 1"
+value_labels = ["0", "1"]
+initial_value_label = "1"
+
+# Switch 4: Matte Bit 0 (LSB of matte mode word)
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Matte Bit 0"
+value_labels = ["0", "1"]
+initial_value_label = "0"
+
+# Switch 5: Fine mode — half-sensitivity for precise threshold adjustment
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Fine"
+value_labels = ["Normal", "Fine"]
+initial_value_label = "Normal"
+
+# ---------------------------------------------------------------------------
+# SLIDER (Linear Potentiometer)
+# ---------------------------------------------------------------------------
+
+# Global blend: fade between original (dry) and keyed (wet) output
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Global Blend"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"

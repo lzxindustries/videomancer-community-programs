@@ -23,7 +23,7 @@
 [program]
 program_id = "com.peteappleby.rgb_bit_crush"
 program_name = "RGB Bit Crush"
-program_version = "0.1.1"
+program_version = "0.1.5"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"

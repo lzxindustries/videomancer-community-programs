@@ -9,6 +9,7 @@ out/
 *.swo
 *~
 .DS_Store
+*.txt
 
 # Temporary files
 *.tmp
