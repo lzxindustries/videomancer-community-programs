@@ -26,7 +26,7 @@ program_version = "0.1.1"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Video Processing"
+category = "Color"
 description = "YUV bit crushing with Y brightness trim, dither, and per-channel round/blend"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"

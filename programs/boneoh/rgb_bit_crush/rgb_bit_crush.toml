@@ -27,7 +27,7 @@ program_version = "0.1.1"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Video Processing"
+category = "Color"
 description = "Per-channel RGB bit crushing with per-channel round/truncate and blend"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"

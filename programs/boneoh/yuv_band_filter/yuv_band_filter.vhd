@@ -8,6 +8,17 @@
 --   Pete Appleby
 --
 -- Overview:
+--   Dual-function processor: per-channel YUV multi-mode filter + window keying.
+--
+--   PRIMARY FUNCTION: Multi-Mode Filtering
+--   Per-channel frequency-domain filtering in YUV space using four filter types
+--   controlled independently by knob settings:
+--     - Low Pass:  attenuates frequencies above threshold
+--     - High Pass: attenuates frequencies below threshold
+--     - Band Pass: isolates frequencies between Low/High thresholds
+--     - Notch:     rejects frequencies between Low/High thresholds
+--
+--   SECONDARY FUNCTION: Window Keying / Matte Processing
 --   Per-channel window keying operating directly in YUV space.  For each channel
 --   (Y, U, V) a lower and upper threshold knob define a window.  When the lower
 --   threshold exceeds the upper threshold the window inverts automatically for that

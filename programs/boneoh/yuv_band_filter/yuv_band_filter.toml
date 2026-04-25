@@ -1,11 +1,20 @@
 # Copyright (C) 2026 Pete Appleby
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# YUV Window Key Program Configuration
+# YUV Band Filter Program Configuration
 #
-# Effect: Per-channel window keying operating directly in YUV space (no colour
+# Dual Function: Per-channel YUV filter and matte generation processor.
+#
+# PRIMARY: Multi-Mode Filtering (per-channel, knob-controlled)
+#   - Low Pass: attenuates frequencies above threshold
+#   - High Pass: attenuates frequencies below threshold
+#   - Band Pass: isolates band between Low/High thresholds
+#   - Notch: rejects band between Low/High thresholds
+#
+# SECONDARY: Matte Generation
+#   Per-channel matte generation operating directly in YUV space (no colour
 #   conversion). For each channel, a Lower and Upper knob define a threshold window.
-#   Inverting the key: when a channel's Lower knob exceeds its Upper knob, that
+#   Inverting the matte: when a channel's Lower knob exceeds its Upper knob, that
 #   channel's window inverts automatically — no extra switch needed.
 #
 #   Matte Mode (S2/S3/S4 as a 3-bit word, S2=MSB, S4=LSB):
@@ -16,20 +25,20 @@
 #     1,0,0  Luma          — Y value passed directly, gated by logical AND
 #     1,0,1  LFSR synced   — frame-locked noise, gated by logical OR
 #     1,1,0  PRNG          — free-running noise, gated by logical OR
-#     1,1,1  Passthrough   — original Y/U/V pixel (no keying)
+#     1,1,1  Passthrough   — original Y/U/V pixel (no matte generation)
 #
 #   Show Matte (S1 On): Y = matte value; U/V = 512 (neutral chroma, true monochrome).
 #   Show Matte (S1 Off): matte > 0 passes original Y/U/V; matte = 0 → black.
 
 [program]
-program_id = "com.peteappleby.yuv_window_key"
-program_name = "YUV Window Key"
+program_id = "com.peteappleby.yuv_band_filter"
+program_name = "YUV Band Filter"
 program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Video Processing"
-description = "Per-channel YUV window keying with 8 matte modes and global blend"
+category = "Color"
+description = "Dual-function YUV processor: per-channel multi-mode filtering and matte generation with 8 matte modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"
 
@@ -105,7 +114,7 @@ suffix_label = "%"
 # SWITCHES (Toggle Switches)
 # ---------------------------------------------------------------------------
 
-# Switch 1: Show Matte — AND-combined monochrome matte for previewing the key
+# Switch 1: Show Matte — outputs the matte as monochrome for previewing the selected region
 [[parameter]]
 parameter_id = "toggle_switch_7"
 name_label = "Show Matte"
@@ -144,7 +153,7 @@ initial_value_label = "Normal"
 # SLIDER (Linear Potentiometer)
 # ---------------------------------------------------------------------------
 
-# Global blend: fade between original (dry) and keyed (wet) output
+# Global blend: fade between original (dry) and filtered (wet) output
 [[parameter]]
 parameter_id = "linear_potentiometer_12"
 name_label = "Global Blend"

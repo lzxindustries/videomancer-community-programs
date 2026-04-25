@@ -1,12 +1,20 @@
 # Copyright (C) 2026 Pete Appleby
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# RGB Window Key Program Configuration
+# RGB Band Filter Program Configuration
 #
-# Effect: Per-channel window keying operating in RGB space (full BT.601 YUV<->RGB
-#   conversion). For each channel, a Lower and Upper knob define a threshold window.
-#   Inverting the key: when a channel's Lower knob exceeds its Upper knob, the window
-#   inverts automatically — no extra switch needed.
+# Dual Function: Per-channel RGB filter and matte generation processor.
+#
+# PRIMARY: Multi-Mode Filtering (per-channel, knob-controlled)
+#   - Low Pass: attenuates frequencies above threshold
+#   - High Pass: attenuates frequencies below threshold
+#   - Band Pass: isolates band between Low/High thresholds
+#   - Notch: rejects band between Low/High thresholds
+#
+# SECONDARY: Matte Generation
+#   Operates in RGB space (full BT.601 YUV<->RGB conversion). For each channel,
+#   a Lower and Upper knob define a threshold window. When the lower knob exceeds
+#   the upper knob, the window inverts automatically — no extra switch needed.
 #
 #   Matte Mode (S2/S3/S4 as a 3-bit word, S2=MSB, S4=LSB):
 #     0,0,0  Logical OR    — white if any channel in-window, else black
@@ -16,20 +24,20 @@
 #     1,0,0  Luma          — BT.601 luma of the pixel, gated by logical AND
 #     1,0,1  LFSR synced   — frame-locked noise, gated by logical OR
 #     1,1,0  PRNG          — free-running noise, gated by logical OR
-#     1,1,1  Passthrough   — original pixel (no keying)
+#     1,1,1  Passthrough   — original pixel (no matte generation)
 #
 #   Show Matte (S1 On): outputs the matte as greyscale on all channels.
 #   Show Matte (S1 Off): matte > 0 passes the original pixel; matte = 0 → black.
 
 [program]
-program_id = "com.peteappleby.rgb_window_key"
-program_name = "RGB Window Key"
+program_id = "com.peteappleby.rgb_band_filter"
+program_name = "RGB Band Filter"
 program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Video Processing"
-description = "Per-channel RGB window keying with 8 matte modes and global blend"
+category = "Color"
+description = "Dual-function RGB processor: per-channel multi-mode filtering and matte generation with 8 matte modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"
 
@@ -105,7 +113,7 @@ suffix_label = "%"
 # SWITCHES (Toggle Switches)
 # ---------------------------------------------------------------------------
 
-# Switch 1: Show Matte — outputs white/black matte for previewing the key region
+# Switch 1: Show Matte — outputs the matte as greyscale for previewing the selected region
 [[parameter]]
 parameter_id = "toggle_switch_7"
 name_label = "Show Matte"
@@ -144,7 +152,7 @@ initial_value_label = "Normal"
 # SLIDER (Linear Potentiometer)
 # ---------------------------------------------------------------------------
 
-# Global blend: fade between original (dry) and keyed (wet) output
+# Global blend: fade between original (dry) and filtered (wet) output
 [[parameter]]
 parameter_id = "linear_potentiometer_12"
 name_label = "Global Blend"
