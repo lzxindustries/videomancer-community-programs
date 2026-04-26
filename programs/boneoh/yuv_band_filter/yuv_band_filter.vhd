@@ -2,7 +2,7 @@
 -- SPDX-License-Identifier: GPL-3.0-only
 --
 -- Program Name:
---   YUV Window Key
+--   YUV Band Filter
 --
 -- Author:
 --   Pete Appleby
@@ -43,10 +43,11 @@
 --   No colour space conversion is performed; processing is entirely in YUV.
 --
 -- Architecture:
---   Stage 0   - Control decode + data register + comparisons  (1 clock) -> T+1
---   Stage 1a  - Window flag register (LUT-only)               (1 clock) -> T+2
---   Stage 1b  - Matte computation + output                    (1 clock) -> T+3
---   Stage 2   - Global Blend (3x interpolator_u)             (4 clocks) -> T+7
+--   Stage 0a  - Fine mode arithmetic + control decode         (1 clock) -> T+1
+--   Stage 0b  - Data register + comparison pre-computes       (1 clock) -> T+2
+--   Stage 1a  - Window flag register (LUT-only)               (1 clock) -> T+3
+--   Stage 1b  - Matte computation + output                    (1 clock) -> T+4
+--   Stage 2   - Global Blend (3x interpolator_u)             (4 clocks) -> T+8
 --
 -- Videomancer UV Convention Note:
 --   data_in.u / data_out.u = Cr (red-difference);  data_in.v / data_out.v = Cb.
@@ -76,8 +77,8 @@
 --   Switching back to Normal restores full-range control immediately.
 --
 -- Timing:
---   Total pipeline latency: 7 clock cycles.
---   Sync delay line is 7 clocks.
+--   Total pipeline latency: 8 clock cycles.
+--   Sync delay line is 8 clocks.
 --------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
@@ -88,10 +89,10 @@ use work.core_pkg.all;
 use work.video_stream_pkg.all;
 use work.video_timing_pkg.all;
 
-architecture yuv_window_key of program_top is
+architecture yuv_band_filter of program_top is
 
-    constant C_PROCESSING_DELAY_CLKS : integer := 7;
-    constant C_PRE_GLOBAL_DELAY_CLKS : integer := 2;   -- 2-clock registered dry tap (Stage 0 + Stage 1a)
+    constant C_PROCESSING_DELAY_CLKS : integer := 8;
+    constant C_PRE_GLOBAL_DELAY_CLKS : integer := 3;   -- 3-clock registered dry tap (Stage 0a + Stage 0b + Stage 1a)
 
     --------------------------------------------------------------------------------
     -- Functions
@@ -158,8 +159,10 @@ architecture yuv_window_key of program_top is
     signal s_high_y         : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '1');
     signal s_high_u         : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '1');
     signal s_high_v         : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '1');
-    signal s_show_matte     : std_logic := '0';  -- '1' = On/Show Matte
-    signal s_matte_mode     : std_logic_vector(2 downto 0) := "010";  -- default: Logical AND
+    signal s_show_matte     : std_logic := '0';  -- '1' = On/Show Matte (Stage 0a output)
+    signal s_matte_mode     : std_logic_vector(2 downto 0) := "010";  -- default: Logical AND (Stage 0a output)
+    signal s_show_matte_d1  : std_logic := '0';  -- Stage 0b registered delay
+    signal s_matte_mode_d1  : std_logic_vector(2 downto 0) := "010";  -- Stage 0b registered delay
     -- LFSR / PRNG noise generators for matte modes 101 and 110
     signal s_vsync_n_d      : std_logic := '1';  -- registered vsync_n for edge detect
     signal s_hsync_n_d      : std_logic := '1';  -- registered hsync_n for edge detect
@@ -169,7 +172,9 @@ architecture yuv_window_key of program_top is
                                           := "0011001100";
 
     --------------------------------------------------------------------------------
-    -- Stage 0: Control Decode + Data Register Outputs (T+1)
+    -- Stage 0b: Data Register + Comparison Pre-compute Outputs (T+2)
+    -- data_in Y/U/V registered here; comparisons run against Stage 0a registered
+    -- thresholds (s_low_*/s_high_*) so no fine_knob carry chains in this stage.
     --------------------------------------------------------------------------------
     signal s_y_d1           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0)
                                           := (others => '0');
@@ -180,7 +185,7 @@ architecture yuv_window_key of program_top is
     signal s_avid_d1        : std_logic := '0';
 
     --------------------------------------------------------------------------------
-    -- Stage 0: Pre-computed LFSR/PRNG XOR Y (T+1)
+    -- Stage 0b: Pre-computed LFSR/PRNG XOR Y (T+2)
     -- Computed alongside data_in registration to keep Stage 1a critical path
     -- free of XOR logic.
     --------------------------------------------------------------------------------
@@ -188,12 +193,9 @@ architecture yuv_window_key of program_top is
     signal s_prng_xor_y_d1  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
 
     --------------------------------------------------------------------------------
-    -- Stage 0: Window Comparison Pre-compute Outputs (T+1)
-    -- Carry chains (10-bit comparisons) are computed in p_control_decode alongside
-    -- data registration so Stage 1a is pure LUT logic (no carry chains).
-    -- Compares data_in against the PREVIOUS clock's threshold values (s_low_y etc.
-    -- retain their registered values inside the process that drives them).
-    -- Threshold lag is 1 clock — imperceptible at knob-turn speeds.
+    -- Stage 0b: Window Comparison Pre-compute Outputs (T+2)
+    -- Carry chains (10-bit comparisons) against Stage 0a registered thresholds.
+    -- Stage 0a isolates fine_knob carry chains; this stage has comparisons only.
     --------------------------------------------------------------------------------
     signal s_pb_y_ge_low    : std_logic := '0';  -- data_in.y >= s_low_y[T-1]
     signal s_pb_y_le_high   : std_logic := '0';  -- data_in.y <= s_high_y[T-1]
@@ -206,9 +208,9 @@ architecture yuv_window_key of program_top is
     signal s_pb_lo_le_hi_v  : std_logic := '0';
 
     --------------------------------------------------------------------------------
-    -- Stage 1a: Window Flag Register Outputs (T+2)
-    -- Pure LUT logic: combines pre-registered comparison bits from Stage 0.
-    -- No carry chains — Stage 0 holds all comparison carry logic.
+    -- Stage 1a: Window Flag Register Outputs (T+3)
+    -- Pure LUT logic: combines pre-registered comparison bits from Stage 0b.
+    -- No carry chains — Stage 0b holds all comparison carry logic.
     --------------------------------------------------------------------------------
     signal s_wf_in_y        : std_logic := '0';
     signal s_wf_in_u        : std_logic := '0';
@@ -222,13 +224,13 @@ architecture yuv_window_key of program_top is
     signal s_wf_u           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_wf_v           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_wf_avid        : std_logic := '0';
-    signal s_wf_show_matte  : std_logic := '0';
-    signal s_wf_matte_mode  : std_logic_vector(2 downto 0) := "010";
+    signal s_wf_show_matte  : std_logic := '0';  -- registered from s_show_matte_d1
+    signal s_wf_matte_mode  : std_logic_vector(2 downto 0) := "010";  -- registered from s_matte_mode_d1
     signal s_wf_lfsr_xor_y  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_wf_prng_xor_y  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
 
     --------------------------------------------------------------------------------
-    -- Stage 1b: Window Key Outputs (T+3)
+    -- Stage 1b: Window Key Outputs (T+4)
     --------------------------------------------------------------------------------
     signal s_processed_y    : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_processed_u    : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -236,8 +238,8 @@ architecture yuv_window_key of program_top is
     signal s_processed_valid : std_logic;
 
     --------------------------------------------------------------------------------
-    -- Stage 2: Global Blend Outputs (T+7)
-    -- Dry input: original data delayed to T+3 (2 clocks after Stage 0)
+    -- Stage 2: Global Blend Outputs (T+8)
+    -- Dry input: original data delayed to T+4 (3 clocks after Stage 0a)
     --------------------------------------------------------------------------------
     signal s_y_for_global   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_u_for_global   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -251,7 +253,7 @@ architecture yuv_window_key of program_top is
     signal s_global_v_valid : std_logic;
 
     --------------------------------------------------------------------------------
-    -- Sync Delay Line (7 clocks — aligns hsync/vsync/field with pipeline output)
+    -- Sync Delay Line (8 clocks — aligns hsync/vsync/field with pipeline output)
     --------------------------------------------------------------------------------
     signal s_hsync_n_delayed : std_logic;
     signal s_vsync_n_delayed : std_logic;
@@ -265,43 +267,22 @@ begin
     s_global_blend  <= unsigned(registers_in(7));  -- linear_potentiometer_12
 
     --------------------------------------------------------------------------------
-    -- Stage 0: Control Decode + Data Register
+    -- Stage 0a: Fine Mode Arithmetic + Control Decode + Pixel Registration
     -- Latency: 1 clock. Input T+0, output T+1.
-    -- Registers all threshold knobs, switches, and the data_in Y/U/V samples
-    -- in one clock so that controls and data arrive at Stage 1a together.
-    -- Also pre-computes the 9 window comparison bits (carry chains) and the
-    -- LFSR/PRNG XOR Y values so that Stage 1a is pure LUT logic.
+    -- Computes and registers the 6 threshold values (fine_knob carry chains here),
+    -- switches, fine mode edge detection, and raw pixel data registration.
+    -- Registering data_in.y/u/v here keeps their fan-out off the comparison carry
+    -- chains in Stage 0b — all Stage 0b inputs are registered FF outputs.
     -- Hardware switch polarity: Off='0', On='1' (direct bit value).
-    --
-    -- Note on comparison timing: s_low_y / s_high_y etc. are written in this same
-    -- process, so reads of those signals inside the process see their PREVIOUS
-    -- registered values (VHDL signal semantics).  The comparison therefore uses the
-    -- threshold from one clock ago, giving a 1-clock lag that is invisible at
-    -- knob-turn speeds.  data_in.y/u/v are compared directly (no extra pipeline hop).
     --------------------------------------------------------------------------------
     p_control_decode : process(clk)
     begin
         if rising_edge(clk) then
-            -- Data
+            -- Register pixel data — isolates raw port fan-out from Stage 0b comparisons
             s_y_d1    <= data_in.y;
             s_u_d1    <= data_in.u;
             s_v_d1    <= data_in.v;
             s_avid_d1 <= data_in.avid;
-            -- Pre-compute LFSR/PRNG XOR Y so Stage 1a has no XOR carry logic.
-            s_lfsr_xor_y_d1 <= unsigned(s_lfsr) xor unsigned(data_in.y);
-            s_prng_xor_y_d1 <= unsigned(s_prng) xor unsigned(data_in.y);
-            -- Pre-compute per-channel window comparison bits (carry chains here,
-            -- not in Stage 1a).  Reads current s_low_*/s_high_* (previous clock's
-            -- registered values) vs data_in port inputs.
-            if unsigned(data_in.y) >= s_low_y  then s_pb_y_ge_low   <= '1'; else s_pb_y_ge_low   <= '0'; end if;
-            if unsigned(data_in.y) <= s_high_y then s_pb_y_le_high  <= '1'; else s_pb_y_le_high  <= '0'; end if;
-            if s_low_y             <= s_high_y  then s_pb_lo_le_hi_y <= '1'; else s_pb_lo_le_hi_y <= '0'; end if;
-            if unsigned(data_in.u) >= s_low_u  then s_pb_u_ge_low   <= '1'; else s_pb_u_ge_low   <= '0'; end if;
-            if unsigned(data_in.u) <= s_high_u then s_pb_u_le_high  <= '1'; else s_pb_u_le_high  <= '0'; end if;
-            if s_low_u             <= s_high_u  then s_pb_lo_le_hi_u <= '1'; else s_pb_lo_le_hi_u <= '0'; end if;
-            if unsigned(data_in.v) >= s_low_v  then s_pb_v_ge_low   <= '1'; else s_pb_v_ge_low   <= '0'; end if;
-            if unsigned(data_in.v) <= s_high_v then s_pb_v_le_high  <= '1'; else s_pb_v_le_high  <= '0'; end if;
-            if s_low_v             <= s_high_v  then s_pb_lo_le_hi_v <= '1'; else s_pb_lo_le_hi_v <= '0'; end if;
             -- Switches — Off='0'/On='1'
             s_show_matte <= registers_in(6)(0);          -- '1' = On/Show Matte
             -- S2=bit3=MSB, S3=bit2, S4=bit1=LSB → concatenate to preserve {S2,S3,S4} order
@@ -316,7 +297,9 @@ begin
                 s_in_ref(4) <= unsigned(registers_in(4));
                 s_in_ref(5) <= unsigned(registers_in(5));
             end if;
-            -- Compute threshold values: 1/8-sensitivity in Fine mode, full range Normal
+            -- Compute threshold values: 1/8-sensitivity in Fine mode, full range Normal.
+            -- fine_knob carry chains land here, isolated from comparison carry chains
+            -- in Stage 0b.
             if registers_in(6)(4) = '1' then
                 s_low_y  <= fine_knob(registers_in(0), s_in_ref(0));
                 s_low_u  <= fine_knob(registers_in(1), s_in_ref(1));
@@ -334,6 +317,37 @@ begin
             end if;
         end if;
     end process p_control_decode;
+
+    --------------------------------------------------------------------------------
+    -- Stage 0b: Window Comparison Pre-compute
+    -- Latency: 1 clock. Input T+1, output T+2.
+    -- All inputs are registered FF outputs from Stage 0a — no raw port fan-out.
+    -- 9 carry-chain comparisons: registered pixel vs registered thresholds.
+    -- LFSR/PRNG XOR uses registered s_y_d1 (not data_in.y) for the same reason.
+    -- Also propagates switch controls one clock to align with comparison bits at
+    -- Stage 1a.
+    --------------------------------------------------------------------------------
+    p_data_register : process(clk)
+    begin
+        if rising_edge(clk) then
+            -- Pre-compute LFSR/PRNG XOR Y using registered pixel — no raw port fan-out.
+            s_lfsr_xor_y_d1 <= unsigned(s_lfsr) xor unsigned(s_y_d1);
+            s_prng_xor_y_d1 <= unsigned(s_prng) xor unsigned(s_y_d1);
+            -- 9 carry-chain comparisons: all inputs are Stage 0a registered signals.
+            if unsigned(s_y_d1) >= s_low_y  then s_pb_y_ge_low   <= '1'; else s_pb_y_ge_low   <= '0'; end if;
+            if unsigned(s_y_d1) <= s_high_y then s_pb_y_le_high  <= '1'; else s_pb_y_le_high  <= '0'; end if;
+            if s_low_y          <= s_high_y  then s_pb_lo_le_hi_y <= '1'; else s_pb_lo_le_hi_y <= '0'; end if;
+            if unsigned(s_u_d1) >= s_low_u  then s_pb_u_ge_low   <= '1'; else s_pb_u_ge_low   <= '0'; end if;
+            if unsigned(s_u_d1) <= s_high_u then s_pb_u_le_high  <= '1'; else s_pb_u_le_high  <= '0'; end if;
+            if s_low_u          <= s_high_u  then s_pb_lo_le_hi_u <= '1'; else s_pb_lo_le_hi_u <= '0'; end if;
+            if unsigned(s_v_d1) >= s_low_v  then s_pb_v_ge_low   <= '1'; else s_pb_v_ge_low   <= '0'; end if;
+            if unsigned(s_v_d1) <= s_high_v then s_pb_v_le_high  <= '1'; else s_pb_v_le_high  <= '0'; end if;
+            if s_low_v          <= s_high_v  then s_pb_lo_le_hi_v <= '1'; else s_pb_lo_le_hi_v <= '0'; end if;
+            -- Propagate switch controls to align with comparison bits at Stage 1a
+            s_show_matte_d1 <= s_show_matte;
+            s_matte_mode_d1 <= s_matte_mode;
+        end if;
+    end process p_data_register;
 
     --------------------------------------------------------------------------------
     -- LFSR Noise Generator (frame-synced)
@@ -383,10 +397,8 @@ begin
     end process p_prng;
 
     --------------------------------------------------------------------------------
-    -- Stage 0b: Window Comparison Pre-compute
-    --------------------------------------------------------------------------------
     -- Stage 1a: Window Check Flag Register
-    -- Latency: 1 clock. Input T+1, output T+2.
+    -- Latency: 1 clock. Input T+2, output T+3.
     -- Combines the pre-registered comparison bits from Stage 0 using pure LUT
     -- logic (no carry chains) and registers all results — per-channel flags,
     -- OR/AND combinations, masked values, raw data, and controls — so that
@@ -427,8 +439,8 @@ begin
             s_wf_u          <= s_u_d1;
             s_wf_v          <= s_v_d1;
             s_wf_avid       <= s_avid_d1;
-            s_wf_show_matte <= s_show_matte;
-            s_wf_matte_mode <= s_matte_mode;
+            s_wf_show_matte <= s_show_matte_d1;
+            s_wf_matte_mode <= s_matte_mode_d1;
             s_wf_lfsr_xor_y <= s_lfsr_xor_y_d1;
             s_wf_prng_xor_y <= s_prng_xor_y_d1;
         end if;
@@ -436,7 +448,7 @@ begin
 
     --------------------------------------------------------------------------------
     -- Stage 1b: Matte Computation + Output
-    -- Latency: 1 clock. Input T+2 (registered flags), output T+3.
+    -- Latency: 1 clock. Input T+3 (registered flags), output T+4.
     -- All inputs are registered values — no comparisons, just mux/logic.
     --
     -- Matte mode (s_wf_matte_mode = {S2, S3, S4}, S2=MSB):
@@ -533,7 +545,7 @@ begin
 
     --------------------------------------------------------------------------------
     -- Delay Line: YUV dry input for global blend.
-    -- 1-clock registered delay from Stage 1a: T+2+1=T+3, aligned with s_processed.
+    -- 1-clock registered delay from Stage 1a: T+3+1=T+4, aligned with s_processed.
     --------------------------------------------------------------------------------
     p_global_dry_delay : process(clk)
     begin
@@ -599,4 +611,4 @@ begin
     data_out.vsync_n <= s_vsync_n_delayed;
     data_out.field_n <= s_field_n_delayed;
 
-end architecture yuv_window_key;
+end architecture yuv_band_filter;

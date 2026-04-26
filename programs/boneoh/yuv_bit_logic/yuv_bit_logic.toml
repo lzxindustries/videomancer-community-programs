@@ -34,7 +34,7 @@ program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Color"
+categories = ["Color"]
 description = "Per-channel YUV bitwise logic with blend and LFSR/PRNG modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"

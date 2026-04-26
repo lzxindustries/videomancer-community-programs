@@ -36,7 +36,7 @@ program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Color"
+categories = ["Color"]
 description = "Dual-function RGB processor: per-channel multi-mode filtering and matte generation with 8 matte modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"

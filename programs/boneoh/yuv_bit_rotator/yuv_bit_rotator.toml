@@ -17,12 +17,12 @@
 
 [program]
 program_id = "com.peteappleby.yuv_bit_rotator"
-program_name = "YUV Bit Rotato"
+program_name = "YUV Bit Rotator"
 program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Color"
+categories = ["Color"]
 description = "Per-channel YUV bit rotation with blend and lo-fi bit depth modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"

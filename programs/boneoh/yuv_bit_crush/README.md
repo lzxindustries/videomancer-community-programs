@@ -4,6 +4,15 @@ A per-channel bit-depth reduction video effect for the [LZX Industries Videomanc
 
 ## Effect
 
+This is a flexible and powerful effect that provides a lot of creative control.
+
+This effect program is designed with a layout that resembles a simple audio mixer.
+There are three vertical channels, one each for Red, Green, and Blue.
+
+Knobs 1, 2, 3 control the 10-bit mask that determines the amount of bit crush.
+Knobs 4, 5, 6 control the wet/dry amount of video that is sent to the master output bus.
+The Slider is the master wet/dry fade.
+
 Bit crushing quantises each channel to a coarser set of values, producing a stepped, posterised look. This version operates directly in YUV space — no colour conversion — so luminance and chroma are crushed independently.
 
 All three channels (Y, U, V) are crushed using their respective knobs, each selecting one of eight quantisation step sizes. Y is always truncated (floor). U and V support optional round-to-nearest switching and optional RPDF dither from the onboard LFSRs, which breaks up the hard quantisation edges at the cost of added grain.
@@ -65,7 +74,12 @@ The knob is divided into 8 equal bands of 128 counts each (step_idx = knob / 128
 - **Colour space:** Operates directly on YUV444 — no colour conversion
 - **Pipeline latency:** 10 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
-- **LC utilisation:** Low (no BRAM colour conversion tables)
+- **IOs:** 107 / 256
+- **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
+- **HD timing:** All six variants meet 74.25 MHz (worst case 74.66 MHz)
+- **LC utilisation:** 4836–4851 of 7680 (~63%)
+- **Package size:** 310,436 bytes (rev_b, unsigned)
+- **Last built:** 2026-04-25 12:55 MDT
 - **Dither sources:** U uses lfsr16[9:0]; V uses lfsr10 (both free-running)
 - **Rounding:** Round-to-nearest adds step/2 before quantising with overflow saturation to the largest representable multiple of the step
 - **Steps 48 and 96:** Non-power-of-2; implemented via shift-and-reciprocal, no extra BRAMs required
