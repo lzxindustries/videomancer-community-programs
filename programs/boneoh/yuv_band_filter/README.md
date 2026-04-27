@@ -140,10 +140,10 @@ Use YUV Band Filter when your threshold decisions map naturally onto luma or chr
 - **BRAM usage:** 0 / 32
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
-- **HD timing:** All six variants meet 74.25 MHz (worst case 74.76 MHz)
-- **LC utilisation:** 3547–3573 of 7680 (~46%)
-- **Package size:** 242,090 bytes (rev_b, unsigned)
-- **Last built:** 2026-04-25 12:55 MDT
+- **HD timing:** All six variants meet 74.25 MHz (worst case 76.71 MHz)
+- **LC utilisation:** 3564–3588 of 7680 (~46%)
+- **Package size:** 244,496 bytes (rev_b, unsigned)
+- **Last built:** 2026-04-27
 - **UV convention:** U = Cr (red-difference), V = Cb (blue-difference) — Videomancer hardware convention; thresholds apply to the raw hardware values
 - **Neutral chroma:** U = V = 512 (50%)
 

@@ -78,10 +78,10 @@ The input YUV signal is converted to RGB, the logic operation is applied, and th
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
-- **HD timing:** All six variants meet 74.25 MHz (worst case 78.65 MHz)
-- **LC utilisation:** 5710–5732 of 7680 (~75%)
-- **Package size:** 414,848 bytes (rev_b, unsigned)
-- **Last built:** 2026-04-25 12:55 MDT
+- **HD timing:** All six variants meet 74.25 MHz (worst case 80.66 MHz)
+- **LC utilisation:** 5721–5733 of 7680 (~75%)
+- **Package size:** 413,278 bytes (rev_b, unsigned)
+- **Last built:** 2026-04-27
 
 ## Hardware Requirements
 

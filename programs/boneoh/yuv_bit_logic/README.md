@@ -77,10 +77,10 @@ Because this operates directly in YUV space — with no colour conversion — th
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
-- **HD timing:** All six variants meet 74.25 MHz (worst case 75.61 MHz)
-- **LC utilisation:** 4815–4854 of 7680 (~63%)
-- **Package size:** 312,464 bytes (rev_b, unsigned)
-- **Last built:** 2026-04-25 12:55 MDT
+- **HD timing:** All six variants meet 74.25 MHz (worst case 75.79 MHz)
+- **LC utilisation:** 4836–4854 of 7680 (~63%)
+- **Package size:** 312,825 bytes (rev_b, unsigned)
+- **Last built:** 2026-04-27
 
 ## Hardware Requirements
 
