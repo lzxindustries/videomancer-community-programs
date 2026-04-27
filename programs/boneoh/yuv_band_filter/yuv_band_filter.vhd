@@ -47,7 +47,8 @@
 --   Stage 0b  - Data register + comparison pre-computes       (1 clock) -> T+2
 --   Stage 1a  - Window flag register (LUT-only)               (1 clock) -> T+3
 --   Stage 1b  - Matte computation + output                    (1 clock) -> T+4
---   Stage 2   - Global Blend (3x interpolator_u)             (4 clocks) -> T+8
+--   Stage 2r  - Global blend factor register                  (1 clock) -> T+5
+--   Stage 2   - Global Blend (3x interpolator_u)             (4 clocks) -> T+9
 --
 -- Videomancer UV Convention Note:
 --   data_in.u / data_out.u = Cr (red-difference);  data_in.v / data_out.v = Cb.
@@ -63,9 +64,9 @@
 --   Register  5: V channel high threshold (0-1023)   rotary_potentiometer_6
 --   Register  6: Packed toggle bits (Off='0', On='1'):
 --     bit 0: Show Matte (0=Off/gate pixel, 1=On/show matte)            toggle_switch_7
---     bit 3: Matte Bit2 MSB of 3-bit matte mode {S2,S3,S4}             toggle_switch_8
+--     bit 1: Matte Bit2 MSB of 3-bit matte mode {S2,S3,S4}             toggle_switch_8
 --     bit 2: Matte Bit1 middle bit of matte mode word                  toggle_switch_9
---     bit 1: Matte Bit0 LSB of matte mode word                         toggle_switch_10
+--     bit 3: Matte Bit0 LSB of matte mode word                         toggle_switch_10
 --     bit 4: Fine       (0=Normal full-range, 1=Fine 1/8-sensitivity)   toggle_switch_11
 --   Register  7: Global blend (0=dry, 1023=wet)                    linear_potentiometer_12
 --
@@ -77,8 +78,8 @@
 --   Switching back to Normal restores full-range control immediately.
 --
 -- Timing:
---   Total pipeline latency: 8 clock cycles.
---   Sync delay line is 8 clocks.
+--   Total pipeline latency: 9 clock cycles.
+--   Sync delay line is 9 clocks.
 --------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
@@ -91,8 +92,8 @@ use work.video_timing_pkg.all;
 
 architecture yuv_band_filter of program_top is
 
-    constant C_PROCESSING_DELAY_CLKS : integer := 8;
-    constant C_PRE_GLOBAL_DELAY_CLKS : integer := 3;   -- 3-clock registered dry tap (Stage 0a + Stage 0b + Stage 1a)
+    constant C_PROCESSING_DELAY_CLKS : integer := 9;
+    constant C_PRE_GLOBAL_DELAY_CLKS : integer := 4;   -- 4-clock registered dry tap (Stage 0a + Stage 0b + Stage 1a + s_global_blend_r)
 
     --------------------------------------------------------------------------------
     -- Functions
@@ -146,6 +147,7 @@ architecture yuv_band_filter of program_top is
     -- Control Signals
     --------------------------------------------------------------------------------
     signal s_global_blend   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
+    signal s_global_blend_r  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');  -- registered blend factor (Stage 2r)
 
     -- Fine mode: registered S5 for edge detection; locked knob reference values
     signal s_fine           : std_logic := '0';
@@ -238,8 +240,8 @@ architecture yuv_band_filter of program_top is
     signal s_processed_valid : std_logic;
 
     --------------------------------------------------------------------------------
-    -- Stage 2: Global Blend Outputs (T+8)
-    -- Dry input: original data delayed to T+4 (3 clocks after Stage 0a)
+    -- Stage 2: Global Blend Outputs (T+9)
+    -- Dry input: original data delayed to T+5 (4 clocks after Stage 0a)
     --------------------------------------------------------------------------------
     signal s_y_for_global   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_u_for_global   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
@@ -285,8 +287,8 @@ begin
             s_avid_d1 <= data_in.avid;
             -- Switches — Off='0'/On='1'
             s_show_matte <= registers_in(6)(0);          -- '1' = On/Show Matte
-            -- S2=bit3=MSB, S3=bit2, S4=bit1=LSB → concatenate to preserve {S2,S3,S4} order
-            s_matte_mode <= registers_in(6)(3) & registers_in(6)(2) & registers_in(6)(1);
+            -- S2=bit1=MSB, S3=bit2, S4=bit3=LSB → concatenate ascending to preserve {S2,S3,S4} order
+            s_matte_mode <= registers_in(6)(1) & registers_in(6)(2) & registers_in(6)(3);
             -- Fine mode: register S5; latch reference values on Normal->Fine transition
             s_fine <= registers_in(6)(4);
             if s_fine = '0' and registers_in(6)(4) = '1' then
@@ -544,45 +546,51 @@ begin
     end process p_window_key;
 
     --------------------------------------------------------------------------------
-    -- Delay Line: YUV dry input for global blend.
-    -- 1-clock registered delay from Stage 1a: T+3+1=T+4, aligned with s_processed.
+    -- Delay Line: YUV dry input for global blend + register global blend factor.
+    -- s_wf_y/u/v are at T+3; delaying 1 clock gives T+4, aligned with s_processed (T+4).
+    -- s_global_blend_r is also registered here (Stage 2r) so all three interpolator
+    -- t-inputs share a local registered copy, shortening the fan-out routing wire.
     --------------------------------------------------------------------------------
     p_global_dry_delay : process(clk)
     begin
         if rising_edge(clk) then
-            s_y_for_global <= unsigned(s_wf_y);
-            s_u_for_global <= unsigned(s_wf_u);
-            s_v_for_global <= unsigned(s_wf_v);
+            s_y_for_global   <= unsigned(s_wf_y);
+            s_u_for_global   <= unsigned(s_wf_u);
+            s_v_for_global   <= unsigned(s_wf_v);
+            s_global_blend_r <= s_global_blend;  -- Stage 2r: register blend factor
         end if;
     end process p_global_dry_delay;
 
     --------------------------------------------------------------------------------
     -- Stage 2: Global Wet/Dry Blend
-    -- Latency: 4 clocks. Input T+3, output T+7.
+    -- Latency: 4 clocks. Input T+5, output T+9.
+    -- s_global_blend_r is registered one extra cycle (Stage 2r, T+4→T+5) to break
+    -- the long fan-out wire from registers_in to all three interpolator t-inputs,
+    -- giving the placer a local copy near each interpolator and improving Fmax.
     --------------------------------------------------------------------------------
     interp_global_y : entity work.interpolator_u
         generic map(G_WIDTH=>C_VIDEO_DATA_WIDTH, G_FRAC_BITS=>C_VIDEO_DATA_WIDTH,
                     G_OUTPUT_MIN=>0, G_OUTPUT_MAX=>1023)
         port map(clk=>clk, enable=>s_processed_valid,
-                 a=>s_y_for_global, b=>s_processed_y, t=>s_global_blend,
+                 a=>s_y_for_global, b=>s_processed_y, t=>s_global_blend_r,
                  result=>s_global_y, valid=>s_global_y_valid);
 
     interp_global_u : entity work.interpolator_u
         generic map(G_WIDTH=>C_VIDEO_DATA_WIDTH, G_FRAC_BITS=>C_VIDEO_DATA_WIDTH,
                     G_OUTPUT_MIN=>0, G_OUTPUT_MAX=>1023)
         port map(clk=>clk, enable=>s_processed_valid,
-                 a=>s_u_for_global, b=>s_processed_u, t=>s_global_blend,
+                 a=>s_u_for_global, b=>s_processed_u, t=>s_global_blend_r,
                  result=>s_global_u, valid=>s_global_u_valid);
 
     interp_global_v : entity work.interpolator_u
         generic map(G_WIDTH=>C_VIDEO_DATA_WIDTH, G_FRAC_BITS=>C_VIDEO_DATA_WIDTH,
                     G_OUTPUT_MIN=>0, G_OUTPUT_MAX=>1023)
         port map(clk=>clk, enable=>s_processed_valid,
-                 a=>s_v_for_global, b=>s_processed_v, t=>s_global_blend,
+                 a=>s_v_for_global, b=>s_processed_v, t=>s_global_blend_r,
                  result=>s_global_v, valid=>s_global_v_valid);
 
     --------------------------------------------------------------------------------
-    -- Sync Delay Line (7 clocks — aligns hsync/vsync/field with pipeline output)
+    -- Sync Delay Line (9 clocks — aligns hsync/vsync/field with pipeline output)
     --------------------------------------------------------------------------------
     p_sync_delay : process(clk)
         type t_sync_delay is array (0 to C_PROCESSING_DELAY_CLKS - 1) of std_logic;

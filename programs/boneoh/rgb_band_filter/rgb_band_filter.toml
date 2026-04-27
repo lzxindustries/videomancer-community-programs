@@ -141,7 +141,7 @@ name_label = "Matte Bit 0"
 value_labels = ["0", "1"]
 initial_value_label = "0"
 
-# Switch 5: Fine mode — half-sensitivity for precise threshold adjustment
+# Switch 5: Fine mode — one-eighth-sensitivity for precise threshold adjustment
 [[parameter]]
 parameter_id = "toggle_switch_11"
 name_label = "Fine"

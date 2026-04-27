@@ -70,9 +70,9 @@
 --   Register  5: B channel high threshold (0-1023)   rotary_potentiometer_6
 --   Register  6: Packed toggle bits (Off='0', On='1'):
 --     bit 0: Show Matte (0=Off/gate pixel, 1=On/show matte)            toggle_switch_7
---     bit 3: Matte Bit2 MSB of 3-bit matte mode {S2,S3,S4}             toggle_switch_8
+--     bit 1: Matte Bit2 MSB of 3-bit matte mode {S2,S3,S4}             toggle_switch_8
 --     bit 2: Matte Bit1 middle bit of matte mode word                  toggle_switch_9
---     bit 1: Matte Bit0 LSB of matte mode word                         toggle_switch_10
+--     bit 3: Matte Bit0 LSB of matte mode word                         toggle_switch_10
 --     bit 4: Fine       (0=Normal full-range, 1=Fine 1/8-sensitivity)   toggle_switch_11
 --   Register  7: Global blend (0=dry, 1023=wet)                    linear_potentiometer_12
 --
@@ -393,8 +393,8 @@ begin
             -- Pre-register decoded controls (parallel with BRAM lookup, no added latency).
             -- Off='0'/On='1': feature active when bit='1' (On position).
             s_show_matte <= registers_in(6)(0);          -- '1' = On/Show Matte
-            -- S2=bit3=MSB, S3=bit2, S4=bit1=LSB → concatenate to preserve {S2,S3,S4} order
-            s_matte_mode <= registers_in(6)(3) & registers_in(6)(2) & registers_in(6)(1);
+            -- S2=bit1=MSB, S3=bit2, S4=bit3=LSB → concatenate ascending to preserve {S2,S3,S4} order
+            s_matte_mode <= registers_in(6)(1) & registers_in(6)(2) & registers_in(6)(3);
             -- Fine mode: register S5; latch reference values on Normal->Fine transition
             s_fine <= registers_in(6)(4);
             if s_fine = '0' and registers_in(6)(4) = '1' then

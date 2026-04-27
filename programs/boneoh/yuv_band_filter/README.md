@@ -125,7 +125,7 @@ Logical AND mode (S2=0, S3=1, S4=0) produces the tightest matte, requiring all t
 | Feature              | YUV Band Filter              | RGB Band Filter                     |
 |----------------------|------------------------------|-------------------------------------|
 | Colour space         | YUV direct                   | RGB (full BT.601 YUV↔RGB conv.)     |
-| Pipeline latency     | 7 clocks                     | 14 clocks                           |
+| Pipeline latency     | 9 clocks                     | 14 clocks                           |
 | BRAM usage           | 0 block RAMs                 | 11 block RAMs                       |
 | Mode 100 matte       | Y value (luma passthrough)   | BT.601 computed luma                |
 | Best for             | Luma/chroma ranges, fast     | Isolating specific RGB colours      |
@@ -135,7 +135,7 @@ Use YUV Band Filter when your threshold decisions map naturally onto luma or chr
 ## Technical Notes
 
 - **Colour space:** Direct YUV (no colour conversion)
-- **Pipeline latency:** 7 clock cycles
+- **Pipeline latency:** 9 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
 - **BRAM usage:** 0 / 32
 - **IOs:** 107 / 256
