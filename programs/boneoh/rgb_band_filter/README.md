@@ -127,10 +127,10 @@ For colour-separated matte generation, patch R, G, and B outputs to FKG3 inputs 
 - **BRAM usage:** 11 block RAMs (BT.601 colour conversion LUTs; 31 / 32 total including SDK)
 - **IOs:** 107 / 256
 - **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
-- **HD timing:** All six variants meet 74.25 MHz (worst case 81.81 MHz)
-- **LC utilisation:** 4473–4492 of 7680 (~58%)
-- **Package size:** 355,254 bytes (rev_b, unsigned)
-- **Last built:** 2026-04-27
+- **HD timing:** All six variants meet 74.25 MHz (worst case 75.31 MHz)
+- **LC utilisation:** 4449–4482 of 7680 (~58%)
+- **Package size:** 354,792 bytes (rev_b, unsigned)
+- **Last built:** 2026-04-25 12:55 MDT
 - **Matte inversion:** Handled inside the `window_check` function — no extra hardware
 
 ## Hardware Requirements
