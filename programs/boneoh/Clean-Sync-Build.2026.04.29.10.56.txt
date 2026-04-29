@@ -1,0 +1,311 @@
+Clean-Sync-Build Sequence Log
+Timestamp: Wed Apr 29 10:56:57 MDT 2026
+=========================================
+
+=== CLEAN PROGRAMS ===
+Command: ./clean_programs.sh
+
+[0;34m====================================[0m
+[0;34mVideomancer Programs Build Cleaner[0m
+[0;34m====================================[0m
+
+[0;36mCleaning build artifacts in /Users/peterappleby/videomancer-sdk/build/programs/...[0m
+[0;32m✓ Removed       65 build artifact files[0m
+
+[0;36mCleaning packaged programs in /Users/peterappleby/videomancer-sdk/out/...[0m
+[0;32m✓ Removed        8 .vmprog package(s)[0m
+
+[0;32m====================================[0m
+[0;32mCleanup complete![0m
+[0;32m====================================[0m
+
+[0;36mNote: OSS CAD Suite toolchain and other build artifacts were preserved[0m
+
+=== SYNC PROGRAMS ===
+Command: ./sync_programs.sh
+
+Creating backup in: /Volumes/Elektron 1 TB/VM-Backup/boneoh.2026.04.29.10.56
+Backing up files from: /Users/peterappleby/videomancer-community-programs/programs/boneoh/
+Setting read-only permissions on backup directory
+Syncing:
+  from: /Users/peterappleby/videomancer-community-programs/programs/boneoh/
+  to:   /Users/peterappleby/videomancer-sdk/programs/
+
+Transfer starting: 36 files
+./
+Clean-Sync-Build.2026.04.29.10.56.txt
+
+sent 3144 bytes  received 48 bytes  1030k bytes/sec
+total size is 393k  speedup is 123.19
+
+Done.
+
+=== BUILD PROGRAMS CLAUDE ===
+Command: ./build_programs_claude.sh
+
+[0;34m====================================[0m
+[0;34mVideomancer FPGA Programs Builder[0m
+[0;34m====================================[0m
+
+[0;36mBuilding all programs...[0m
+[0;36mFound        8 program(s) to build[0m
+
+[1;33m⚠ Ed25519 signing keys not found - packages will be unsigned[0m
+[1;33m  To enable signing, run: ./scripts/setup_ed25519_signing.sh[0m
+
+[0;32mLoading OSS CAD Suite environment...[0m
+
+[0;34m====================================[0m
+[0;34mProgram 1/       8: rgb_band_filter[0m
+[0;34m====================================[0m
+
+[0;36mSupported hardware: rev_b[0m
+[0;36mCore architecture: yuv444_30b[0m
+
+[1;33mBuilding for hardware: rev_b[0m
+[0;36m  Platform: ice40, Device: hx4k, Package: tq144[0m
+[0;32mSynthesizing FPGA bitstreams for rev_b...[0m
+[0;36m  [1/6] HD Analog - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 22.904301000s - Fmax: 81.81 MHz, LCs: 4473/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [2/6] SD Analog - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 23.099592000s - Fmax: 80.66 MHz, LCs: 4479/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;36m  [3/6] HD HDMI - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 24.135496000s - Fmax: 81.62 MHz, LCs: 4477/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [4/6] SD HDMI - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 22.376637000s - Fmax: 79.45 MHz, LCs: 4492/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;36m  [5/6] HD Dual - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 23.747727000s - Fmax: 82.39 MHz, LCs: 4466/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [6/6] SD Dual - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 23.630823000s - Fmax: 79.54 MHz, LCs: 4453/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;32m✓ All 6 bitstream variants generated in 140.253230000s[0m
+[0;32mConverting TOML configuration to binary...[0m
+[0;32m✓ Configuration binary created[0m
+[0;32mCleaning intermediate files...[0m
+[0;32mPackaging rgb_band_filter.vmprog for rev_b...[0m
+[0;32m✓ Successfully created: /Users/peterappleby/videomancer-sdk/out//rev_b/rgb_band_filter.vmprog (355254 bytes, unsigned)[0m
+
+
+[0;34m====================================[0m
+[0;34mProgram 2/       8: rgb_bit_crush[0m
+[0;34m====================================[0m
+
+[0;36mSupported hardware: rev_b[0m
+[0;36mCore architecture: yuv444_30b[0m
+
+[1;33mBuilding for hardware: rev_b[0m
+[0;36m  Platform: ice40, Device: hx4k, Package: tq144[0m
+[0;32mSynthesizing FPGA bitstreams for rev_b...[0m
+[0;36m  [1/6] HD Analog - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 28.067161000s - Fmax: 83.01 MHz, LCs: 5945/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [2/6] SD Analog - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 27.680489000s - Fmax: 83.10 MHz, LCs: 5963/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;36m  [3/6] HD HDMI - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 29.827616000s - Fmax: 83.25 MHz, LCs: 5959/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [4/6] SD HDMI - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 28.380853000s - Fmax: 75.19 MHz, LCs: 5957/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;36m  [5/6] HD Dual - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 29.292059000s - Fmax: 80.48 MHz, LCs: 5955/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [6/6] SD Dual - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 30.876135000s - Fmax: 81.53 MHz, LCs: 5950/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;32m✓ All 6 bitstream variants generated in 174.489542000s[0m
+[0;32mConverting TOML configuration to binary...[0m
+[0;32m✓ Configuration binary created[0m
+[0;32mCleaning intermediate files...[0m
+[0;32mPackaging rgb_bit_crush.vmprog for rev_b...[0m
+[0;32m✓ Successfully created: /Users/peterappleby/videomancer-sdk/out//rev_b/rgb_bit_crush.vmprog (422964 bytes, unsigned)[0m
+
+
+[0;34m====================================[0m
+[0;34mProgram 3/       8: rgb_bit_logic[0m
+[0;34m====================================[0m
+
+[0;36mSupported hardware: rev_b[0m
+[0;36mCore architecture: yuv444_30b[0m
+
+[1;33mBuilding for hardware: rev_b[0m
+[0;36m  Platform: ice40, Device: hx4k, Package: tq144[0m
+[0;32mSynthesizing FPGA bitstreams for rev_b...[0m
+[0;36m  [1/6] HD Analog - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 27.167272000s - Fmax: 81.21 MHz, LCs: 5722/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [2/6] SD Analog - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 27.259409000s - Fmax: 84.13 MHz, LCs: 5721/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;36m  [3/6] HD HDMI - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 27.655498000s - Fmax: 80.66 MHz, LCs: 5725/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [4/6] SD HDMI - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 26.851535000s - Fmax: 83.20 MHz, LCs: 5733/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;36m  [5/6] HD Dual - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 26.655548000s - Fmax: 83.84 MHz, LCs: 5710/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [6/6] SD Dual - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 27.286462000s - Fmax: 79.45 MHz, LCs: 5723/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;32m✓ All 6 bitstream variants generated in 163.240920000s[0m
+[0;32mConverting TOML configuration to binary...[0m
+[0;32m✓ Configuration binary created[0m
+[0;32mCleaning intermediate files...[0m
+[0;32mPackaging rgb_bit_logic.vmprog for rev_b...[0m
+[0;32m✓ Successfully created: /Users/peterappleby/videomancer-sdk/out//rev_b/rgb_bit_logic.vmprog (413278 bytes, unsigned)[0m
+
+
+[0;34m====================================[0m
+[0;34mProgram 4/       8: rgb_bit_rotator[0m
+[0;34m====================================[0m
+
+[0;36mSupported hardware: rev_b[0m
+[0;36mCore architecture: yuv444_30b[0m
+
+[1;33mBuilding for hardware: rev_b[0m
+[0;36m  Platform: ice40, Device: hx4k, Package: tq144[0m
+[0;32mSynthesizing FPGA bitstreams for rev_b...[0m
+[0;36m  [1/6] HD Analog - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 48.758392000s - Fmax: 77.22 MHz, LCs: 6019/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [2/6] SD Analog - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 49.147603000s - Fmax: 82.72 MHz, LCs: 6062/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;36m  [3/6] HD HDMI - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 47.839991000s - Fmax: 85.49 MHz, LCs: 6021/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [4/6] SD HDMI - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 47.256069000s - Fmax: 80.48 MHz, LCs: 6048/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;36m  [5/6] HD Dual - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 48.709443000s - Fmax: 84.98 MHz, LCs: 6025/7680, IOs: 107/256, RAMs: 31/32, PLLs: 0/2[0m
+[0;36m  [6/6] SD Dual - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 49.959218000s - Fmax: 80.98 MHz, LCs: 6037/7680, IOs: 107/256, RAMs: 31/32, PLLs: 1/2[0m
+[0;32m✓ All 6 bitstream variants generated in 292.137933000s[0m
+[0;32mConverting TOML configuration to binary...[0m
+[0;32m✓ Configuration binary created[0m
+[0;32mCleaning intermediate files...[0m
+[0;32mPackaging rgb_bit_rotator.vmprog for rev_b...[0m
+[0;32m✓ Successfully created: /Users/peterappleby/videomancer-sdk/out//rev_b/rgb_bit_rotator.vmprog (424387 bytes, unsigned)[0m
+
+
+[0;34m====================================[0m
+[0;34mProgram 5/       8: yuv_band_filter[0m
+[0;34m====================================[0m
+
+[0;36mSupported hardware: rev_b[0m
+[0;36mCore architecture: yuv444_30b[0m
+
+[1;33mBuilding for hardware: rev_b[0m
+[0;36m  Platform: ice40, Device: hx4k, Package: tq144[0m
+[0;32mSynthesizing FPGA bitstreams for rev_b...[0m
+[0;36m  [1/6] HD Analog - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 10.033725000s - Fmax: 76.71 MHz, LCs: 3564/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [2/6] SD Analog - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 9.813333000s - Fmax: 72.70 MHz, LCs: 3569/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;36m  [3/6] HD HDMI - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 9.744832000s - Fmax: 78.80 MHz, LCs: 3566/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [4/6] SD HDMI - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 9.744407000s - Fmax: 80.62 MHz, LCs: 3588/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;36m  [5/6] HD Dual - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 11.327811000s - Fmax: 80.08 MHz, LCs: 3574/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [6/6] SD Dual - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 10.270057000s - Fmax: 80.44 MHz, LCs: 3577/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;32m✓ All 6 bitstream variants generated in 61.295877000s[0m
+[0;32mConverting TOML configuration to binary...[0m
+[0;32m✓ Configuration binary created[0m
+[0;32mCleaning intermediate files...[0m
+[0;32mPackaging yuv_band_filter.vmprog for rev_b...[0m
+[0;32m✓ Successfully created: /Users/peterappleby/videomancer-sdk/out//rev_b/yuv_band_filter.vmprog (244496 bytes, unsigned)[0m
+
+
+[0;34m====================================[0m
+[0;34mProgram 6/       8: yuv_bit_crush[0m
+[0;34m====================================[0m
+
+[0;36mSupported hardware: rev_b[0m
+[0;36mCore architecture: yuv444_30b[0m
+
+[1;33mBuilding for hardware: rev_b[0m
+[0;36m  Platform: ice40, Device: hx4k, Package: tq144[0m
+[0;32mSynthesizing FPGA bitstreams for rev_b...[0m
+[0;36m  [1/6] HD Analog - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 14.287134000s - Fmax: 83.06 MHz, LCs: 4837/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [2/6] SD Analog - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 13.480032000s - Fmax: 81.68 MHz, LCs: 4836/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;36m  [3/6] HD HDMI - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 13.875701000s - Fmax: 75.79 MHz, LCs: 4851/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [4/6] SD HDMI - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 13.892822000s - Fmax: 76.31 MHz, LCs: 4850/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;36m  [5/6] HD Dual - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 13.291459000s - Fmax: 81.91 MHz, LCs: 4841/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [6/6] SD Dual - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 15.064487000s - Fmax: 79.41 MHz, LCs: 4851/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;32m✓ All 6 bitstream variants generated in 84.253385000s[0m
+[0;32mConverting TOML configuration to binary...[0m
+[0;32m✓ Configuration binary created[0m
+[0;32mCleaning intermediate files...[0m
+[0;32mPackaging yuv_bit_crush.vmprog for rev_b...[0m
+[0;32m✓ Successfully created: /Users/peterappleby/videomancer-sdk/out//rev_b/yuv_bit_crush.vmprog (310436 bytes, unsigned)[0m
+
+
+[0;34m====================================[0m
+[0;34mProgram 7/       8: yuv_bit_logic[0m
+[0;34m====================================[0m
+
+[0;36mSupported hardware: rev_b[0m
+[0;36mCore architecture: yuv444_30b[0m
+
+[1;33mBuilding for hardware: rev_b[0m
+[0;36m  Platform: ice40, Device: hx4k, Package: tq144[0m
+[0;32mSynthesizing FPGA bitstreams for rev_b...[0m
+[0;36m  [1/6] HD Analog - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 14.437563000s - Fmax: 81.49 MHz, LCs: 4836/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [2/6] SD Analog - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 14.203509000s - Fmax: 75.07 MHz, LCs: 4837/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;36m  [3/6] HD HDMI - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 13.405127000s - Fmax: 80.07 MHz, LCs: 4844/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [4/6] SD HDMI - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 13.524812000s - Fmax: 82.80 MHz, LCs: 4847/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;36m  [5/6] HD Dual - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 13.929212000s - Fmax: 82.29 MHz, LCs: 4854/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [6/6] SD Dual - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 13.742560000s - Fmax: 83.74 MHz, LCs: 4811/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;32m✓ All 6 bitstream variants generated in 83.604434000s[0m
+[0;32mConverting TOML configuration to binary...[0m
+[0;32m✓ Configuration binary created[0m
+[0;32mCleaning intermediate files...[0m
+[0;32mPackaging yuv_bit_logic.vmprog for rev_b...[0m
+[0;32m✓ Successfully created: /Users/peterappleby/videomancer-sdk/out//rev_b/yuv_bit_logic.vmprog (312825 bytes, unsigned)[0m
+
+
+[0;34m====================================[0m
+[0;34mProgram 8/       8: yuv_bit_rotator[0m
+[0;34m====================================[0m
+
+[0;36mSupported hardware: rev_b[0m
+[0;36mCore architecture: yuv444_30b[0m
+
+[1;33mBuilding for hardware: rev_b[0m
+[0;36m  Platform: ice40, Device: hx4k, Package: tq144[0m
+[0;32mSynthesizing FPGA bitstreams for rev_b...[0m
+[0;36m  [1/6] HD Analog - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 28.660436000s - Fmax: 82.58 MHz, LCs: 5352/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [2/6] SD Analog - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 28.950285000s - Fmax: 80.21 MHz, LCs: 5346/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;36m  [3/6] HD HDMI - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 29.562187000s - Fmax: 83.10 MHz, LCs: 5335/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [4/6] SD HDMI - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 29.349502000s - Fmax: 82.67 MHz, LCs: 5341/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;36m  [5/6] HD Dual - Fmin: 74.25 MHz...[0m
+[0;32m    ✓ Completed in 28.726979000s - Fmax: 79.99 MHz, LCs: 5335/7680, IOs: 107/256, RAMs: 0/32, PLLs: 0/2[0m
+[0;36m  [6/6] SD Dual - Fmin: 27 MHz...[0m
+[0;32m    ✓ Completed in 30.523848000s - Fmax: 81.07 MHz, LCs: 5337/7680, IOs: 107/256, RAMs: 0/32, PLLs: 1/2[0m
+[0;32m✓ All 6 bitstream variants generated in 176.224580000s[0m
+[0;32mConverting TOML configuration to binary...[0m
+[0;32m✓ Configuration binary created[0m
+[0;32mCleaning intermediate files...[0m
+[0;32mPackaging yuv_bit_rotator.vmprog for rev_b...[0m
+[0;32m✓ Successfully created: /Users/peterappleby/videomancer-sdk/out//rev_b/yuv_bit_rotator.vmprog (340317 bytes, unsigned)[0m
+
+
+[0;34m====================================[0m
+[0;34mBuild Summary[0m
+[0;34m====================================[0m
+
+[0;36mTotal programs processed:  8[0m
+[0;32mSuccessfully built:        8[0m
+[1;33mPackages are unsigned (no Ed25519 keys found)[0m
+
+[0;32mOutput directory: /Users/peterappleby/videomancer-sdk/out/[0m
+
+[0;32m====================================[0m
+[0;32mAll programs built successfully![0m
+[0;32m====================================[0m
+

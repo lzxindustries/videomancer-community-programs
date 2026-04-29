@@ -4,6 +4,16 @@ A per-channel bit-depth reduction video effect for the [LZX Industries Videomanc
 
 ## Effect
 
+This is a flexible and powerful effect that provides a lot of creative control.
+
+This effect program is designed with a layout that resembles a simple audio mixer.
+There are three vertical channels, one each for Red, Green, and Blue.
+
+Knobs 1, 2, 3 control the 10-bit mask that determines the amount of bit crush.
+Knobs 4, 5, 6 control the wet/dry amount of video that is sent to the master output bus.
+The Slider is the master wet/dry fade.
+
+
 Bit crushing quantises each colour channel to a coarser set of values, producing a posterised, stepped look — the digital equivalent of running video through a low-resolution DAC. Because this operates in RGB space (with full YUV↔RGB colour conversion), the effect is applied independently to red, green, and blue, giving rich colour fringing and cross-channel contrast that differs from the YUV version.
 
 The three column knobs set the crush amount per channel, selecting one of eight quantisation step sizes. Blend knobs and the global slider let you fade between the crushed and original image at each stage. Per-channel rounding switches choose between floor (truncate) and round-to-nearest, which changes whether the crushed levels sit at the bottom or centre of each quantisation step. The Invert switch bitwise-NOTs all three channels after crushing, producing a negative-crushed image.
@@ -63,6 +73,12 @@ The knob is divided into 8 equal bands of 128 counts each (step_idx = knob / 128
 - **Colour space:** Operates on RGB (full BT.601 YUV↔RGB conversion via BRAM LUTs)
 - **Pipeline latency:** 16 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
+- **IOs:** 107 / 256
+- **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
+- **HD timing:** All six variants meet 74.25 MHz (worst case 76.23 MHz)
+- **LC utilisation:** 5945–5963 of 7680 (~78%)
+- **Package size:** 422,964 bytes (rev_b, unsigned)
+- **Last built:** 2026-04-25 12:55 MDT
 - **BRAM usage:** 11 block RAMs (same LUT tables as RGB Bit Rotator)
 - **Rounding:** Round-to-nearest adds step/2 before quantising with overflow saturation to the largest representable multiple of the step
 - **Steps 48 and 96:** Non-power-of-2; implemented via shift-and-reciprocal (floor(x/48)=floor((x>>4)×171>>9)), no extra BRAMs required

@@ -38,13 +38,13 @@
 --     bit 0: Invert/Seed   (ops 0-5: 0=normal, 1=invert masks;
 --                           op  6:   0=vsync-reseed LFSR, 1=free-run;
 --                           op  7:   no effect)           toggle_switch_7
---     bit 3: Op S2 MSB     (0=Off, 1=On)                 toggle_switch_8
+--     bit 1: Op S2 MSB     (0=Off, 1=On)                 toggle_switch_8
 --     bit 2: Op S3         (0=Off, 1=On)                 toggle_switch_9
---     bit 1: Op S4 LSB     (0=Off, 1=On)                 toggle_switch_10
+--     bit 3: Op S4 LSB     (0=Off, 1=On)                 toggle_switch_10
 --     bit 4: Bypass enable (0=Process, 1=Bypass)         toggle_switch_11
 --   Register  7: Global blend (0=dry, 1023=wet)          linear_potentiometer_12
 --
---   Operator encoding (bits 3 downto 1 of register 6):
+--   Operator encoding (bits 1 downto 3 of register 6, S2=MSB S4=LSB):
 --     "000"=AND  "001"=OR   "010"=XOR  "011"=NAND
 --     "100"=NOR  "101"=NXOR "110"=LFSR "111"=PRNG
 --
@@ -232,7 +232,8 @@ begin
             s_mask_y_r      <= unsigned(registers_in(0));
             s_mask_u_r      <= unsigned(registers_in(1));
             s_mask_v_r      <= unsigned(registers_in(2));
-            s_operator_r    <= registers_in(6)(3) & registers_in(6)(2) & registers_in(6)(1); -- {S2=MSB, S3, S4=LSB}
+            -- S2=bit1=MSB, S3=bit2, S4=bit3=LSB → concatenate ascending to preserve {S2,S3,S4} order
+            s_operator_r    <= registers_in(6)(1) & registers_in(6)(2) & registers_in(6)(3);
             s_invert_mask_r <= registers_in(6)(0);
             s_vsync_n_prev  <= data_in.vsync_n;
             s_y_d1          <= data_in.y;
@@ -243,7 +244,7 @@ begin
             -- registers_in during vsync. Output is a flip-flop; fires one clock
             -- after the vsync falling edge when op=LFSR and switch is on (sync mode).
             if (data_in.vsync_n = '0' and s_vsync_n_prev = '1')
-                    and (registers_in(6)(3) = '1' and registers_in(6)(2) = '1' and registers_in(6)(1) = '0')
+                    and (registers_in(6)(1) = '1' and registers_in(6)(2) = '1' and registers_in(6)(3) = '0')
                     and (registers_in(6)(0) = '1') then   -- 1=off=vsync-reseed, 0=on=free-run
                 s_lfsr_reset <= '1';
             else
