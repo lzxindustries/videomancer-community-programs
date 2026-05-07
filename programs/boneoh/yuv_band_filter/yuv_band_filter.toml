@@ -1,35 +1,44 @@
 # Copyright (C) 2026 Pete Appleby
 # SPDX-License-Identifier: GPL-3.0-only
 #
-# RGB Window Key Program Configuration
+# YUV Band Filter Program Configuration
 #
-# Effect: Per-channel window keying operating in RGB space (full BT.601 YUV<->RGB
+# Dual Function: Per-channel YUV filter and matte generation processor.
+#
+# PRIMARY: Multi-Mode Filtering (per-channel, knob-controlled)
+#   - Low Pass: attenuates frequencies above threshold
+#   - High Pass: attenuates frequencies below threshold
+#   - Band Pass: isolates band between Low/High thresholds
+#   - Notch: rejects band between Low/High thresholds
+#
+# SECONDARY: Matte Generation
+#   Per-channel matte generation operating directly in YUV space (no colour
 #   conversion). For each channel, a Lower and Upper knob define a threshold window.
-#   Inverting the key: when a channel's Lower knob exceeds its Upper knob, the window
-#   inverts automatically — no extra switch needed.
+#   Inverting the matte: when a channel's Lower knob exceeds its Upper knob, that
+#   channel's window inverts automatically — no extra switch needed.
 #
 #   Matte Mode (S2/S3/S4 as a 3-bit word, S2=MSB, S4=LSB):
 #     0,0,0  Logical OR    — white if any channel in-window, else black
 #     0,0,1  Bitwise OR    — OR of channel values; failing channels contribute 0
 #     0,1,0  Logical AND   — white if all channels in-window, else black  (default)
 #     0,1,1  Bitwise AND   — AND of channel values; failing channels contribute 0
-#     1,0,0  Luma          — BT.601 luma of the pixel, gated by logical AND
+#     1,0,0  Luma          — Y value passed directly, gated by logical AND
 #     1,0,1  LFSR synced   — frame-locked noise, gated by logical OR
 #     1,1,0  PRNG          — free-running noise, gated by logical OR
-#     1,1,1  Passthrough   — original pixel (no keying)
+#     1,1,1  Passthrough   — original Y/U/V pixel (no matte generation)
 #
-#   Show Matte (S1 On): outputs the matte as greyscale on all channels.
-#   Show Matte (S1 Off): matte > 0 passes the original pixel; matte = 0 → black.
+#   Show Matte (S1 On): Y = matte value; U/V = 512 (neutral chroma, true monochrome).
+#   Show Matte (S1 Off): matte > 0 passes original Y/U/V; matte = 0 → black.
 
 [program]
-program_id = "com.peteappleby.rgb_window_key"
-program_name = "RGB Window Key"
+program_id = "com.peteappleby.yuv_band_filter"
+program_name = "YUV Band Filter"
 program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Video Processing"
-description = "Per-channel RGB window keying with 8 matte modes and global blend"
+categories = ["Color"]
+description = "Dual-function YUV processor: per-channel multi-mode filtering and matte generation with 8 matte modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"
 
@@ -41,7 +50,7 @@ core = "yuv444_30b"
 
 [[parameter]]
 parameter_id = "rotary_potentiometer_1"
-name_label = "R Low"
+name_label = "Y Low"
 control_mode = "linear"
 display_min_value = 0
 display_max_value = 100
@@ -51,7 +60,7 @@ suffix_label = "%"
 
 [[parameter]]
 parameter_id = "rotary_potentiometer_2"
-name_label = "G Low"
+name_label = "U Low"
 control_mode = "linear"
 display_min_value = 0
 display_max_value = 100
@@ -61,7 +70,7 @@ suffix_label = "%"
 
 [[parameter]]
 parameter_id = "rotary_potentiometer_3"
-name_label = "B Low"
+name_label = "V Low"
 control_mode = "linear"
 display_min_value = 0
 display_max_value = 100
@@ -73,7 +82,7 @@ suffix_label = "%"
 
 [[parameter]]
 parameter_id = "rotary_potentiometer_4"
-name_label = "R High"
+name_label = "Y High"
 control_mode = "linear"
 display_min_value = 0
 display_max_value = 100
@@ -83,7 +92,7 @@ suffix_label = "%"
 
 [[parameter]]
 parameter_id = "rotary_potentiometer_5"
-name_label = "G High"
+name_label = "U High"
 control_mode = "linear"
 display_min_value = 0
 display_max_value = 100
@@ -93,7 +102,7 @@ suffix_label = "%"
 
 [[parameter]]
 parameter_id = "rotary_potentiometer_6"
-name_label = "B High"
+name_label = "V High"
 control_mode = "linear"
 display_min_value = 0
 display_max_value = 100
@@ -105,7 +114,7 @@ suffix_label = "%"
 # SWITCHES (Toggle Switches)
 # ---------------------------------------------------------------------------
 
-# Switch 1: Show Matte — outputs white/black matte for previewing the key region
+# Switch 1: Show Matte — outputs the matte as monochrome for previewing the selected region
 [[parameter]]
 parameter_id = "toggle_switch_7"
 name_label = "Show Matte"
@@ -133,7 +142,7 @@ name_label = "Matte Bit 0"
 value_labels = ["0", "1"]
 initial_value_label = "0"
 
-# Switch 5: Fine mode — half-sensitivity for precise threshold adjustment
+# Switch 5: Fine mode — one-eighth-sensitivity for precise threshold adjustment
 [[parameter]]
 parameter_id = "toggle_switch_11"
 name_label = "Fine"
@@ -144,7 +153,7 @@ initial_value_label = "Normal"
 # SLIDER (Linear Potentiometer)
 # ---------------------------------------------------------------------------
 
-# Global blend: fade between original (dry) and keyed (wet) output
+# Global blend: fade between original (dry) and filtered (wet) output
 [[parameter]]
 parameter_id = "linear_potentiometer_12"
 name_label = "Global Blend"

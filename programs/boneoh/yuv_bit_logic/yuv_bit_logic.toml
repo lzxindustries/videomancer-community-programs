@@ -12,14 +12,14 @@
 #   - Bypass switch (follows Videomancer convention)
 #   - No YUV<->RGB colour conversion; operates directly on Y, U, V channels
 #
-# Operator encoding (switches 2+3+4 as 3-bit value, S2=LSB, S4=MSB):
-#   S2=Off S3=Off S4=Off -> 0: AND   (channel AND mask)
-#   S2=On  S3=Off S4=Off -> 1: OR    (channel OR  mask)
-#   S2=Off S3=On  S4=Off -> 2: XOR   (channel XOR mask)
-#   S2=On  S3=On  S4=Off -> 3: NAND  (NOT(channel AND mask))
-#   S2=Off S3=Off S4=On  -> 4: NOR   (NOT(channel OR  mask))
-#   S2=On  S3=Off S4=On  -> 5: NXOR  (NOT(channel XOR mask) = XNOR)
-#   S2=Off S3=On  S4=On  -> 6: LFSR  (10-bit LFSR XOR, mask knobs gate bit planes)
+# Operator encoding (switches 2+3+4 as 3-bit value, S2=MSB, S4=LSB):
+#   S2=Off S3=Off S4=Off -> 0: AND   (pixel AND mask)
+#   S2=Off S3=Off S4=On  -> 1: OR    (pixel OR  mask)
+#   S2=Off S3=On  S4=Off -> 2: XOR   (pixel XOR mask)
+#   S2=Off S3=On  S4=On  -> 3: NAND  (NOT(pixel AND mask))
+#   S2=On  S3=Off S4=Off -> 4: NOR   (NOT(pixel OR  mask))
+#   S2=On  S3=Off S4=On  -> 5: NXOR  (NOT(pixel XOR mask) = XNOR)
+#   S2=On  S3=On  S4=Off -> 6: LFSR  (10-bit LFSR XOR, mask knobs gate bit planes)
 #   S2=On  S3=On  S4=On  -> 7: PRNG  (16-bit LFSR XOR, mask knobs gate bit planes)
 #
 # Switch 1 dual behaviour:
@@ -34,7 +34,7 @@ program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Video Processing"
+categories = ["Color"]
 description = "Per-channel YUV bitwise logic with blend and LFSR/PRNG modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"
@@ -116,8 +116,8 @@ suffix_label = "%"
 [[parameter]]
 parameter_id = "toggle_switch_7"
 name_label = "Invert/Seed"
-value_labels = ["Off/Free", "On/Sync"]
-initial_value_label = "Off/Free"
+value_labels = ["Off/Sync", "On/Free"]
+initial_value_label = "Off/Sync"
 
 # Switches 2-4: Operator select (3-bit encoding, see header for full table)
 [[parameter]]

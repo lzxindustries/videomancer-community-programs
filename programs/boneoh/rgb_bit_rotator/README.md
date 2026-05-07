@@ -83,8 +83,12 @@ Per-channel and global wet/dry blend controls allow the effect to be mixed with 
 - **Colour conversion:** BT.601 full-range coefficients implemented as 11 pre-computed BRAM lookup tables (31 of 32 ice40 hx4k BRAM blocks)
 - **Pipeline latency:** 14 clock cycles
 - **FPGA:** Lattice iCE40 HX4K (tq144) on Videomancer rev_b
-- **HD timing:** All six variants meet 74.25 MHz (worst case ~77 MHz)
-- **LC utilisation:** ~25% (routing-friendly)
+- **IOs:** 107 / 256
+- **PLLs:** 0 / 2 (HD targets), 1 / 2 (SD targets)
+- **HD timing:** All six variants meet 74.25 MHz (worst case 77.44 MHz)
+- **LC utilisation:** 6019–6062 of 7680 (~79%)
+- **Package size:** 424,387 bytes (rev_b, unsigned)
+- **Last built:** 2026-04-25 12:55 MDT
 
 ## Hardware Requirements
 

@@ -13,12 +13,12 @@
 
 [program]
 program_id = "com.peteappleby.rgb_bit_rotator"
-program_name = "RGB Bit Rotato"
+program_name = "RGB Bit Rotator"
 program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Video Processing"
+categories = ["Color"]
 description = "Per-channel RGB bit rotation with blend and lo-fi bit depth modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"

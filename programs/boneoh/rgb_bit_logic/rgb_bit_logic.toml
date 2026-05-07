@@ -11,14 +11,14 @@
 #   - Invert mask switch (dual-use: invert mask for ops 0-5, vsync-seed for ops 6-7)
 #   - Bypass switch (follows Videomancer convention)
 #
-# Operator encoding (switches 2+3+4 as 3-bit value, S2=LSB, S4=MSB):
+# Operator encoding (switches 2+3+4 as 3-bit value, S2=MSB, S4=LSB):
 #   S2=Off S3=Off S4=Off -> 0: AND   (pixel AND mask)
-#   S2=On  S3=Off S4=Off -> 1: OR    (pixel OR  mask)
+#   S2=Off S3=Off S4=On  -> 1: OR    (pixel OR  mask)
 #   S2=Off S3=On  S4=Off -> 2: XOR   (pixel XOR mask)
-#   S2=On  S3=On  S4=Off -> 3: NAND  (NOT(pixel AND mask))
-#   S2=Off S3=Off S4=On  -> 4: NOR   (NOT(pixel OR  mask))
+#   S2=Off S3=On  S4=On  -> 3: NAND  (NOT(pixel AND mask))
+#   S2=On  S3=Off S4=Off -> 4: NOR   (NOT(pixel OR  mask))
 #   S2=On  S3=Off S4=On  -> 5: NXOR  (NOT(pixel XOR mask) = XNOR)
-#   S2=Off S3=On  S4=On  -> 6: LFSR  (10-bit LFSR XOR, mask knobs gate bit planes)
+#   S2=On  S3=On  S4=Off -> 6: LFSR  (10-bit LFSR XOR, mask knobs gate bit planes)
 #   S2=On  S3=On  S4=On  -> 7: PRNG  (16-bit LFSR XOR, mask knobs gate bit planes)
 #
 # Switch 1 dual behaviour:
@@ -33,7 +33,7 @@ program_version = "0.1.0"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
-category = "Video Processing"
+categories = ["Color"]
 description = "Per-channel RGB bitwise logic with blend and LFSR/PRNG modes"
 hardware_compatibility = ["rev_b"]
 core = "yuv444_30b"
