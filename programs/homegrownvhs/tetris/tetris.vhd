@@ -352,6 +352,10 @@ architecture tetris of program_top is
     signal s_stg1p5_hx        : unsigned(11 downto 0) := (others => '0');
     signal s_stg1p5_vy        : unsigned(11 downto 0) := (others => '0');
     signal s_stg1p5_grid_row  : std_logic_vector(C_FIELD_COLS - 1 downto 0) := (others => '0');
+    -- Pre-decoded next-piece preview box position (registered in stg1.5 so the
+    -- subtract+divide+bit-position chain is no longer combinational into stg2).
+    signal s_stg1p5_next_in_box : std_logic := '0';
+    signal s_stg1p5_next_nbit   : integer range 0 to 15 := 0;
 
     -- Stage 2
     signal s_stg2_on_grid    : std_logic := '0';
@@ -1132,6 +1136,12 @@ begin
     -- ====================================================================
 
     p_stage1p5 : process(clk)
+        variable v_nfx  : integer range -4095 to 4095;
+        variable v_nfy  : integer range -4095 to 4095;
+        variable v_nc   : integer range -512 to 511;
+        variable v_nr   : integer range -512 to 511;
+        variable v_nc_c : integer range 0 to 3;
+        variable v_nr_c : integer range 0 to 3;
     begin
         if rising_edge(clk) then
             s_stg1p5_in_field <= s_stg1_in_field;
@@ -1147,6 +1157,40 @@ begin
             else
                 s_stg1p5_grid_row <= (others => '0');
             end if;
+
+            -- Pre-decode next-piece preview box: detect whether this pixel
+            -- falls inside the 4x4 next-piece preview region and compute the
+            -- bit index into the piece bitmap. Done here so stg2 only needs a
+            -- 16:1 MUX into the bitmap.
+            v_nfx := to_integer(s_stg1_hx) - s_next_x_off;
+            v_nfy := to_integer(s_stg1_vy) - s_next_y_off;
+            case s_cell_w_shift is
+                when 3 =>      v_nc := v_nfx / 8;
+                when 4 =>      v_nc := v_nfx / 16;
+                when others => v_nc := v_nfx / 32;
+            end case;
+            case s_cell_shift is
+                when 3 =>      v_nr := v_nfy / 8;
+                when 4 =>      v_nr := v_nfy / 16;
+                when others => v_nr := v_nfy / 32;
+            end case;
+            if v_nfx >= 0 and v_nfx < to_integer(s_cell_w_u) * 4 and
+               v_nfy >= 0 and v_nfy < to_integer(s_cell_size_u) * 4 then
+                s_stg1p5_next_in_box <= '1';
+            else
+                s_stg1p5_next_in_box <= '0';
+            end if;
+            if v_nc < 0 then v_nc_c := 0;
+            elsif v_nc > 3 then v_nc_c := 3;
+            else v_nc_c := v_nc; end if;
+            if v_nr < 0 then v_nr_c := 0;
+            elsif v_nr > 3 then v_nr_c := 3;
+            else v_nr_c := v_nr; end if;
+            -- 15 - v_nr_c*4 - v_nc_c expressed as bit-invert of 4-bit
+            -- {v_nr_c[1:0], v_nc_c[1:0]} -- avoids the ripple subtract chain.
+            s_stg1p5_next_nbit <= to_integer(unsigned(
+                not (std_logic_vector(to_unsigned(v_nr_c, 2)) &
+                     std_logic_vector(to_unsigned(v_nc_c, 2)))));
         end if;
     end process;
 
@@ -1160,12 +1204,6 @@ begin
         variable v_gdy     : integer range -23 to 23;
         variable v_bit     : integer range 0 to 15;
         variable v_col     : integer range 0 to 9;
-        variable v_nfx     : integer range -4095 to 4095;
-        variable v_nfy     : integer range -4095 to 4095;
-        variable v_nc      : integer range 0 to 3;
-        variable v_nr      : integer range 0 to 3;
-        variable v_nbit    : integer range 0 to 15;
-        variable v_cell_sz : integer range 1 to 63;
     begin
         if rising_edge(clk) then
             s_stg2_in_field   <= s_stg1p5_in_field;
@@ -1235,28 +1273,11 @@ begin
                 end if;
             end if;
 
-            -- Next piece preview (to right of field)
-            v_cell_sz := to_integer(s_cell_size_u);
-            v_nfx := to_integer(s_stg1p5_hx) - s_next_x_off;
-            v_nfy := to_integer(s_stg1p5_vy) - s_next_y_off;
-            if v_nfx >= 0 and v_nfx < to_integer(s_cell_w_u) * 4 and
-               v_nfy >= 0 and v_nfy < v_cell_sz * 4 and
-               s_next_en = '1' then
+            -- Next piece preview (to right of field). Position+bit index were
+            -- pre-computed in stg1.5; here we only do the 16:1 bitmap lookup.
+            if s_stg1p5_next_in_box = '1' and s_next_en = '1' then
                 s_stg2_in_next <= '1';
-                -- Column: divide by horizontal cell width
-                case s_cell_w_shift is
-                    when 3 =>  v_nc := v_nfx / 8;
-                    when 4 =>  v_nc := v_nfx / 16;
-                    when others => v_nc := v_nfx / 32;
-                end case;
-                -- Row: divide by vertical cell size
-                case s_cell_shift is
-                    when 3 =>  v_nr := v_nfy / 8;
-                    when 4 =>  v_nr := v_nfy / 16;
-                    when others => v_nr := v_nfy / 32;
-                end case;
-                v_nbit := 15 - v_nr * 4 - v_nc;
-                if C_PIECES(s_next_type * 4)(v_nbit) = '1' then
+                if C_PIECES(s_next_type * 4)(s_stg1p5_next_nbit) = '1' then
                     s_stg2_next_type <= s_next_type + 1;
                 end if;
             end if;

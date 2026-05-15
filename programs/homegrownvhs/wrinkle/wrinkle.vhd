@@ -64,9 +64,9 @@
 --   Fader  (registers_in(7)):    Mix (dry/wet)
 --
 -- Timing:
---   C_PROCESSING_DELAY_CLKS = 8 (inline stages, includes 2-cycle pipelined LPF
---                                  and 2-cycle pipelined stage 4)
-    --   C_SYNC_DELAY_CLKS       = 12 (8 + 4 interpolator)
+--   C_PROCESSING_DELAY_CLKS = 9 (inline stages, includes 2-cycle pipelined LPF,
+--                                  registered s_src, and 2-cycle pipelined stage 4)
+    --   C_SYNC_DELAY_CLKS       = 13 (9 + 4 interpolator)
 
 --------------------------------------------------------------------------------
 
@@ -83,8 +83,8 @@ use work.video_timing_pkg.all;
 architecture wrinkle of program_top is
 
     constant C_VIDEO_DATA_WIDTH      : integer := 10;
-    constant C_PROCESSING_DELAY_CLKS : integer := 8;
-    constant C_SYNC_DELAY_CLKS       : integer := 12;
+    constant C_PROCESSING_DELAY_CLKS : integer := 9;
+    constant C_SYNC_DELAY_CLKS       : integer := 13;
 
     -- Frequency encoding: freq_factor = (knob >> 2) + 4 = 4..259 (8 bits)
     -- product = channel * freq_factor (10x8 = 18 bits)
@@ -215,9 +215,15 @@ architecture wrinkle of program_top is
     signal s_err_snap_u     : signed(C_IIR_WIDTH - 1 downto 0) := (others => '0');
     signal s_err_snap_v     : signed(C_IIR_WIDTH - 1 downto 0) := (others => '0');
     signal s_err_snap_en    : std_logic := '0';
-    signal s_src_y          : unsigned(9 downto 0);
-    signal s_src_u          : unsigned(9 downto 0);
-    signal s_src_v          : unsigned(9 downto 0);
+    -- Combinational extraction from IIR state (10-bit unsigned with zero-clamp)
+    signal s_src_y_c        : unsigned(9 downto 0);
+    signal s_src_u_c        : unsigned(9 downto 0);
+    signal s_src_v_c        : unsigned(9 downto 0);
+    -- Registered version: breaks the long s_iir -> CSC -> s0_ch* combinational
+    -- chain by inserting a pipeline stage (adds 1 clk to processing latency).
+    signal s_src_y          : unsigned(9 downto 0) := (others => '0');
+    signal s_src_u          : unsigned(9 downto 0) := to_unsigned(512, 10);
+    signal s_src_v          : unsigned(9 downto 0) := to_unsigned(512, 10);
 
 begin
 
@@ -314,12 +320,22 @@ begin
     end process p_lpf;
 
     -- Extract 10-bit unsigned from 19-bit signed IIR state (bits 17:8)
-    s_src_y <= to_unsigned(0, 10) when s_iir_y(C_IIR_WIDTH - 1) = '1' else
-               unsigned(s_iir_y(9 + C_IIR_FRAC downto C_IIR_FRAC));
-    s_src_u <= to_unsigned(0, 10) when s_iir_u(C_IIR_WIDTH - 1) = '1' else
-               unsigned(s_iir_u(9 + C_IIR_FRAC downto C_IIR_FRAC));
-    s_src_v <= to_unsigned(0, 10) when s_iir_v(C_IIR_WIDTH - 1) = '1' else
-               unsigned(s_iir_v(9 + C_IIR_FRAC downto C_IIR_FRAC));
+    s_src_y_c <= to_unsigned(0, 10) when s_iir_y(C_IIR_WIDTH - 1) = '1' else
+                 unsigned(s_iir_y(9 + C_IIR_FRAC downto C_IIR_FRAC));
+    s_src_u_c <= to_unsigned(0, 10) when s_iir_u(C_IIR_WIDTH - 1) = '1' else
+                 unsigned(s_iir_u(9 + C_IIR_FRAC downto C_IIR_FRAC));
+    s_src_v_c <= to_unsigned(0, 10) when s_iir_v(C_IIR_WIDTH - 1) = '1' else
+                 unsigned(s_iir_v(9 + C_IIR_FRAC downto C_IIR_FRAC));
+
+    -- Pipeline register breaks the s_iir -> CSC sum-of-shifts -> s0_ch* path.
+    p_src_reg : process(clk)
+    begin
+        if rising_edge(clk) then
+            s_src_y <= s_src_y_c;
+            s_src_u <= s_src_u_c;
+            s_src_v <= s_src_v_c;
+        end if;
+    end process p_src_reg;
 
     -- =========================================================================
     -- Parameter latch on vsync (prevents mid-frame tearing)
