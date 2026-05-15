@@ -110,6 +110,40 @@ parse_toml_array() {
     fi
 }
 
+# MacOS comes with a version of grep that does not support PCRE
+# GNU grep is installed during setup and aliased to ggrep to avoid conflicts
+case "$(uname -s)" in
+    Darwin*)
+        SEARCH=ggrep
+        ;;
+    *)
+	SEARCH=grep
+        ;;
+esac
+
+# Function to check for timing violations in nextpnr build log
+# Returns 0 if no timing errors, 1 if timing errors found
+# Args: $1 = log file path
+#
+# nextpnr-ice40 emits TWO "Max frequency for clock ..." lines per run:
+#   1. Info:    <Fmax> MHz   - pre-route estimate (optimistic, ignores routing)
+#   2. Info: or Warning:     - post-route verification (definitive achieved Fmax)
+# By default, post-route FAIL is logged as "Warning:" (not "ERROR:") because
+# nextpnr exits successfully when --timing-allow-fail is in effect. We match
+# the explicit FAIL marker on the post-route line, which appears as either
+# "Warning: Max frequency ... (FAIL at ...)" or
+# "ERROR: Max frequency ... (FAIL at ...)".
+check_timing_errors() {
+    local log_file="$1"
+    if [ ! -f "$log_file" ]; then
+        return 0
+    fi
+    if $SEARCH -qE '(Warning|ERROR):\s+Max frequency.*FAIL at' "$log_file"; then
+        return 1
+    fi
+    return 0
+}
+
 # Function to extract timing and resource information from nextpnr build log
 # Args: $1 = log file path
 parse_build_stats() {
@@ -129,36 +163,49 @@ parse_build_stats() {
         return 1
     fi
 
-    # Extract max frequency from timing analysis (look for critical path max frequency)
-    max_freq=$(grep -oP 'Max frequency for clock.*?:\s+\K[0-9.]+' "$log_file" | head -n1)
+    # Extract max frequency from timing analysis.
+    # nextpnr emits TWO "Max frequency" lines: pre-route estimate (Info, optimistic)
+    # and post-route verification (Info or Warning, definitive). Use tail -n1 to
+    # grab the post-route value, which is the achieved Fmax after routing.
+    max_freq=$($SEARCH -oP 'Max frequency for clock.*?:\s+\K[0-9.]+' "$log_file" | tail -n1)
     if [ -z "$max_freq" ]; then
         # Alternative pattern for max frequency
-        max_freq=$(grep -oP 'Max delay.*?=.*?\K[0-9.]+(?=\s+MHz)' "$log_file" | head -n1)
+        max_freq=$($SEARCH -oP 'Max delay.*?=.*?\K[0-9.]+(?=\s+MHz)' "$log_file" | tail -n1)
     fi
 
     # Extract resource utilization with both used and max values
-    local lc_line=$(grep 'ICESTORM_LC:' "$log_file" | head -n1)
+    # Example lines from nextpnr-ice40:
+    # Info: Device utilisation:
+    # Info:            ICESTORM_LC:  1234/ 3520    35%
+    # Info:           ICESTORM_RAM:     4/   20    20%
+    # Info:                  SB_IO:    42/   96    43%
+    # Info:                  SB_GB:     8/    8   100%
+    # Info:           ICESTORM_PLL:     0/    1     0%
+    # Info:            SB_WARMBOOT:     0/    1     0%
+
+    # Extract used/max for each resource type
+    local lc_line=$($SEARCH 'ICESTORM_LC:' "$log_file" | head -n1)
     if [ -n "$lc_line" ]; then
-        luts=$(echo "$lc_line" | grep -oP 'ICESTORM_LC:\s+\K[0-9]+')
-        luts_max=$(echo "$lc_line" | grep -oP 'ICESTORM_LC:\s+[0-9]+/\s*\K[0-9]+')
+        luts=$(echo "$lc_line" | $SEARCH -oP 'ICESTORM_LC:\s+\K[0-9]+')
+        luts_max=$(echo "$lc_line" | $SEARCH -oP 'ICESTORM_LC:\s+[0-9]+/\s*\K[0-9]+')
     fi
 
-    local io_line=$(grep 'SB_IO:' "$log_file" | head -n1)
+    local io_line=$($SEARCH 'SB_IO:' "$log_file" | head -n1)
     if [ -n "$io_line" ]; then
-        ios=$(echo "$io_line" | grep -oP 'SB_IO:\s+\K[0-9]+')
-        ios_max=$(echo "$io_line" | grep -oP 'SB_IO:\s+[0-9]+/\s*\K[0-9]+')
+        ios=$(echo "$io_line" | $SEARCH -oP 'SB_IO:\s+\K[0-9]+')
+        ios_max=$(echo "$io_line" | $SEARCH -oP 'SB_IO:\s+[0-9]+/\s*\K[0-9]+')
     fi
 
-    local ram_line=$(grep 'ICESTORM_RAM:' "$log_file" | head -n1)
+    local ram_line=$($SEARCH 'ICESTORM_RAM:' "$log_file" | head -n1)
     if [ -n "$ram_line" ]; then
-        brams=$(echo "$ram_line" | grep -oP 'ICESTORM_RAM:\s+\K[0-9]+')
-        brams_max=$(echo "$ram_line" | grep -oP 'ICESTORM_RAM:\s+[0-9]+/\s*\K[0-9]+')
+        brams=$(echo "$ram_line" | $SEARCH -oP 'ICESTORM_RAM:\s+\K[0-9]+')
+        brams_max=$(echo "$ram_line" | $SEARCH -oP 'ICESTORM_RAM:\s+[0-9]+/\s*\K[0-9]+')
     fi
 
-    local pll_line=$(grep 'ICESTORM_PLL:' "$log_file" | head -n1)
+    local pll_line=$($SEARCH 'ICESTORM_PLL:' "$log_file" | head -n1)
     if [ -n "$pll_line" ]; then
-        plbs=$(echo "$pll_line" | grep -oP 'ICESTORM_PLL:\s+\K[0-9]+')
-        plbs_max=$(echo "$pll_line" | grep -oP 'ICESTORM_PLL:\s+[0-9]+/\s*\K[0-9]+')
+        plbs=$(echo "$pll_line" | $SEARCH -oP 'ICESTORM_PLL:\s+\K[0-9]+')
+        plbs_max=$(echo "$pll_line" | $SEARCH -oP 'ICESTORM_PLL:\s+[0-9]+/\s*\K[0-9]+')
     fi
 
     # Build output string with available information
@@ -351,10 +398,26 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
         CORE="yuv444_27b"
     fi
 
+    # Get HD clock divisor (optional, defaults to 1 = full speed)
+    HD_CLK_DIV=$(parse_toml_field "$PROGRAM_TOML" "program.hd_clock_divisor")
+    if [ -z "$HD_CLK_DIV" ]; then
+        HD_CLK_DIV=1
+    fi
+
+    # Get optional nextpnr placement seed override (defaults to Makefile's SEED ?= 1).
+    # Use to work around occasional nextpnr-ice40 router assertions on specific designs.
+    NEXTPNR_SEED=$(parse_toml_field "$PROGRAM_TOML" "firmware.seed")
+
     echo -e "${CYAN}Vendor: ${VENDOR}${NC}"
     echo -e "${CYAN}Program: ${PROGRAM}${NC}"
     echo -e "${CYAN}Supported hardware: ${HARDWARE_VARIANTS}${NC}"
     echo -e "${CYAN}Core architecture: ${CORE}${NC}"
+    if [ "$HD_CLK_DIV" -gt 1 ]; then
+        echo -e "${CYAN}HD clock divisor: ${HD_CLK_DIV}x (program clock = $(echo "scale=4; 74.25 / $HD_CLK_DIV" | bc) MHz)${NC}"
+    fi
+    if [ -n "$NEXTPNR_SEED" ]; then
+        echo -e "${CYAN}nextpnr seed override: ${NEXTPNR_SEED}${NC}"
+    fi
     echo ""
 
     # Loop through each supported hardware variant
@@ -386,7 +449,7 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
         HW_BUILD_ROOT="${BUILD_ROOT}/${HARDWARE}/"
         mkdir -p "${HW_BUILD_ROOT}/bitstreams"
 
-        # Synthesize FPGA bitstreams (6 variants)
+        # Synthesize FPGA bitstreams (8 variants)
         echo -e "${GREEN}Synthesizing FPGA bitstreams for ${HARDWARE}...${NC}"
         cd "${VIDEOMANCER_SDK_ROOT}/fpga"
 
@@ -400,20 +463,53 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
             if ! python3 "$PYTHON_HOOK"; then
                 echo -e "${RED}ERROR: Python hook failed${NC}"
                 rm -f "$MAKE_LOG"
-                cd ..
+                cd "${SCRIPT_DIR}"
                 FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
                 continue 2
             fi
             echo -e "${GREEN}  ✓ Python hook completed${NC}"
         fi
 
+        # Remove stale .vmprog so a failed build can't be masked by a previous success
+        rm -f "${VIDEOMANCER_OUT_DIR}/${HARDWARE}/${VENDOR}/${PROGRAM}.vmprog"
+
         # Track total bitstream generation time
         BITSTREAM_START=$(date +%s.%N)
 
-        echo -e "${CYAN}  [1/6] HD Analog - Fmin: 74.25 MHz...${NC}"
+        echo -e "${CYAN}  [1/8] HD Analog - Fmin: 74.25 MHz...${NC}"
         START=$(date +%s.%N)
-        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=hd_analog DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=74.25 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM > "$MAKE_LOG" 2>&1; then
+        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=hd_analog DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=74.25 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM HD_CLOCK_DIVISOR=$HD_CLK_DIV ${NEXTPNR_SEED:+SEED=$NEXTPNR_SEED} > "$MAKE_LOG" 2>&1; then
             echo -e "${RED}Build failed. Error output:${NC}"
+            cat "$MAKE_LOG"
+            rm -f "$MAKE_LOG"
+            cd "${SCRIPT_DIR}"
+            FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
+            continue 2
+        fi
+        if ! check_timing_errors "$MAKE_LOG"; then
+            echo -e "${YELLOW}    ⚠ HD timing not met (informational; bitstream produced via --timing-allow-fail)${NC}"
+        fi
+        END=$(date +%s.%N)
+        ELAPSED=$(echo "$END - $START" | bc)
+        BUILD_STATS=$(parse_build_stats "$MAKE_LOG")
+        if [ -n "$BUILD_STATS" ]; then
+            echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s - ${BUILD_STATS}${NC}"
+        else
+            echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s${NC}"
+        fi
+
+        echo -e "${CYAN}  [2/8] SD Analog - Fmin: 27 MHz...${NC}"
+        START=$(date +%s.%N)
+        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=sd_analog DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=27 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM ${NEXTPNR_SEED:+SEED=$NEXTPNR_SEED} > "$MAKE_LOG" 2>&1; then
+            echo -e "${RED}Build failed. Error output:${NC}"
+            cat "$MAKE_LOG"
+            rm -f "$MAKE_LOG"
+            cd "${SCRIPT_DIR}"
+            FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
+            continue 2
+        fi
+        if ! check_timing_errors "$MAKE_LOG"; then
+            echo -e "${RED}Timing constraint violated. Error output:${NC}"
             cat "$MAKE_LOG"
             rm -f "$MAKE_LOG"
             cd "${SCRIPT_DIR}"
@@ -429,10 +525,40 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
             echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s${NC}"
         fi
 
-        echo -e "${CYAN}  [2/6] SD Analog - Fmin: 27 MHz...${NC}"
+        echo -e "${CYAN}  [3/8] HD HDMI - Fmin: 74.25 MHz...${NC}"
         START=$(date +%s.%N)
-        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=sd_analog DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=27 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM > "$MAKE_LOG" 2>&1; then
+        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=hd_hdmi DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=74.25 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM HD_CLOCK_DIVISOR=$HD_CLK_DIV ${NEXTPNR_SEED:+SEED=$NEXTPNR_SEED} > "$MAKE_LOG" 2>&1; then
             echo -e "${RED}Build failed. Error output:${NC}"
+            cat "$MAKE_LOG"
+            rm -f "$MAKE_LOG"
+            cd "${SCRIPT_DIR}"
+            FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
+            continue 2
+        fi
+        if ! check_timing_errors "$MAKE_LOG"; then
+            echo -e "${YELLOW}    ⚠ HD timing not met (informational; bitstream produced via --timing-allow-fail)${NC}"
+        fi
+        END=$(date +%s.%N)
+        ELAPSED=$(echo "$END - $START" | bc)
+        BUILD_STATS=$(parse_build_stats "$MAKE_LOG")
+        if [ -n "$BUILD_STATS" ]; then
+            echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s - ${BUILD_STATS}${NC}"
+        else
+            echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s${NC}"
+        fi
+
+        echo -e "${CYAN}  [4/8] SD HDMI - Fmin: 27 MHz...${NC}"
+        START=$(date +%s.%N)
+        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=sd_hdmi DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=27 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM ${NEXTPNR_SEED:+SEED=$NEXTPNR_SEED} > "$MAKE_LOG" 2>&1; then
+            echo -e "${RED}Build failed. Error output:${NC}"
+            cat "$MAKE_LOG"
+            rm -f "$MAKE_LOG"
+            cd "${SCRIPT_DIR}"
+            FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
+            continue 2
+        fi
+        if ! check_timing_errors "$MAKE_LOG"; then
+            echo -e "${RED}Timing constraint violated. Error output:${NC}"
             cat "$MAKE_LOG"
             rm -f "$MAKE_LOG"
             cd "${SCRIPT_DIR}"
@@ -448,10 +574,40 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
             echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s${NC}"
         fi
 
-        echo -e "${CYAN}  [3/6] HD HDMI - Fmin: 74.25 MHz...${NC}"
+        echo -e "${CYAN}  [5/8] HD Dual - Fmin: 74.25 MHz...${NC}"
         START=$(date +%s.%N)
-        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=hd_hdmi DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=74.25 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM > "$MAKE_LOG" 2>&1; then
+        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=hd_dual DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=74.25 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM HD_CLOCK_DIVISOR=$HD_CLK_DIV ${NEXTPNR_SEED:+SEED=$NEXTPNR_SEED} > "$MAKE_LOG" 2>&1; then
             echo -e "${RED}Build failed. Error output:${NC}"
+            cat "$MAKE_LOG"
+            rm -f "$MAKE_LOG"
+            cd "${SCRIPT_DIR}"
+            FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
+            continue 2
+        fi
+        if ! check_timing_errors "$MAKE_LOG"; then
+            echo -e "${YELLOW}    ⚠ HD timing not met (informational; bitstream produced via --timing-allow-fail)${NC}"
+        fi
+        END=$(date +%s.%N)
+        ELAPSED=$(echo "$END - $START" | bc)
+        BUILD_STATS=$(parse_build_stats "$MAKE_LOG")
+        if [ -n "$BUILD_STATS" ]; then
+            echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s - ${BUILD_STATS}${NC}"
+        else
+            echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s${NC}"
+        fi
+
+        echo -e "${CYAN}  [6/8] SD Dual - Fmin: 27 MHz...${NC}"
+        START=$(date +%s.%N)
+        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=sd_dual DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=27 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM ${NEXTPNR_SEED:+SEED=$NEXTPNR_SEED} > "$MAKE_LOG" 2>&1; then
+            echo -e "${RED}Build failed. Error output:${NC}"
+            cat "$MAKE_LOG"
+            rm -f "$MAKE_LOG"
+            cd "${SCRIPT_DIR}"
+            FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
+            continue 2
+        fi
+        if ! check_timing_errors "$MAKE_LOG"; then
+            echo -e "${RED}Timing constraint violated. Error output:${NC}"
             cat "$MAKE_LOG"
             rm -f "$MAKE_LOG"
             cd "${SCRIPT_DIR}"
@@ -467,15 +623,18 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
             echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s${NC}"
         fi
 
-        echo -e "${CYAN}  [4/6] SD HDMI - Fmin: 27 MHz...${NC}"
+        echo -e "${CYAN}  [7/8] HD Standalone - Fmin: 74.25 MHz...${NC}"
         START=$(date +%s.%N)
-        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=sd_hdmi DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=27 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM > "$MAKE_LOG" 2>&1; then
+        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=hd_standalone DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=74.25 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM HD_CLOCK_DIVISOR=$HD_CLK_DIV ${NEXTPNR_SEED:+SEED=$NEXTPNR_SEED} > "$MAKE_LOG" 2>&1; then
             echo -e "${RED}Build failed. Error output:${NC}"
             cat "$MAKE_LOG"
             rm -f "$MAKE_LOG"
             cd "${SCRIPT_DIR}"
             FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
             continue 2
+        fi
+        if ! check_timing_errors "$MAKE_LOG"; then
+            echo -e "${YELLOW}    ⚠ HD timing not met (informational; bitstream produced via --timing-allow-fail)${NC}"
         fi
         END=$(date +%s.%N)
         ELAPSED=$(echo "$END - $START" | bc)
@@ -486,9 +645,9 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
             echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s${NC}"
         fi
 
-        echo -e "${CYAN}  [5/6] HD Dual - Fmin: 74.25 MHz...${NC}"
+        echo -e "${CYAN}  [8/8] SD Standalone - Fmin: 27 MHz...${NC}"
         START=$(date +%s.%N)
-        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=hd_dual DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=74.25 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM > "$MAKE_LOG" 2>&1; then
+        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=sd_standalone DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=27 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM ${NEXTPNR_SEED:+SEED=$NEXTPNR_SEED} > "$MAKE_LOG" 2>&1; then
             echo -e "${RED}Build failed. Error output:${NC}"
             cat "$MAKE_LOG"
             rm -f "$MAKE_LOG"
@@ -496,19 +655,8 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
             FAILED_PROGRAMS=$((FAILED_PROGRAMS + 1))
             continue 2
         fi
-        END=$(date +%s.%N)
-        ELAPSED=$(echo "$END - $START" | bc)
-        BUILD_STATS=$(parse_build_stats "$MAKE_LOG")
-        if [ -n "$BUILD_STATS" ]; then
-            echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s - ${BUILD_STATS}${NC}"
-        else
-            echo -e "${GREEN}    ✓ Completed in ${ELAPSED}s${NC}"
-        fi
-
-        echo -e "${CYAN}  [6/6] SD Dual - Fmin: 27 MHz...${NC}"
-        START=$(date +%s.%N)
-        if ! make VIDEOMANCER_SDK_ROOT="${VIDEOMANCER_SDK_ROOT}" PROJECT_ROOT="${PROJECT_ROOT}" BUILD_ROOT="${HW_BUILD_ROOT}" PROGRAM=$PROGRAM CONFIG=sd_dual DEVICE=$DEVICE PACKAGE=$PACKAGE FREQUENCY=27 HARDWARE=$HARDWARE CORE=$CORE PLATFORM=$PLATFORM > "$MAKE_LOG" 2>&1; then
-            echo -e "${RED}Build failed. Error output:${NC}"
+        if ! check_timing_errors "$MAKE_LOG"; then
+            echo -e "${RED}Timing constraint violated. Error output:${NC}"
             cat "$MAKE_LOG"
             rm -f "$MAKE_LOG"
             cd "${SCRIPT_DIR}"
@@ -529,9 +677,8 @@ for PROGRAM_PATH in $PROGRAMS_TO_BUILD; do
 
         rm -f "$MAKE_LOG"
         cd "${SCRIPT_DIR}"
-        echo -e "${GREEN}✓ All 6 bitstream variants generated in ${TOTAL_BITSTREAM_TIME}s${NC}"
+        echo -e "${GREEN}✓ All 8 bitstream variants generated in ${TOTAL_BITSTREAM_TIME}s${NC}"
 
-        # Convert TOML configuration to binary (once per program, shared across hardware)
         # Convert TOML configuration to binary (always regenerate to avoid stale config)
         echo -e "${GREEN}Converting TOML configuration to binary...${NC}"
         cd "${VIDEOMANCER_SDK_ROOT}/tools/toml-converter"
