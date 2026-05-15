@@ -182,6 +182,7 @@ architecture tetris of program_top is
         GS_LOCK_ITER,
         GS_LOCK_WRITE,
         GS_LINE_SCAN,
+        GS_LINE_SCAN_CHECK,
         GS_LINE_READ,
         GS_LINE_WRITE,
         GS_GHOST_SETUP,
@@ -309,7 +310,22 @@ architecture tetris of program_top is
     signal s_lock_wr_en  : std_logic := '0';
     signal s_lock_wr_row : integer range 0 to 19 := 0;
     signal s_lock_wr_col : integer range 0 to 9 := 0;
+    -- One-hot row/col selects pre-decoded from s_lock_wr_row/col one cycle
+    -- before the grid write. This collapses the per-FF write enable from a
+    -- 5-bit row comparator + 4-bit col comparator + AND chain (which failed
+    -- HD timing at 74.25 MHz) into a single 3-input AND on each FF's CEN.
+    signal s_lock_wr_row_oh : std_logic_vector(0 to 19) := (others => '0');
+    signal s_lock_wr_col_oh : std_logic_vector(0 to 9)  := (others => '0');
+    -- One-hot select for s_shift_row, used in GS_LINE_WRITE / GS_LINE_READ.
+    -- Pre-decoded so the grid_occ row write doesn't go through a 5-bit row
+    -- comparator from s_state -> grid_occ.CEN (which failed HD timing).
+    signal s_shift_row_oh   : std_logic_vector(0 to 19) := (others => '0');
     signal s_line_src_data  : std_logic_vector(C_FIELD_COLS - 1 downto 0) := (others => '0');
+    -- Pre-registered scan row read for GS_LINE_SCAN. Splits the deep
+    -- combinational chain (s_scan_row -> grid_occ row mux -> all-ones AND
+    -- tree -> BCD score increment cascade -> s_score_hundreds CEN) into two
+    -- pipeline stages so HD timing closes at 74.25 MHz on iCE40 hx4k.
+    signal s_scan_row_data  : std_logic_vector(C_FIELD_COLS - 1 downto 0) := (others => '0');
 
     -- Ghost search
     signal s_ghost_test_y : integer range -3 to 23 := 0;
@@ -841,12 +857,28 @@ begin
                 v_lock_col := s_cur_x + v_piece_col;
                 v_lock_row := s_cur_y + v_piece_row;
 
+                -- Default: clear one-hot selects (no write).
+                s_lock_wr_row_oh <= (others => '0');
+                s_lock_wr_col_oh <= (others => '0');
+
                 if s_cur_bitmap(v_bit_idx) = '1' and
                    v_lock_row >= 0 and v_lock_row < C_FIELD_ROWS and
                    v_lock_col >= 0 and v_lock_col < C_FIELD_COLS then
                     s_lock_wr_en  <= '1';
                     s_lock_wr_row <= v_lock_row;
                     s_lock_wr_col <= v_lock_col;
+                    -- Pre-decode one-hot selects this cycle so GS_LOCK_WRITE
+                    -- only needs a 3-input AND per grid FF.
+                    for r in 0 to C_FIELD_ROWS - 1 loop
+                        if v_lock_row = r then
+                            s_lock_wr_row_oh(r) <= '1';
+                        end if;
+                    end loop;
+                    for c in 0 to C_FIELD_COLS - 1 loop
+                        if v_lock_col = c then
+                            s_lock_wr_col_oh(c) <= '1';
+                        end if;
+                    end loop;
                 else
                     s_lock_wr_en <= '0';
                 end if;
@@ -857,9 +889,17 @@ begin
             -- ============================================================
             when GS_LOCK_WRITE =>
                 if s_lock_wr_en = '1' then
-                    s_grid_occ(s_lock_wr_row)(s_lock_wr_col) <= '1';
+                    for r in 0 to C_FIELD_ROWS - 1 loop
+                        for c in 0 to C_FIELD_COLS - 1 loop
+                            if s_lock_wr_row_oh(r) = '1' and s_lock_wr_col_oh(c) = '1' then
+                                s_grid_occ(r)(c) <= '1';
+                            end if;
+                        end loop;
+                    end loop;
                 end if;
-                s_lock_wr_en <= '0';
+                s_lock_wr_en     <= '0';
+                s_lock_wr_row_oh <= (others => '0');
+                s_lock_wr_col_oh <= (others => '0');
 
                 if s_lock_idx = 15 then
                     s_scan_row <= C_FIELD_ROWS - 1;
@@ -871,31 +911,44 @@ begin
 
             -- ============================================================
             -- LINE_SCAN: check rows for completed lines
+            -- Split into two states (SCAN -> SCAN_CHECK) to break the long
+            -- combinational path from s_scan_row through the grid_occ row
+            -- mux into the score BCD increment cascade.
             -- ============================================================
             when GS_LINE_SCAN =>
                 if s_scan_row < 0 then
                     s_state <= GS_SPAWN;
                 else
-                    if s_grid_occ(s_scan_row) = "1111111111" then
-                        s_shift_row <= s_scan_row;
-                        -- Increment BCD score
-                        if s_score_ones < 9 then
-                            s_score_ones <= s_score_ones + 1;
+                    s_scan_row_data <= s_grid_occ(s_scan_row);
+                    s_state         <= GS_LINE_SCAN_CHECK;
+                end if;
+
+            when GS_LINE_SCAN_CHECK =>
+                if s_scan_row_data = "1111111111" then
+                    s_shift_row <= s_scan_row;
+                    -- Pre-decode one-hot select for the row-write MUX.
+                    for r in 0 to C_FIELD_ROWS - 1 loop
+                        if s_scan_row = r then s_shift_row_oh(r) <= '1';
+                        else s_shift_row_oh(r) <= '0'; end if;
+                    end loop;
+                    -- Increment BCD score
+                    if s_score_ones < 9 then
+                        s_score_ones <= s_score_ones + 1;
+                    else
+                        s_score_ones <= 0;
+                        if s_score_tens < 9 then
+                            s_score_tens <= s_score_tens + 1;
                         else
-                            s_score_ones <= 0;
-                            if s_score_tens < 9 then
-                                s_score_tens <= s_score_tens + 1;
-                            else
-                                s_score_tens <= 0;
-                                if s_score_hundreds < 9 then
-                                    s_score_hundreds <= s_score_hundreds + 1;
-                                end if;
+                            s_score_tens <= 0;
+                            if s_score_hundreds < 9 then
+                                s_score_hundreds <= s_score_hundreds + 1;
                             end if;
                         end if;
-                        s_state <= GS_LINE_READ;
-                    else
-                        s_scan_row <= s_scan_row - 1;
                     end if;
+                    s_state <= GS_LINE_READ;
+                else
+                    s_scan_row <= s_scan_row - 1;
+                    s_state    <= GS_LINE_SCAN;
                 end if;
 
             -- ============================================================
@@ -912,11 +965,19 @@ begin
                 end if;
 
             -- ============================================================
-            -- LINE_WRITE: write pre-read data to destination row
+            -- LINE_WRITE: write pre-read data to destination row.
+            -- Use pre-decoded one-hot s_shift_row_oh to keep the per-FF CEN
+            -- shallow (single AND), avoiding a deep state+row-index decoder.
             -- ============================================================
             when GS_LINE_WRITE =>
-                s_grid_occ(s_shift_row) <= s_line_src_data;
+                for r in 0 to C_FIELD_ROWS - 1 loop
+                    if s_shift_row_oh(r) = '1' then
+                        s_grid_occ(r) <= s_line_src_data;
+                    end if;
+                end loop;
                 s_shift_row <= s_shift_row - 1;
+                -- Shift one-hot down (row N -> row N-1) to track s_shift_row.
+                s_shift_row_oh <= '0' & s_shift_row_oh(0 to 18);
                 s_state <= GS_LINE_READ;
 
             -- ============================================================

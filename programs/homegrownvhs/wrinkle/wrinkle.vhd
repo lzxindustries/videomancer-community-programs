@@ -64,8 +64,9 @@
 --   Fader  (registers_in(7)):    Mix (dry/wet)
 --
 -- Timing:
---   C_PROCESSING_DELAY_CLKS = 5 (inline stages)
-    --   C_SYNC_DELAY_CLKS       = 10 (6 + 4 interpolator)
+--   C_PROCESSING_DELAY_CLKS = 8 (inline stages, includes 2-cycle pipelined LPF
+--                                  and 2-cycle pipelined stage 4)
+    --   C_SYNC_DELAY_CLKS       = 12 (8 + 4 interpolator)
 
 --------------------------------------------------------------------------------
 
@@ -82,8 +83,8 @@ use work.video_timing_pkg.all;
 architecture wrinkle of program_top is
 
     constant C_VIDEO_DATA_WIDTH      : integer := 10;
-    constant C_PROCESSING_DELAY_CLKS : integer := 6;
-    constant C_SYNC_DELAY_CLKS       : integer := 10;
+    constant C_PROCESSING_DELAY_CLKS : integer := 8;
+    constant C_SYNC_DELAY_CLKS       : integer := 12;
 
     -- Frequency encoding: freq_factor = (knob >> 2) + 4 = 4..259 (8 bits)
     -- product = channel * freq_factor (10x8 = 18 bits)
@@ -134,6 +135,18 @@ architecture wrinkle of program_top is
     signal s4_u : unsigned(9 downto 0) := to_unsigned(512, 10);
     signal s4_v : unsigned(9 downto 0) := to_unsigned(512, 10);
 
+    -- Stage 4a: CSC sum-of-shifted-terms result (signed 12-bit, before
+    -- brightness add and chroma +512 offset). Splitting stage 4 into 4a
+    -- (CSC compute) and 4b (brightness + offset + clamp) breaks the deep
+    -- multi-add chain that failed HD timing on the hd_hdmi build (path
+    -- was retimed from s3_ch* through stage-4 logic into the interpolator's
+    -- stage-0 input registers).
+    signal s4a_y : signed(11 downto 0) := (others => '0');
+    signal s4a_u : signed(11 downto 0) := (others => '0');
+    signal s4a_v : signed(11 downto 0) := (others => '0');
+    -- '1' in CSC modes 01/10 -> stage 4b adds +512 to U/V before clamp.
+    signal s4a_chroma_offset : std_logic := '0';
+
     -- Triangle fold from product bits (combinational)
     signal s_tri0 : unsigned(9 downto 0);
     signal s_tri1 : unsigned(9 downto 0);
@@ -182,6 +195,26 @@ architecture wrinkle of program_top is
     signal s_line_first_pix : std_logic := '1';
     signal s_prev_hsync_lpf : std_logic := '1';
     signal s_lpf_mix_acc    : unsigned(4 downto 0) := (others => '0');
+    -- Registered shift count used by the IIR barrel shift. Registering this
+    -- breaks the long combinational path:
+    --   r_smoothing -> mix_acc add -> compare -> k_use mux -> 19-bit barrel
+    --   shift -> 19-bit add -> s_iir_* register
+    -- which previously failed HD timing at 74.25 MHz on iCE40 hx4k.
+    signal s_k_use_q        : natural range 0 to 15 := 0;
+    -- Pipelined IIR error stage. The IIR feedback is split into:
+    --   stage A: s_err_* <= v_in - s_iir
+    --   stage B: s_iir   <= s_iir + shift_right(s_err, s_k_use_q)
+    -- This adds 1 cycle of LPF latency (accounted for in
+    -- C_PROCESSING_DELAY_CLKS / C_SYNC_DELAY_CLKS) but breaks the IIR
+    -- feedback combinational chain so HD timing closes at 74.25 MHz.
+    signal s_err_y          : signed(C_IIR_WIDTH - 1 downto 0) := (others => '0');
+    signal s_err_u          : signed(C_IIR_WIDTH - 1 downto 0) := (others => '0');
+    signal s_err_v          : signed(C_IIR_WIDTH - 1 downto 0) := (others => '0');
+    signal s_err_valid      : std_logic := '0';
+    signal s_err_snap_y     : signed(C_IIR_WIDTH - 1 downto 0) := (others => '0');
+    signal s_err_snap_u     : signed(C_IIR_WIDTH - 1 downto 0) := (others => '0');
+    signal s_err_snap_v     : signed(C_IIR_WIDTH - 1 downto 0) := (others => '0');
+    signal s_err_snap_en    : std_logic := '0';
     signal s_src_y          : unsigned(9 downto 0);
     signal s_src_u          : unsigned(9 downto 0);
     signal s_src_v          : unsigned(9 downto 0);
@@ -204,11 +237,8 @@ begin
         variable v_in_y  : signed(C_IIR_WIDTH - 1 downto 0);
         variable v_in_u  : signed(C_IIR_WIDTH - 1 downto 0);
         variable v_in_v  : signed(C_IIR_WIDTH - 1 downto 0);
-        variable v_err_y : signed(C_IIR_WIDTH - 1 downto 0);
-        variable v_err_u : signed(C_IIR_WIDTH - 1 downto 0);
-        variable v_err_v : signed(C_IIR_WIDTH - 1 downto 0);
         variable v_k_coarse  : natural;
-        variable v_k_use     : natural;
+        variable v_k_next    : natural range 0 to 15;
         variable v_acc_next  : unsigned(4 downto 0);
     begin
         if rising_edge(clk) then
@@ -218,36 +248,61 @@ begin
             v_in_u := shift_left(resize(signed('0' & data_in.u), C_IIR_WIDTH), C_IIR_FRAC);
             v_in_v := shift_left(resize(signed('0' & data_in.v), C_IIR_WIDTH), C_IIR_FRAC);
 
+            ----------------------------------------------------------------
+            -- Stage A: compute the IIR error v_in - s_iir and register it.
+            -- Also propagate the snap-to-input value for the first active
+            -- pixel of each line (used by Stage B to bypass the IIR update).
+            -- Sigma-delta accumulator is also updated here so the registered
+            -- s_k_use_q is ready for Stage B.
+            ----------------------------------------------------------------
+            s_err_valid   <= '0';
+            s_err_snap_en <= '0';
+
             if data_in.avid = '1' then
                 if s_line_first_pix = '1' then
-                    -- Snap to input on first pixel of line (eliminates cross-line bleed)
-                    s_iir_y <= v_in_y;
-                    s_iir_u <= v_in_u;
-                    s_iir_v <= v_in_v;
+                    s_err_snap_en <= '1';
+                    s_err_snap_y  <= v_in_y;
+                    s_err_snap_u  <= v_in_u;
+                    s_err_snap_v  <= v_in_v;
                     s_line_first_pix <= '0';
                 else
-                    v_err_y := v_in_y - s_iir_y;
-                    v_err_u := v_in_u - s_iir_u;
-                    v_err_v := v_in_v - s_iir_v;
+                    s_err_valid <= '1';
+                    s_err_y <= v_in_y - s_iir_y;
+                    s_err_u <= v_in_u - s_iir_u;
+                    s_err_v <= v_in_v - s_iir_v;
 
-                    -- Sigma-delta fine mixing: alternate k and k+1
+                    -- Sigma-delta fine mixing: alternate k and k+1.
+                    -- s_k_use_q updated here is used by Stage B next cycle.
                     v_acc_next := s_lpf_mix_acc + resize(r_smoothing(3 downto 0), 5);
                     if v_acc_next >= 16 then
                         s_lpf_mix_acc <= v_acc_next - 16;
                         if v_k_coarse < 15 then
-                            v_k_use := v_k_coarse + 1;
+                            v_k_next := v_k_coarse + 1;
                         else
-                            v_k_use := v_k_coarse;
+                            v_k_next := v_k_coarse;
                         end if;
                     else
                         s_lpf_mix_acc <= v_acc_next;
-                        v_k_use := v_k_coarse;
+                        v_k_next := v_k_coarse;
                     end if;
-
-                    s_iir_y <= s_iir_y + shift_right(v_err_y, v_k_use);
-                    s_iir_u <= s_iir_u + shift_right(v_err_u, v_k_use);
-                    s_iir_v <= s_iir_v + shift_right(v_err_v, v_k_use);
+                    s_k_use_q <= v_k_next;
                 end if;
+            end if;
+
+            ----------------------------------------------------------------
+            -- Stage B: apply registered error through the variable barrel
+            -- shift and accumulate into s_iir. This is the second half of
+            -- the IIR feedback loop, now isolated from the v_in - s_iir
+            -- subtract by the s_err_* registers.
+            ----------------------------------------------------------------
+            if s_err_snap_en = '1' then
+                s_iir_y <= s_err_snap_y;
+                s_iir_u <= s_err_snap_u;
+                s_iir_v <= s_err_snap_v;
+            elsif s_err_valid = '1' then
+                s_iir_y <= s_iir_y + shift_right(s_err_y, s_k_use_q);
+                s_iir_u <= s_iir_u + shift_right(s_err_u, s_k_use_q);
+                s_iir_v <= s_iir_v + shift_right(s_err_v, s_k_use_q);
             end if;
 
             -- Detect line boundaries
@@ -532,17 +587,17 @@ begin
     -- Stage 4 (T+5): CSC reverse + brightness + clamp
     -- 00=YUV, 01=RGB->YUV, 10=XYZ->YUV, 11=Y-only (pass original chroma)
     -- =========================================================================
-    p_stage4 : process(clk)
+    -- Stage 4a: CSC compute (sum-of-shifted-terms only). Output is signed
+    -- 12-bit, no brightness add, no +512 chroma offset, no clamp -- those
+    -- happen in stage 4b. This split breaks the deep multi-add chain that
+    -- caused the hd_hdmi build to fail HD timing.
+    p_stage4a : process(clk)
         variable v0 : unsigned(9 downto 0);
         variable v1 : unsigned(9 downto 0);
         variable v2 : unsigned(9 downto 0);
         variable v_r_s : signed(11 downto 0);
         variable v_g_s : signed(11 downto 0);
         variable v_b_s : signed(11 downto 0);
-        variable v_y   : signed(11 downto 0);
-        variable v_u_s : signed(11 downto 0);
-        variable v_v_s : signed(11 downto 0);
-        variable v_brt : signed(11 downto 0);
         variable v_ch0_s : signed(11 downto 0);
         variable v_ch1_s : signed(11 downto 0);
         variable v_ch2_s : signed(11 downto 0);
@@ -554,37 +609,21 @@ begin
 
             case r_csc_mode is
                 when "01" =>
-                    -- RGB -> YUV reverse
+                    -- RGB -> YUV reverse (no brightness, no +512)
                     v_r_s := signed(resize(v0, 12));
                     v_g_s := signed(resize(v1, 12));
                     v_b_s := signed(resize(v2, 12));
 
-                    v_y := shift_right(v_r_s, 2) +
-                           shift_right(v_g_s, 1) + shift_right(v_g_s, 4) +
-                           shift_right(v_b_s, 3);
-                    v_u_s := -shift_right(v_r_s, 3) -
+                    s4a_y <= shift_right(v_r_s, 2) +
+                             shift_right(v_g_s, 1) + shift_right(v_g_s, 4) +
+                             shift_right(v_b_s, 3);
+                    s4a_u <= -shift_right(v_r_s, 3) -
                               shift_right(v_g_s, 2) +
                               shift_right(v_b_s, 1);
-                    v_v_s := shift_right(v_r_s, 1) -
+                    s4a_v <= shift_right(v_r_s, 1) -
                              shift_right(v_g_s, 2) - shift_right(v_g_s, 3) -
                              shift_right(v_b_s, 4);
-
-                    v_brt := signed(resize(r_brightness, 12)) - to_signed(512, 12);
-                    v_y := v_y + v_brt;
-
-                    if v_y < 0 then s4_y <= (others => '0');
-                    elsif v_y > 1023 then s4_y <= to_unsigned(1023, 10);
-                    else s4_y <= unsigned(v_y(9 downto 0)); end if;
-
-                    v_u_s := v_u_s + to_signed(512, 12);
-                    if v_u_s < 0 then s4_u <= (others => '0');
-                    elsif v_u_s > 1023 then s4_u <= to_unsigned(1023, 10);
-                    else s4_u <= unsigned(v_u_s(9 downto 0)); end if;
-
-                    v_v_s := v_v_s + to_signed(512, 12);
-                    if v_v_s < 0 then s4_v <= (others => '0');
-                    elsif v_v_s > 1023 then s4_v <= to_unsigned(1023, 10);
-                    else s4_v <= unsigned(v_v_s(9 downto 0)); end if;
+                    s4a_chroma_offset <= '1';
 
                 when "10" =>
                     -- XYZ -> YUV reverse (approximate inverse)
@@ -593,57 +632,68 @@ begin
                     v_ch2_s := signed(resize(v2, 12));
 
                     -- Y ~ 3/8*X + 5/8*Y_xyz
-                    v_y := shift_right(v_ch0_s, 2) + shift_right(v_ch0_s, 3) +
-                           shift_right(v_ch1_s, 1) + shift_right(v_ch1_s, 3);
+                    s4a_y <= shift_right(v_ch0_s, 2) + shift_right(v_ch0_s, 3) +
+                             shift_right(v_ch1_s, 1) + shift_right(v_ch1_s, 3);
                     -- U_s ~ -3/16*X - 1/2*Y_xyz + 5/8*Z
-                    v_u_s := -shift_right(v_ch0_s, 3) - shift_right(v_ch0_s, 4) -
+                    s4a_u <= -shift_right(v_ch0_s, 3) - shift_right(v_ch0_s, 4) -
                               shift_right(v_ch1_s, 1) +
                               shift_right(v_ch2_s, 1) + shift_right(v_ch2_s, 3);
                     -- V_s ~ 2*X - 3/2*Y_xyz - 3/8*Z
-                    v_v_s := shift_left(v_ch0_s, 1) -
+                    s4a_v <= shift_left(v_ch0_s, 1) -
                              v_ch1_s - shift_right(v_ch1_s, 1) -
                              shift_right(v_ch2_s, 2) - shift_right(v_ch2_s, 3);
-
-                    v_brt := signed(resize(r_brightness, 12)) - to_signed(512, 12);
-                    v_y := v_y + v_brt;
-
-                    if v_y < 0 then s4_y <= (others => '0');
-                    elsif v_y > 1023 then s4_y <= to_unsigned(1023, 10);
-                    else s4_y <= unsigned(v_y(9 downto 0)); end if;
-
-                    v_u_s := v_u_s + to_signed(512, 12);
-                    if v_u_s < 0 then s4_u <= (others => '0');
-                    elsif v_u_s > 1023 then s4_u <= to_unsigned(1023, 10);
-                    else s4_u <= unsigned(v_u_s(9 downto 0)); end if;
-
-                    v_v_s := v_v_s + to_signed(512, 12);
-                    if v_v_s < 0 then s4_v <= (others => '0');
-                    elsif v_v_s > 1023 then s4_v <= to_unsigned(1023, 10);
-                    else s4_v <= unsigned(v_v_s(9 downto 0)); end if;
+                    s4a_chroma_offset <= '1';
 
                 when "11" =>
                     -- Y-only: fold luma, preserve original chroma from dry tap
-                    v_brt := signed(resize(v0, 12)) +
-                             signed(resize(r_brightness, 12)) - to_signed(512, 12);
-                    if v_brt < 0 then s4_y <= (others => '0');
-                    elsif v_brt > 1023 then s4_y <= to_unsigned(1023, 10);
-                    else s4_y <= unsigned(v_brt(9 downto 0)); end if;
-                    s4_u <= s_dry_u;
-                    s4_v <= s_dry_v;
+                    s4a_y <= signed(resize(v0, 12));
+                    s4a_u <= signed(resize(s_dry_u, 12));
+                    s4a_v <= signed(resize(s_dry_v, 12));
+                    s4a_chroma_offset <= '0';
 
                 when others =>
                     -- YUV mode (00): brightness on Y, pass U/V
-                    v_brt := signed(resize(v0, 12)) +
-                             signed(resize(r_brightness, 12)) - to_signed(512, 12);
-                    if v_brt < 0 then s4_y <= (others => '0');
-                    elsif v_brt > 1023 then s4_y <= to_unsigned(1023, 10);
-                    else s4_y <= unsigned(v_brt(9 downto 0)); end if;
-
-                    s4_u <= v1;
-                    s4_v <= v2;
+                    s4a_y <= signed(resize(v0, 12));
+                    s4a_u <= signed(resize(v1, 12));
+                    s4a_v <= signed(resize(v2, 12));
+                    s4a_chroma_offset <= '0';
             end case;
         end if;
-    end process p_stage4;
+    end process p_stage4a;
+
+    -- Stage 4b: brightness add (Y), conditional +512 chroma offset (U/V), clamp.
+    p_stage4b : process(clk)
+        variable v_brt : signed(11 downto 0);
+        variable v_y   : signed(11 downto 0);
+        variable v_u   : signed(11 downto 0);
+        variable v_v   : signed(11 downto 0);
+        variable v_off : signed(11 downto 0);
+    begin
+        if rising_edge(clk) then
+            v_brt := signed(resize(r_brightness, 12)) - to_signed(512, 12);
+            if s4a_chroma_offset = '1' then
+                v_off := to_signed(512, 12);
+            else
+                v_off := to_signed(0, 12);
+            end if;
+
+            v_y := s4a_y + v_brt;
+            v_u := s4a_u + v_off;
+            v_v := s4a_v + v_off;
+
+            if v_y < 0 then s4_y <= (others => '0');
+            elsif v_y > 1023 then s4_y <= to_unsigned(1023, 10);
+            else s4_y <= unsigned(v_y(9 downto 0)); end if;
+
+            if v_u < 0 then s4_u <= (others => '0');
+            elsif v_u > 1023 then s4_u <= to_unsigned(1023, 10);
+            else s4_u <= unsigned(v_u(9 downto 0)); end if;
+
+            if v_v < 0 then s4_v <= (others => '0');
+            elsif v_v > 1023 then s4_v <= to_unsigned(1023, 10);
+            else s4_v <= unsigned(v_v(9 downto 0)); end if;
+        end if;
+    end process p_stage4b;
 
     -- =========================================================================
     -- Valid pipeline
