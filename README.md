@@ -1,6 +1,6 @@
 # Videomancer Community Programs
 
-[![CI](https://github.com/lzxindustries/videomancer-community-programs/workflows/CI/badge.svg)](https://github.com/lzxindustries/videomancer-community-programs/actions/workflows/ci.yml)
+[![Forgejo](https://img.shields.io/badge/host-Forgejo-blue)](https://git.lzxindustries.net/lzx/videomancer-community-programs)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 A community repository for FPGA-based video processing programs for the [Videomancer](https://github.com/lzxindustries/videomancer-sdk) platform.
@@ -17,7 +17,7 @@ If you want to build the community programs for your Videomancer hardware:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/lzxindustries/videomancer-community-programs.git
+git clone git@git.lzxindustries.net:lzx/videomancer-community-programs.git
 cd videomancer-community-programs
 
 # 2. Initialize submodules
