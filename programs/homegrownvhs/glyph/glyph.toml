@@ -1,4 +1,5 @@
 [program]
+processing_delay_clks = 12
 program_id = "com.homegrownvhs.glyph"
 program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"

@@ -70,6 +70,19 @@ use work.video_timing_pkg.all;
 
 architecture tetris of program_top is
 
+    -- AUTO_IO_ALIGN_PAD declarations
+    type t_io_align_stream is record
+        y       : std_logic_vector(10-1 downto 0);
+        u       : std_logic_vector(10-1 downto 0);
+        v       : std_logic_vector(10-1 downto 0);
+        avid    : std_logic;
+        hsync_n : std_logic;
+        vsync_n : std_logic;
+        field_n : std_logic;
+    end record;
+    signal s_io_align_in : t_io_align_stream;
+    signal s_io_pad_0 : t_io_align_stream;
+
     -- ====================================================================
     -- Constants
     -- ====================================================================
@@ -1580,12 +1593,28 @@ begin
     -- Output Assignment
     -- ====================================================================
 
-    data_out.y       <= s_io_1.y;
-    data_out.u       <= s_io_1.u;
-    data_out.v       <= s_io_1.v;
-    data_out.hsync_n <= s_io_1.hsync_n;
-    data_out.vsync_n <= s_io_1.vsync_n;
-    data_out.avid    <= s_io_1.avid;
-    data_out.field_n <= s_io_1.field_n;
+    s_io_align_in.y <= s_io_1.y;
+    s_io_align_in.u <= s_io_1.u;
+    s_io_align_in.v <= s_io_1.v;
+    s_io_align_in.hsync_n <= s_io_1.hsync_n;
+    s_io_align_in.vsync_n <= s_io_1.vsync_n;
+    s_io_align_in.avid <= s_io_1.avid;
+    s_io_align_in.field_n <= s_io_1.field_n;
+
+    -- AUTO_IO_ALIGN_PAD
+    p_io_align_pad : process(clk)
+    begin
+        if rising_edge(clk) then
+            s_io_pad_0 <= s_io_align_in;
+        end if;
+    end process p_io_align_pad;
+
+    data_out.y      <= s_io_pad_0.y;
+    data_out.u      <= s_io_pad_0.u;
+    data_out.v      <= s_io_pad_0.v;
+    data_out.avid   <= s_io_pad_0.avid;
+    data_out.hsync_n<= s_io_pad_0.hsync_n;
+    data_out.vsync_n<= s_io_pad_0.vsync_n;
+    data_out.field_n<= s_io_pad_0.field_n;
 
 end architecture tetris;

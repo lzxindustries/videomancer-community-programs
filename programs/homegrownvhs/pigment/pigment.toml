@@ -4,6 +4,7 @@
 # Pigment Program Configuration
 
 [program]
+processing_delay_clks = 12
 program_id = "com.homegrownvhs.pigment"
 program_name = "Pigment"
 program_version = "1.0.0"

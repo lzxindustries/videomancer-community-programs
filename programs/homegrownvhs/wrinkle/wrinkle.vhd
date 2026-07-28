@@ -82,6 +82,21 @@ use work.video_timing_pkg.all;
 
 architecture wrinkle of program_top is
 
+    -- AUTO_IO_ALIGN_PAD declarations
+    type t_io_align_stream is record
+        y       : std_logic_vector(10-1 downto 0);
+        u       : std_logic_vector(10-1 downto 0);
+        v       : std_logic_vector(10-1 downto 0);
+        avid    : std_logic;
+        hsync_n : std_logic;
+        vsync_n : std_logic;
+        field_n : std_logic;
+    end record;
+    signal s_io_align_in : t_io_align_stream;
+    signal s_io_pad_0 : t_io_align_stream;
+    signal s_io_pad_1 : t_io_align_stream;
+    signal s_io_pad_2 : t_io_align_stream;
+
     constant C_VIDEO_DATA_WIDTH      : integer := 10;
     constant C_PROCESSING_DELAY_CLKS : integer := 9;
     constant C_SYNC_DELAY_CLKS       : integer := 13;
@@ -779,10 +794,10 @@ begin
             v_y_dry := unsigned(data_in.y) & v_y_dry(0 to C_PROCESSING_DELAY_CLKS - 2);
             v_u_dry := unsigned(data_in.u) & v_u_dry(0 to C_PROCESSING_DELAY_CLKS - 2);
             v_v_dry := unsigned(data_in.v) & v_v_dry(0 to C_PROCESSING_DELAY_CLKS - 2);
-            data_out.hsync_n <= v_hsync_n(C_SYNC_DELAY_CLKS - 1);
-            data_out.vsync_n <= v_vsync_n(C_SYNC_DELAY_CLKS - 1);
-            data_out.field_n <= v_field_n(C_SYNC_DELAY_CLKS - 1);
-            data_out.avid    <= v_avid   (C_SYNC_DELAY_CLKS - 1);
+            s_io_align_in.hsync_n <= v_hsync_n(C_SYNC_DELAY_CLKS - 1);
+            s_io_align_in.vsync_n <= v_vsync_n(C_SYNC_DELAY_CLKS - 1);
+            s_io_align_in.field_n <= v_field_n(C_SYNC_DELAY_CLKS - 1);
+            s_io_align_in.avid <= v_avid   (C_SYNC_DELAY_CLKS - 1);
             s_bypass_y <= v_y_bypass(C_SYNC_DELAY_CLKS - 1);
             s_bypass_u <= v_u_bypass(C_SYNC_DELAY_CLKS - 1);
             s_bypass_v <= v_v_bypass(C_SYNC_DELAY_CLKS - 1);
@@ -793,8 +808,26 @@ begin
     end process p_delay;
 
     -- Output mux
-    data_out.y <= s_bypass_y when s_bypass = '1' else std_logic_vector(s_mix_y);
-    data_out.u <= s_bypass_u when s_bypass = '1' else std_logic_vector(s_mix_u);
-    data_out.v <= s_bypass_v when s_bypass = '1' else std_logic_vector(s_mix_v);
+    s_io_align_in.y <= s_bypass_y when s_bypass = '1' else std_logic_vector(s_mix_y);
+    s_io_align_in.u <= s_bypass_u when s_bypass = '1' else std_logic_vector(s_mix_u);
+    s_io_align_in.v <= s_bypass_v when s_bypass = '1' else std_logic_vector(s_mix_v);
+
+    -- AUTO_IO_ALIGN_PAD
+    p_io_align_pad : process(clk)
+    begin
+        if rising_edge(clk) then
+            s_io_pad_0 <= s_io_align_in;
+            s_io_pad_1 <= s_io_pad_0;
+            s_io_pad_2 <= s_io_pad_1;
+        end if;
+    end process p_io_align_pad;
+
+    data_out.y      <= s_io_pad_2.y;
+    data_out.u      <= s_io_pad_2.u;
+    data_out.v      <= s_io_pad_2.v;
+    data_out.avid   <= s_io_pad_2.avid;
+    data_out.hsync_n<= s_io_pad_2.hsync_n;
+    data_out.vsync_n<= s_io_pad_2.vsync_n;
+    data_out.field_n<= s_io_pad_2.field_n;
 
 end architecture wrinkle;

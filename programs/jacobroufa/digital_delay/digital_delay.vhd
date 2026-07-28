@@ -136,6 +136,21 @@ use work.video_stream_pkg.all;
 use work.video_timing_pkg.all;
 
 architecture digital_delay of program_top is
+    -- AUTO_IO_ALIGN_PAD declarations
+    type t_io_align_stream is record
+        y       : std_logic_vector(10-1 downto 0);
+        u       : std_logic_vector(10-1 downto 0);
+        v       : std_logic_vector(10-1 downto 0);
+        avid    : std_logic;
+        hsync_n : std_logic;
+        vsync_n : std_logic;
+        field_n : std_logic;
+    end record;
+    signal s_io_align_in : t_io_align_stream;
+    signal s_io_pad_0 : t_io_align_stream;
+    signal s_io_pad_1 : t_io_align_stream;
+    signal s_io_pad_2 : t_io_align_stream;
+
     --------------------------------------------------------------------------------
     -- Constants
     --------------------------------------------------------------------------------
@@ -759,13 +774,31 @@ begin
     --------------------------------------------------------------------------------
     -- Output multiplexing
     --------------------------------------------------------------------------------
-    data_out.y <= std_logic_vector(s_blend_y) when s_bypass_enable = '0' else s_y_bypassed;
-    data_out.u <= std_logic_vector(s_blend_u) when s_bypass_enable = '0' else s_u_bypassed;
-    data_out.v <= std_logic_vector(s_blend_v) when s_bypass_enable = '0' else s_v_bypassed;
+    s_io_align_in.y <= std_logic_vector(s_blend_y) when s_bypass_enable = '0' else s_y_bypassed;
+    s_io_align_in.u <= std_logic_vector(s_blend_u) when s_bypass_enable = '0' else s_u_bypassed;
+    s_io_align_in.v <= std_logic_vector(s_blend_v) when s_bypass_enable = '0' else s_v_bypassed;
 
-    data_out.avid    <= s_blend_valid;
-    data_out.hsync_n <= s_hsync_delayed;
-    data_out.vsync_n <= s_vsync_delayed;
-    data_out.field_n <= s_field_delayed;
+    s_io_align_in.avid <= s_blend_valid;
+    s_io_align_in.hsync_n <= s_hsync_delayed;
+    s_io_align_in.vsync_n <= s_vsync_delayed;
+    s_io_align_in.field_n <= s_field_delayed;
+
+    -- AUTO_IO_ALIGN_PAD
+    p_io_align_pad : process(clk)
+    begin
+        if rising_edge(clk) then
+            s_io_pad_0 <= s_io_align_in;
+            s_io_pad_1 <= s_io_pad_0;
+            s_io_pad_2 <= s_io_pad_1;
+        end if;
+    end process p_io_align_pad;
+
+    data_out.y      <= s_io_pad_2.y;
+    data_out.u      <= s_io_pad_2.u;
+    data_out.v      <= s_io_pad_2.v;
+    data_out.avid   <= s_io_pad_2.avid;
+    data_out.hsync_n<= s_io_pad_2.hsync_n;
+    data_out.vsync_n<= s_io_pad_2.vsync_n;
+    data_out.field_n<= s_io_pad_2.field_n;
 
 end architecture digital_delay;

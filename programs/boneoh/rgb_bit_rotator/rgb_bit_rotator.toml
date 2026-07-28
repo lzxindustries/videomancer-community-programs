@@ -12,6 +12,7 @@
 #   - Bypass switch (last switch, follows Videomancer convention)
 
 [program]
+processing_delay_clks = 20
 program_id = "com.peteappleby.rgb_bit_rotator"
 program_name = "RGB Bit Rotator"
 program_version = "1.0.1"

@@ -4,6 +4,7 @@
 # Tetris Program Configuration
 
 [program]
+processing_delay_clks = 16
 program_id = "com.homegrownvhs.tetris"
 program_name = "Tetris"
 program_version = "1.0.0"

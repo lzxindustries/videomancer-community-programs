@@ -74,6 +74,20 @@ use work.video_timing_pkg.all;
 
 architecture yuv_bit_crush of program_top is
 
+    -- AUTO_IO_ALIGN_PAD declarations
+    type t_io_align_stream is record
+        y       : std_logic_vector(10-1 downto 0);
+        u       : std_logic_vector(10-1 downto 0);
+        v       : std_logic_vector(10-1 downto 0);
+        avid    : std_logic;
+        hsync_n : std_logic;
+        vsync_n : std_logic;
+        field_n : std_logic;
+    end record;
+    signal s_io_align_in : t_io_align_stream;
+    signal s_io_pad_0 : t_io_align_stream;
+    signal s_io_pad_1 : t_io_align_stream;
+
     --------------------------------------------------------------------------------
     -- Constants
     --------------------------------------------------------------------------------
@@ -557,16 +571,33 @@ begin
     --------------------------------------------------------------------------------
     -- Output Multiplexing
     --------------------------------------------------------------------------------
-    data_out.y <= std_logic_vector(s_global_y) when s_bypass_enable = '0'
+    s_io_align_in.y <= std_logic_vector(s_global_y) when s_bypass_enable = '0'
                   else s_y_delayed;
-    data_out.u <= std_logic_vector(s_global_u) when s_bypass_enable = '0'
+    s_io_align_in.u <= std_logic_vector(s_global_u) when s_bypass_enable = '0'
                   else s_u_delayed;
-    data_out.v <= std_logic_vector(s_global_v) when s_bypass_enable = '0'
+    s_io_align_in.v <= std_logic_vector(s_global_v) when s_bypass_enable = '0'
                   else s_v_delayed;
 
-    data_out.avid    <= s_global_y_valid;
-    data_out.hsync_n <= s_hsync_n_delayed;
-    data_out.vsync_n <= s_vsync_n_delayed;
-    data_out.field_n <= s_field_n_delayed;
+    s_io_align_in.avid <= s_global_y_valid;
+    s_io_align_in.hsync_n <= s_hsync_n_delayed;
+    s_io_align_in.vsync_n <= s_vsync_n_delayed;
+    s_io_align_in.field_n <= s_field_n_delayed;
+
+    -- AUTO_IO_ALIGN_PAD
+    p_io_align_pad : process(clk)
+    begin
+        if rising_edge(clk) then
+            s_io_pad_0 <= s_io_align_in;
+            s_io_pad_1 <= s_io_pad_0;
+        end if;
+    end process p_io_align_pad;
+
+    data_out.y      <= s_io_pad_1.y;
+    data_out.u      <= s_io_pad_1.u;
+    data_out.v      <= s_io_pad_1.v;
+    data_out.avid   <= s_io_pad_1.avid;
+    data_out.hsync_n<= s_io_pad_1.hsync_n;
+    data_out.vsync_n<= s_io_pad_1.vsync_n;
+    data_out.field_n<= s_io_pad_1.field_n;
 
 end architecture yuv_bit_crush;

@@ -28,6 +28,7 @@
 #   Op 7 (PRNG): Switch 1 has no effect (PRNG always free-runs)
 
 [program]
+processing_delay_clks = 12
 program_id = "com.peteappleby.yuv_bit_logic"
 program_name = "YUV Bit Logic"
 program_version = "1.0.1"

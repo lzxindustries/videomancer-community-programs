@@ -20,6 +20,7 @@
 #   reducing quantisation banding at the cost of added grain. Y is unaffected.
 
 [program]
+processing_delay_clks = 12
 program_id = "com.peteappleby.yuv_bit_crush"
 program_name = "YUV Bit Crush"
 program_version = "1.0.1"

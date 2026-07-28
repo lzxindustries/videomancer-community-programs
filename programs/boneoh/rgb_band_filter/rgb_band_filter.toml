@@ -30,6 +30,7 @@
 #   Show Matte (S1 Off): matte > 0 passes the original pixel; matte = 0 → black.
 
 [program]
+processing_delay_clks = 16
 program_id = "com.peteappleby.rgb_band_filter"
 program_name = "RGB Band Filter"
 program_version = "1.0.1"
