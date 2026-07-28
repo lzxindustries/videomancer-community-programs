@@ -48,7 +48,7 @@ GitHub is the website that hosts this repository. A *fork* is your personal copy
 
 ### 2.2 Fork this repository
 
-1. Go to https://git.lzxindustries.net/lzx/videomancer-community-programs.
+1. Go to https://github.com/lzxindustries/videomancer-community-programs.
 2. In the top-right corner of the page, click the **Fork** button.
 3. On the "Create a new fork" page, leave the defaults (owner = your username, repository name unchanged) and click **Create fork**.
 4. After a few seconds you will land on `https://github.com/<your-username>/videomancer-community-programs`. This is your personal copy.
@@ -346,7 +346,7 @@ When you are ready to write something more interesting than an inverter:
 ### 6.1 Install LZX Connect
 
 1. Open https://lzxindustries.net/connect in a web browser.
-2. Download the build for your platform: **Windows**, **macOS**, or **Linux**. (Releases are hosted on Forgejo at https://git.lzxindustries.net/lars/videomancer-firmware/releases under the `connect/*` tags.)
+2. Download the build for your platform: **Windows**, **macOS**, or **Linux**. (Releases are on [GitHub](https://github.com/lzxindustries/videomancer-firmware/releases) under the `connect/*` tags, or use the download buttons on [lzxindustries.net/connect](https://lzxindustries.net/connect).)
 3. Install:
    - **Windows**: run the `.msi` installer (or `.exe` setup) and follow the prompts. If SmartScreen blocks it, click **More info → Run anyway**.
    - **macOS**: open the `.dmg`, drag **LZX Connect** into **Applications**, then launch it from Applications. The first launch may show "cannot be opened because it is from an unidentified developer" — open **System Settings → Privacy & Security**, scroll to the LZX Connect message, and click **Open Anyway**.
@@ -444,10 +444,10 @@ The first push prompts for credentials. GitHub no longer accepts account passwor
 
 ### 7.6 Open the pull request on GitHub
 
-1. Open https://git.lzxindustries.net/lzx/videomancer-community-programs in your browser.
+1. Open https://github.com/lzxindustries/videomancer-community-programs in your browser.
 2. GitHub typically shows a yellow banner: **"add-janedoe-my-first-program had recent pushes — Compare & pull request"**. Click that button. If it does not appear, click **Pull requests** → **New pull request** → **compare across forks** and pick your fork and branch.
 3. Ensure:
-   - **base repository**: `lzx/videomancer-community-programs`, **base**: `main`.
+   - **base repository**: `lzxindustries/videomancer-community-programs`, **base**: `main`.
    - **head repository**: `<your-username>/videomancer-community-programs`, **compare**: `add-janedoe-my-first-program`.
 4. Fill out the PR description. A good template:
 
@@ -481,7 +481,7 @@ The first push prompts for credentials. GitHub no longer accepts account passwor
 Periodically sync your fork with upstream so future branches start from current code:
 
 ```bash
-git remote add upstream https://git.lzxindustries.net/lzx/videomancer-community-programs.git   # one-time
+git remote add upstream https://github.com/lzxindustries/videomancer-community-programs.git   # one-time
 git fetch upstream
 git checkout main
 git merge upstream/main
@@ -495,7 +495,7 @@ git submodule update --init --recursive
 
 - **Repository documentation**: [README](../README.md), [CONTRIBUTING](../CONTRIBUTING.md).
 - **SDK documentation**: [videomancer-sdk/docs/](../videomancer-sdk/docs/).
-- **GitHub Issues**: https://git.lzxindustries.net/lzx/videomancer-community-programs/issues for bug reports.
+- **GitHub Issues**: https://github.com/lzxindustries/videomancer-community-programs/issues for bug reports.
 - **GitHub Discussions** (where enabled) for questions and ideas.
 - **LZX Community**: https://community.lzxindustries.net and the LZX Discord (linked from https://lzxindustries.net).
 - **Videomancer User Manual**: https://lzxindustries.net/instruments/videomancer/manual/user-manual.
