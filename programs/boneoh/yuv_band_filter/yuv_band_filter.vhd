@@ -393,11 +393,12 @@ begin
 
     --------------------------------------------------------------------------------
     -- PRNG Noise Generator (line-seeded)
-    -- Same polynomial as the LFSR.  Reseeds from the current LFSR state on each
-    -- falling edge of hsync_n so that every line starts with a different sequence.
-    -- Because the LFSR itself varies each frame, the PRNG pattern is unique across
-    -- both lines and frames.  Y OR (noise >> 4) is pre-computed in Stage 0b,
-    -- matching LFSR mode 101.  The line-based reseed produces a different spatial
+    -- Polynomial x^10 + x^3 + 1 (feedback q[9] xor q[2]) — different from s_lfsr's
+    -- x^10+x^7+1 so the two generators diverge immediately after each line-start reseed.
+    -- Reseeds from the current LFSR state on each falling edge of hsync_n so that every
+    -- line starts with a different sequence.  Because the LFSR itself varies each frame,
+    -- the PRNG pattern is unique across both lines and frames.  Y OR (noise >> 4) is
+    -- pre-computed in Stage 0b.  The line-based reseed produces a different spatial
     -- pattern from LFSR (frame-locked) — a drifting fine-grained texture.
     -- Gated by logical OR in p_window_key.  Used by matte mode 110.
     --------------------------------------------------------------------------------
@@ -410,7 +411,7 @@ begin
                 -- Reseed from LFSR at each line start for per-line variation
                 s_prng <= s_lfsr;
             else
-                v_fb   := s_prng(9) xor s_prng(6);
+                v_fb   := s_prng(9) xor s_prng(2);  -- x^10 + x^3 + 1 (differs from s_lfsr's x^10+x^7+1)
                 s_prng <= s_prng(8 downto 0) & v_fb;
             end if;
         end if;

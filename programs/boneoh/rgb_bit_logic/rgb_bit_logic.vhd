@@ -58,9 +58,15 @@
 --   Bypass delay line and sync delays are all 16 clocks.
 --
 -- LFSR/PRNG:
---   lfsr16 free-runs continuously (period 2^16-1 = 65535).
---   LFSR (op 6): uses bits [15:6] of lfsr16; PRNG (op 7): uses bits [9:0].
---   Random mask = lfsr16_bits AND channel_mask_knob (XOR applied to pixel).
+--   Two independent 10-bit Fibonacci LFSRs, polynomial x^10+x^7+1 (period 1023).
+--   LFSR (op 6): frame-locked — reseeds from PRNG on vsync, free-runs within frame.
+--     Produces a stable, structured texture that changes pattern each frame.
+--   PRNG (op 7): line-seeded — reseeds from LFSR on every hsync, free-runs within line.
+--     Produces per-line variation: a drifting fine-grained texture visually distinct
+--     from LFSR mode.
+--   Random value ANDed with channel mask knob, then XORed with pixel.
+--   Black protect: pixels with all channels <= C_BLACK_THRESHOLD (16) pass through
+--     unchanged to suppress noise artifacts in near-black areas.
 --------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
@@ -80,6 +86,11 @@ architecture rgb_bit_logic of program_top is
     constant C_PROCESSING_DELAY_CLKS : integer := 16;  -- Stage 1 is 1 clock (not 2)
     constant C_PRE_GLOBAL_DELAY_CLKS : integer := 5;   -- dry tap for global blend
     constant C_UV_OFFSET             : integer := 512;
+    -- Pixels at or below this value (per channel) are passed through unchanged in
+    -- LFSR and PRNG modes.  16 counts at 10-bit (~1.6% of full scale) covers signal
+    -- chain noise on both YPbPr and HDMI inputs without clipping real shadow detail.
+    constant C_BLACK_THRESHOLD : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) :=
+        to_unsigned(16, C_VIDEO_DATA_WIDTH);
 
     --------------------------------------------------------------------------------
     -- YUV<->RGB Lookup Table Signals (data from rgb_yuv_tables_pkg)
@@ -158,8 +169,15 @@ architecture rgb_bit_logic of program_top is
     signal s_operator       : std_logic_vector(2 downto 0) := "000";   -- {S2=MSB, S3, S4=LSB}
     signal s_invert_mask    : std_logic := '0';                        -- bit 0 of reg 6
 
-    -- LFSR / PRNG
-    signal s_lfsr16_out     : std_logic_vector(15 downto 0);
+    -- LFSR / PRNG noise generators
+    -- Two independent 10-bit Fibonacci LFSRs, polynomial x^10+x^7+1 (period 1023).
+    -- s_lfsr: frame-locked — reseeds from s_prng on vsync, runs freely within each frame.
+    -- s_prng: line-seeded  — reseeds from s_lfsr on every hsync, producing per-line variation.
+    -- Different initial seeds guarantee distinct startup sequences.
+    signal s_vsync_n_d  : std_logic := '1';
+    signal s_hsync_n_d  : std_logic := '1';
+    signal s_lfsr       : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := "0101010101";
+    signal s_prng       : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := "0011001100";
 
     --------------------------------------------------------------------------------
     -- Stage 0a: YUV->RGB BRAM Lookup Outputs (T+1)
@@ -386,26 +404,56 @@ begin
     end process p_yuv_rgb_acc;
 
     --------------------------------------------------------------------------------
-    -- LFSR16 Free-Running Noise Generator (period 65535)
-    -- Supplies independent 10-bit windows: bits [15:6] for LFSR mode, [9:0] for PRNG.
-    -- Runs with enable='1' every clock regardless of valid/avid.
+    -- LFSR Noise Generator (frame-synced)
+    -- 10-bit Fibonacci LFSR, polynomial x^10 + x^7 + 1 (primitive, period 1023).
+    -- Reseeds from s_prng on the falling edge of vsync_n so each frame starts with
+    -- a different base pattern.  Produces a stable, structured per-frame texture.
     --------------------------------------------------------------------------------
-    u_lfsr16 : entity work.lfsr16
-        port map (
-            clk    => clk,
-            enable => '1',
-            seed   => s_lfsr16_out,  -- seed ignored unless load pulses; initial=0xACE1
-            load   => '0',
-            q      => s_lfsr16_out
-        );
+    p_lfsr : process(clk)
+        variable v_fb : std_logic;
+    begin
+        if rising_edge(clk) then
+            s_vsync_n_d <= data_in.vsync_n;
+            if s_vsync_n_d = '1' and data_in.vsync_n = '0' then
+                s_lfsr <= s_prng;           -- reseed from PRNG each frame
+            else
+                v_fb   := s_lfsr(9) xor s_lfsr(6);
+                s_lfsr <= s_lfsr(8 downto 0) & v_fb;
+            end if;
+        end if;
+    end process p_lfsr;
+
+    --------------------------------------------------------------------------------
+    -- PRNG Noise Generator (line-seeded)
+    -- Polynomial x^10 + x^3 + 1 (feedback q[9] xor q[2]) — different from s_lfsr's
+    -- x^10+x^7+1 so the two generators diverge immediately after each line-start reseed.
+    -- Reseeds from s_lfsr on every falling edge of hsync_n so each scanline starts with
+    -- a different sequence.  Because s_lfsr itself changes every frame, the PRNG pattern
+    -- is unique across lines and frames, producing a drifting texture visually distinct
+    -- from LFSR mode.
+    --------------------------------------------------------------------------------
+    p_prng : process(clk)
+        variable v_fb : std_logic;
+    begin
+        if rising_edge(clk) then
+            s_hsync_n_d <= data_in.hsync_n;
+            if s_hsync_n_d = '1' and data_in.hsync_n = '0' then
+                s_prng <= s_lfsr;           -- reseed from LFSR each line
+            else
+                v_fb   := s_prng(9) xor s_prng(2);  -- x^10 + x^3 + 1 (differs from s_lfsr's x^10+x^7+1)
+                s_prng <= s_prng(8 downto 0) & v_fb;
+            end if;
+        end if;
+    end process p_prng;
 
     --------------------------------------------------------------------------------
     -- Stage 1: Bit Logic Operation
     -- Latency: 1 clock. Input T+3, output T+4.
     -- Ops 0-5: apply_logic(pixel, effective_mask, operator).
     --   Effective mask = mask_knob when invert_mask='0', NOT mask_knob otherwise.
-    -- Op 6 (LFSR): XOR pixel with (lfsr16_out[15:6] AND mask_knob) per channel.
-    -- Op 7 (PRNG): XOR pixel with (lfsr16_out[9:0] AND mask_knob) per channel.
+    -- Op 6 (LFSR): XOR pixel with (s_lfsr AND mask_knob) — frame-locked texture.
+    -- Op 7 (PRNG): XOR pixel with (s_prng AND mask_knob) — per-line drifting texture.
+    -- Both ops: pixels with all channels <= C_BLACK_THRESHOLD pass through unchanged.
     -- The interpolators downstream use enable=s_processed_valid so they hold
     -- their last output during blanking.
     --------------------------------------------------------------------------------
@@ -416,17 +464,33 @@ begin
         if rising_edge(clk) then
             case s_operator is
 
-                when "110" =>  -- LFSR: XOR with gated upper 10 bits of lfsr16 [15:6]
-                    v_rand   := unsigned(s_lfsr16_out(15 downto 6));
-                    s_processed_r <= s_rgb_r xor (v_rand and s_mask_r);
-                    s_processed_g <= s_rgb_g xor (v_rand and s_mask_g);
-                    s_processed_b <= s_rgb_b xor (v_rand and s_mask_b);
+                when "110" =>  -- LFSR: XOR with frame-locked noise (stable per-frame texture)
+                    v_rand := unsigned(s_lfsr);
+                    if s_rgb_r <= C_BLACK_THRESHOLD and
+                       s_rgb_g <= C_BLACK_THRESHOLD and
+                       s_rgb_b <= C_BLACK_THRESHOLD then
+                        s_processed_r <= s_rgb_r;
+                        s_processed_g <= s_rgb_g;
+                        s_processed_b <= s_rgb_b;
+                    else
+                        s_processed_r <= s_rgb_r xor (v_rand and s_mask_r);
+                        s_processed_g <= s_rgb_g xor (v_rand and s_mask_g);
+                        s_processed_b <= s_rgb_b xor (v_rand and s_mask_b);
+                    end if;
 
-                when "111" =>  -- PRNG: XOR with gated lower 10 bits of lfsr16
-                    v_rand   := unsigned(s_lfsr16_out(C_VIDEO_DATA_WIDTH - 1 downto 0));
-                    s_processed_r <= s_rgb_r xor (v_rand and s_mask_r);
-                    s_processed_g <= s_rgb_g xor (v_rand and s_mask_g);
-                    s_processed_b <= s_rgb_b xor (v_rand and s_mask_b);
+                when "111" =>  -- PRNG: XOR with line-seeded noise (drifting per-line texture)
+                    v_rand := unsigned(s_prng);
+                    if s_rgb_r <= C_BLACK_THRESHOLD and
+                       s_rgb_g <= C_BLACK_THRESHOLD and
+                       s_rgb_b <= C_BLACK_THRESHOLD then
+                        s_processed_r <= s_rgb_r;
+                        s_processed_g <= s_rgb_g;
+                        s_processed_b <= s_rgb_b;
+                    else
+                        s_processed_r <= s_rgb_r xor (v_rand and s_mask_r);
+                        s_processed_g <= s_rgb_g xor (v_rand and s_mask_g);
+                        s_processed_b <= s_rgb_b xor (v_rand and s_mask_b);
+                    end if;
 
                 when others =>  -- Ops 0-5: deterministic logic with optional mask invert
                     if s_invert_mask = '0' then

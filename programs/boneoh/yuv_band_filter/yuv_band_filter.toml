@@ -34,7 +34,7 @@
 processing_delay_clks = 12
 program_id = "com.peteappleby.yuv_band_filter"
 program_name = "YUV Band Filter"
-program_version = "1.0.1"
+program_version = "1.0.2"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"

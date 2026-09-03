@@ -58,9 +58,11 @@
 --   Per-channel dry:  2 clocks (data_in.y/u/v delayed to T+2, aligned with Stage 0b output)
 --
 -- LFSR/PRNG:
---   lfsr16 free-runs continuously (period 2^16-1 = 65535).
---   LFSR (op 6): uses bits [15:6] of lfsr16; PRNG (op 7): uses bits [9:0].
---   Random mask = lfsr16_bits AND channel_mask_knob (XOR applied to channel).
+--   Two independent 10-bit LFSRs with different polynomials produce distinct patterns.
+--   LFSR (op 6): x^10+x^7+1, frame-locked (reseeds from s_prng at vsync falling edge).
+--   PRNG (op 7): x^10+x^3+1, line-seeded  (reseeds from s_lfsr at hsync falling edge).
+--   Random mask = s_lfsr/s_prng AND channel_mask_knob (XOR applied to channel).
+--   Near-black protect: Y <= 16 passes through unmodified in both random modes.
 --------------------------------------------------------------------------------
 library ieee;
 use ieee.std_logic_1164.all;
@@ -92,6 +94,11 @@ architecture yuv_bit_logic of program_top is
     --------------------------------------------------------------------------------
     -- Total pipeline latency: 1 + 1 + 4 + 4 = 10 clocks
     constant C_PROCESSING_DELAY_CLKS : integer := 10;
+
+    -- Near-black protect threshold: Y values at or below this are passed through
+    -- unmodified in LFSR/PRNG modes to prevent visible noise in black regions.
+    constant C_BLACK_THRESHOLD : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) :=
+        to_unsigned(16, C_VIDEO_DATA_WIDTH);
 
     -- Delay for global blend "dry" YUV input.
     -- Original YUV valid at T+0. Stage 1 output valid at T+6.
@@ -128,8 +135,15 @@ architecture yuv_bit_logic of program_top is
     signal s_blend_v        : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
     signal s_global_blend   : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0);
 
-    -- LFSR signals
-    signal s_lfsr16_out     : std_logic_vector(15 downto 0);
+    -- LFSR/PRNG signals
+    -- Two independent 10-bit LFSRs with different polynomials so they diverge
+    -- immediately after any reseed and produce visually distinct patterns.
+    -- s_lfsr: x^10+x^7+1, frame-locked (reseeds from s_prng at vsync falling edge).
+    -- s_prng: x^10+x^3+1, line-seeded  (reseeds from s_lfsr at hsync falling edge).
+    signal s_lfsr           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := "0101010101";
+    signal s_prng           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := "0011001100";
+    signal s_vsync_n_prev   : std_logic := '1';
+    signal s_hsync_n_prev   : std_logic := '1';
 
     --------------------------------------------------------------------------------
     -- Stage 0a: Control Decode Outputs (T+1)
@@ -144,6 +158,9 @@ architecture yuv_bit_logic of program_top is
     signal s_u_d1           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_v_d1           : std_logic_vector(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_avid_d1        : std_logic := '0';
+    -- Pre-registered near-black protect flag. Carry chain lives here in Stage 0a;
+    -- Stage 0b sees only a 1-bit registered result.
+    signal s_black_protect_r : std_logic := '0';
 
     --------------------------------------------------------------------------------
     -- Stage 0b: Bit Logic Outputs (T+2)
@@ -206,16 +223,42 @@ begin
 
 
     --------------------------------------------------------------------------------
-    -- LFSR16 Free-Running Noise Generator (period 65535)
-    -- Supplies independent 10-bit windows: bits [15:6] for LFSR mode, [9:0] for PRNG.
-    -- Runs with enable='1' every clock regardless of valid/avid.
+    -- LFSR: x^10+x^7+1, frame-locked.
+    -- Reseeds from s_prng at vsync falling edge so the frame pattern changes each
+    -- frame while remaining stable within a frame.
     --------------------------------------------------------------------------------
-    u_lfsr16 : entity work.lfsr16
-        port map (clk    => clk,
-                  enable => '1',
-                  seed   => s_lfsr16_out,  -- feedback; load never pulses
-                  load   => '0',
-                  q      => s_lfsr16_out);
+    p_lfsr : process(clk)
+        variable v_fb : std_logic;
+    begin
+        if rising_edge(clk) then
+            s_vsync_n_prev <= data_in.vsync_n;
+            if data_in.vsync_n = '0' and s_vsync_n_prev = '1' then
+                s_lfsr <= s_prng;
+            else
+                v_fb   := s_lfsr(9) xor s_lfsr(6);  -- x^10+x^7+1
+                s_lfsr <= s_lfsr(8 downto 0) & v_fb;
+            end if;
+        end if;
+    end process p_lfsr;
+
+    --------------------------------------------------------------------------------
+    -- PRNG: x^10+x^3+1, line-seeded.
+    -- Reseeds from s_lfsr at every hsync falling edge so each scanline starts from
+    -- a different state. Different polynomial ensures immediate divergence after reseed.
+    --------------------------------------------------------------------------------
+    p_prng : process(clk)
+        variable v_fb : std_logic;
+    begin
+        if rising_edge(clk) then
+            s_hsync_n_prev <= data_in.hsync_n;
+            if data_in.hsync_n = '0' and s_hsync_n_prev = '1' then
+                s_prng <= s_lfsr;
+            else
+                v_fb   := s_prng(9) xor s_prng(2);  -- x^10+x^3+1
+                s_prng <= s_prng(8 downto 0) & v_fb;
+            end if;
+        end if;
+    end process p_prng;
 
     --------------------------------------------------------------------------------
     -- Stage 0a: Control Decode
@@ -236,6 +279,9 @@ begin
             s_u_d1          <= data_in.u;
             s_v_d1          <= data_in.v;
             s_avid_d1       <= data_in.avid;
+            -- Pre-register near-black protect: carry chain resolved here in Stage 0a.
+            -- Result arrives registered at T+1, aligned with s_y_d1/s_u_d1/s_v_d1.
+            s_black_protect_r <= '1' when unsigned(data_in.y) <= C_BLACK_THRESHOLD else '0';
         end if;
     end process p_control_decode;
 
@@ -253,17 +299,29 @@ begin
     begin
         if rising_edge(clk) then
             case s_operator_r is
-                when "110" =>  -- LFSR: XOR with gated upper 10 bits of lfsr16 [15:6]
-                    v_rand := unsigned(s_lfsr16_out(15 downto 6));
-                    s_processed_y <= unsigned(s_y_d1) xor (v_rand and s_mask_y_r);
-                    s_processed_u <= unsigned(s_u_d1) xor (v_rand and s_mask_u_r);
-                    s_processed_v <= unsigned(s_v_d1) xor (v_rand and s_mask_v_r);
+                when "110" =>  -- LFSR: frame-locked pattern (x^10+x^7+1)
+                    v_rand := unsigned(s_lfsr);
+                    if s_black_protect_r = '1' then
+                        s_processed_y <= unsigned(s_y_d1);
+                        s_processed_u <= unsigned(s_u_d1);
+                        s_processed_v <= unsigned(s_v_d1);
+                    else
+                        s_processed_y <= unsigned(s_y_d1) xor (v_rand and s_mask_y_r);
+                        s_processed_u <= unsigned(s_u_d1) xor (v_rand and s_mask_u_r);
+                        s_processed_v <= unsigned(s_v_d1) xor (v_rand and s_mask_v_r);
+                    end if;
 
-                when "111" =>  -- PRNG: XOR with gated lower 10 bits of lfsr16
-                    v_rand := unsigned(s_lfsr16_out(C_VIDEO_DATA_WIDTH - 1 downto 0));
-                    s_processed_y <= unsigned(s_y_d1) xor (v_rand and s_mask_y_r);
-                    s_processed_u <= unsigned(s_u_d1) xor (v_rand and s_mask_u_r);
-                    s_processed_v <= unsigned(s_v_d1) xor (v_rand and s_mask_v_r);
+                when "111" =>  -- PRNG: line-seeded pattern (x^10+x^3+1)
+                    v_rand := unsigned(s_prng);
+                    if s_black_protect_r = '1' then
+                        s_processed_y <= unsigned(s_y_d1);
+                        s_processed_u <= unsigned(s_u_d1);
+                        s_processed_v <= unsigned(s_v_d1);
+                    else
+                        s_processed_y <= unsigned(s_y_d1) xor (v_rand and s_mask_y_r);
+                        s_processed_u <= unsigned(s_u_d1) xor (v_rand and s_mask_u_r);
+                        s_processed_v <= unsigned(s_v_d1) xor (v_rand and s_mask_v_r);
+                    end if;
 
                 when others =>
                     if s_invert_mask_r = '0' then

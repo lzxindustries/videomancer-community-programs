@@ -99,6 +99,13 @@ architecture yuv_bit_crush of program_top is
     -- Delay original by 6 clocks: T+0+6 = T+6. Aligned.
     constant C_PRE_GLOBAL_DELAY_CLKS : integer := 6;
 
+    -- Pixels with Y at or below this value have their U and V crush bypassed.
+    -- Large chroma step sizes quantize near-neutral U/V to off-neutral grid points,
+    -- producing a green tint in what should be black areas.  16 counts (~1.6% of
+    -- full scale) covers signal chain noise on both YPbPr and HDMI inputs.
+    constant C_BLACK_THRESHOLD : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) :=
+        to_unsigned(16, C_VIDEO_DATA_WIDTH);
+
 
     --------------------------------------------------------------------------------
     -- Functions
@@ -289,6 +296,14 @@ architecture yuv_bit_crush of program_top is
     signal s_roundoff_u_r  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_lmask_v_r     : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
     signal s_roundoff_v_r  : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    -- Pre-registered near-black protect flag. Carry chain lives here in Stage 0a;
+    -- Stage 0b sees only a 1-bit registered result.
+    signal s_black_protect_r : std_logic := '0';
+    -- Pre-registered TPDF dither values for U and V.
+    -- Each is the sum of two independent noise sources right-shifted by 1,
+    -- giving a triangular distribution over [0, max] instead of RPDF's uniform.
+    signal s_tpdf_u_r : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
+    signal s_tpdf_v_r : unsigned(C_VIDEO_DATA_WIDTH - 1 downto 0) := (others => '0');
 
     --------------------------------------------------------------------------------
     -- Stage 0b: Bit Crush (Y/U/V) Outputs (T+2)
@@ -404,6 +419,18 @@ begin
             s_u_d1       <= data_in.u;
             s_v_d1       <= data_in.v;
             s_avid_d1    <= data_in.avid;
+            -- Pre-register near-black protect: carry chain is resolved here in Stage 0a.
+            -- Result arrives registered at T+1, aligned with s_y_d1/s_u_d1/s_v_d1.
+            s_black_protect_r <= '1' when unsigned(data_in.y) <= C_BLACK_THRESHOLD else '0';
+            -- TPDF dither: sum two independent noise sources and halve (>> 1).
+            -- U: lfsr16[9:0] + lfsr10_out (no overlapping bits).
+            -- V: lfsr16[15:6] + lfsr10_out (upper slice of lfsr16, no overlap with U slice).
+            s_tpdf_u_r <= resize(shift_right(
+                resize(unsigned(s_lfsr16_out(C_VIDEO_DATA_WIDTH - 1 downto 0)), C_VIDEO_DATA_WIDTH + 1) +
+                resize(unsigned(s_lfsr10_out), C_VIDEO_DATA_WIDTH + 1), 1), C_VIDEO_DATA_WIDTH);
+            s_tpdf_v_r <= resize(shift_right(
+                resize(unsigned(s_lfsr16_out(15 downto 6)), C_VIDEO_DATA_WIDTH + 1) +
+                resize(unsigned(s_lfsr10_out), C_VIDEO_DATA_WIDTH + 1), 1), C_VIDEO_DATA_WIDTH);
             -- LFSR reseed: pulse reset for one clock at vsync falling edge.
             -- Reseeds lfsr10 from lfsr16 each frame, ensuring a valid non-zero
             -- start state regardless of FPGA power-on initialisation behaviour.
@@ -436,15 +463,25 @@ begin
             v_y := apply_crush(unsigned(s_y_d1), s_crush_y_r, '0', (others => '0'), '0',
                                (others => '0'), (others => '0'));
 
-            -- Dither sources (gating to lower bits happens inside apply_crush)
-            v_dither_u := unsigned(s_lfsr16_out(C_VIDEO_DATA_WIDTH - 1 downto 0));
-            v_dither_v := unsigned(s_lfsr10_out);
+            -- TPDF dither sources (pre-registered in Stage 0a; gating inside apply_crush)
+            v_dither_u := s_tpdf_u_r;
+            v_dither_v := s_tpdf_v_r;
 
             -- U/V: crush with optional round or dither; use pre-registered lmask/round_off
             v_u := apply_crush(unsigned(s_u_d1), s_crush_u_r, s_round_u_r,
                                v_dither_u, s_dither_r, s_lmask_u_r, s_roundoff_u_r);
             v_v := apply_crush(unsigned(s_v_d1), s_crush_v_r, s_round_v_r,
                                v_dither_v, s_dither_r, s_lmask_v_r, s_roundoff_v_r);
+
+            -- Near-black protect: skip U and V crush when Y is at or below threshold.
+            -- Large step sizes place U/V grid points far from neutral (512), so small
+            -- signal-chain offsets in what should be black pixels quantize to a
+            -- non-neutral chroma value and produce a green tint in the background.
+            -- Y is still crushed normally (quantising near-zero Y toward 0 is fine).
+            if s_black_protect_r = '1' then
+                v_u := unsigned(s_u_d1);
+                v_v := unsigned(s_v_d1);
+            end if;
 
             -- Invert all three channels when On
             if s_invert_r = '1' then
