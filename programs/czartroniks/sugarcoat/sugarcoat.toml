@@ -1,0 +1,198 @@
+[program]
+processing_delay_clks = 32
+program_id = "com.czartroniks.sugarcoat"
+program_version = "1.2.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Sugarcoat"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Material", "Render", "Pattern"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "1:1 color-to-candy map: 16 candy textures - chocolate, cookie, cane, mint, icing, taffy, allsorts, beans, waffle. Gloss, lines"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 109
+display_min_value = 0
+display_max_value = 63
+name_label = "Theme"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 554
+display_min_value = 0
+display_max_value = 100
+name_label = "Clean"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Scale"
+value_labels = ["8 px", "16 px", "32 px", "64 px"]
+initial_value_label = "8 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 624
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 782
+display_min_value = -100
+display_max_value = 100
+name_label = "Level"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 652
+display_min_value = 0
+display_max_value = 100
+name_label = "Gloss"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Outline"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Shade"
+value_labels = ["Flat", "Shaded"]
+initial_value_label = "Shaded"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Bank"
+value_labels = ["A", "B"]
+initial_value_label = "A"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Sprinkles"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Map"
+value_labels = ["Chroma", "Luma"]
+initial_value_label = "Chroma"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 824
+display_min_value = 0
+display_max_value = 100
+name_label = "Strength"
+suffix_label = "%"
+
+# --- Presets ---
+# Placeholder values pending hardware capture (./capture_preset.sh).
+
+[[preset]]
+name = "Candy Shop"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 320
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 640
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 768
+
+[[preset]]
+name = "Sweet Shelf"
+rotary_potentiometer_1 = 384
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 320
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 640
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 768
+
+[[preset]]
+name = "Big Bites"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 640
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 720
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Bakeshop"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 320
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 480
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 820
+
+[[preset]]
+name = "Cel Candy"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 320
+rotary_potentiometer_4 = 640
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 900

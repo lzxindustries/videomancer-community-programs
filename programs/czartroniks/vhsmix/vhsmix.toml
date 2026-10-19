@@ -1,0 +1,154 @@
+# Vhsmix - Program Configuration
+#
+# Catalogue combo #87 (seed 20260923): posterization + head-switch noise
+# band + multi-source mixing.  See vhsmix.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.vhsmix"
+program_name = "Vhsmix"
+program_version = "0.3.1"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Mixer", "VHS", "Colorizer"]
+program_type = "processing"
+description = "The posterized picture blended onto the original (add/screen/multiply/difference/overlay) under a noisy head-switch band."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Luma"
+value_labels = ["1 bit", "2 bits", "3 bits", "4 bits", "5 bits", "6 bits", "7 bits", "8 bits"]
+initial_value_label = "1 bit"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Chroma"
+value_labels = ["1 bit", "2 bits", "3 bits", "4 bits", "5 bits", "6 bits", "7 bits", "8 bits"]
+initial_value_label = "3 bits"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Band"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 50
+initial_value = 673
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Noise"
+control_mode = "linear"
+display_min_value = 5
+display_max_value = 100
+initial_value = 628
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Blend"
+value_labels = ["Add", "Screen", "Multiply", "Difference", "Overlay"]
+initial_value_label = "Difference"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Mix"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 600
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Ghost"
+value_labels = ["Off", "Ghost"]
+initial_value_label = "Ghost"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Band"
+value_labels = ["Normal", "Negative"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Roll"
+value_labels = ["Fixed", "Roll"]
+initial_value_label = "Fixed"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Noise"
+value_labels = ["Luma", "Colour"]
+initial_value_label = "Colour"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Chroma"
+value_labels = ["Posterize", "Blend"]
+initial_value_label = "Blend"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Static"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 627
+display_float_digits = 0
+suffix_label = "%"
+
+# Presets are v0.1's, translated to the v0.3 ranges (raw knob positions;
+# labelled knobs: K1/K2 eighths, K5 fifths; v0.1's S11 Keep = K2 at 8 bits),
+# plus v0.2/v0.3 showcases.  Capture new ones from the hardware once the
+# look is settled.
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Difference"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_5 = 700
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+
+[[preset]]
+name = "Static Screen"
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 600
+toggle_switch_10 = 1
+linear_potentiometer_12 = 500
+
+[[preset]]
+name = "Overlay Roll"
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_3 = 173
+rotary_potentiometer_5 = 1023
+toggle_switch_9 = 1
+
+[[preset]]
+name = "Ghost Relief"
+rotary_potentiometer_1 = 400
+rotary_potentiometer_5 = 700
+toggle_switch_7 = 1
+
+[[preset]]
+name = "Hue Twist"
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_5 = 500
+toggle_switch_11 = 1
+
+[[preset]]
+name = "Colour Ghost"
+rotary_potentiometer_1 = 400
+rotary_potentiometer_5 = 700
+toggle_switch_7 = 1
+toggle_switch_11 = 1

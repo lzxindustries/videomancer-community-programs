@@ -1,0 +1,138 @@
+# Foldither - Program Configuration
+#
+# Two catalogue effects (seed 20260926, #117): ordered dithering (Bayer) and
+# mirror / kaleidoscope.  Three knobs each; switches and slider set the
+# interaction.  See foldither.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.foldither"
+program_name = "Foldither"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Retro", "Stylize", "Glitch"]
+program_type = "processing"
+description = "Mirror / repeat folds, Bayer-dithered and quantized in source space (the pattern folds too) or in screen space."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Segment"
+value_labels = ["1024 px", "512 px", "256 px", "128 px", "64 px"]
+initial_value_label = "512 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Slide"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 237
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Skew"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 416
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Bits"
+value_labels = ["1 bit", "2 bits", "3 bits", "4 bits", "5 bits", "6 bits"]
+initial_value_label = "3 bits"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Dither"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 981
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Matrix"
+value_labels = ["2x2", "4x4", "8x8", "Diagonal"]
+initial_value_label = "Diagonal"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Fold"
+value_labels = ["Mirror", "Repeat"]
+initial_value_label = "Repeat"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Pattern"
+value_labels = ["Source", "Screen"]
+initial_value_label = "Screen"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Chroma"
+value_labels = ["Clean", "Dithered"]
+initial_value_label = "Dithered"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Alt Neg"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Alt Bits"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Panes"
+value_labels = ["x1", "x2", "x4", "x8"]
+initial_value_label = "x2"
+
+# Presets keep their v0.1 looks: Slide/Skew values moved for the squared
+# curves (same speeds), Skewed Mirror's Bits moved to stay at 4 bits.
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Tiled Gameboy"
+rotary_potentiometer_1 = 800
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+linear_potentiometer_12 = 300
+
+[[preset]]
+name = "Skewed Mirror"
+rotary_potentiometer_1 = 400
+rotary_potentiometer_2 = 672
+rotary_potentiometer_3 = 910
+rotary_potentiometer_4 = 600
+rotary_potentiometer_5 = 400
+toggle_switch_10 = 1
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Alt Crush"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_4 = 500
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 1000
+toggle_switch_9 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 1000

@@ -1,0 +1,188 @@
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.redshift"
+program_version = "2.2.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Redshift"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Warp", "Render", "Optics"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Luma as mass: the picture bends, spins and red/blue-shifts around its own brightness, collapsing into ringed voids."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 820
+display_min_value = 0
+display_max_value = 100
+name_label = "Mass"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 449
+display_min_value = -100
+display_max_value = 100
+name_label = "Spin"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 376
+display_min_value = 0
+display_max_value = 100
+name_label = "Shells"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 986
+display_min_value = 0
+display_max_value = 100
+name_label = "Doppler"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 939
+display_min_value = 0
+display_max_value = 100
+name_label = "Debris"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 686
+display_min_value = 0
+display_max_value = 100
+name_label = "Horizon"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Polarity"
+value_labels = ["Bright Mass", "Dark Mass"]
+initial_value_label = "Bright Mass"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Core"
+value_labels = ["Void", "White Hole"]
+initial_value_label = "White Hole"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Force"
+value_labels = ["Attract", "Repel"]
+initial_value_label = "Attract"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Turbulence"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Pulse"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 593
+display_min_value = 0
+display_max_value = 100
+name_label = "Collapse"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Gravity Well"
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 320
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Ergosphere"
+rotary_potentiometer_1 = 560
+rotary_potentiometer_2 = 860
+rotary_potentiometer_3 = 480
+rotary_potentiometer_4 = 768
+rotary_potentiometer_5 = 256
+rotary_potentiometer_6 = 384
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 704
+
+[[preset]]
+name = "White Hole"
+rotary_potentiometer_1 = 640
+rotary_potentiometer_2 = 240
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 640
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 800
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 832
+
+[[preset]]
+name = "Total Collapse"
+rotary_potentiometer_1 = 704
+rotary_potentiometer_2 = 704
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 832
+rotary_potentiometer_5 = 640
+rotary_potentiometer_6 = 768
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 1023

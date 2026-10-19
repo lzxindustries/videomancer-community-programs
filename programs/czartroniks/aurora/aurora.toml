@@ -1,0 +1,192 @@
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.aurora"
+program_version = "3.0.5"
+abi_version = ">=1.0,<2.0"
+program_name = "Aurora"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Curve", "Organic", "Render"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "A big, smooth, travelling rainbow wave: Swell grows it to the screen edges, Noise makes it organic, Mirror braids two."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 624
+display_min_value = 0
+display_max_value = 100
+name_label = "Height"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 500
+display_min_value = 0
+display_max_value = 100
+name_label = "Waves"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 100
+display_min_value = -100
+display_max_value = 100
+name_label = "Speed"
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 684
+display_min_value = 0
+display_max_value = 100
+name_label = "Noise"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 740
+display_min_value = -100
+display_max_value = 100
+name_label = "Flow"
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 146
+display_min_value = 50
+display_max_value = 400
+name_label = "Spectrum"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Color"
+value_labels = ["Gradient", "Solid"]
+initial_value_label = "Gradient"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Backdrop"
+value_labels = ["Black", "Video"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Fill"
+value_labels = ["Rainbow", "Video"]
+initial_value_label = "Rainbow"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Rainbow"
+value_labels = ["Across", "Along"]
+initial_value_label = "Across"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Mirror"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 350
+display_min_value = 0
+display_max_value = 100
+name_label = "Swell"
+suffix_label = "%"
+
+# --- Presets ---
+# (Swell is the performance gesture: the wave's amplitude, from a gentle
+#  ripple to crests touching the top and bottom of the screen.  Speed and
+#  Flow are bipolar with a still centre.  Placeholders until captured from
+#  the hardware with capture_preset.sh.)
+
+[[preset]]
+name = "First Light"
+rotary_potentiometer_1 = 360
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 250
+rotary_potentiometer_5 = 576
+rotary_potentiometer_6 = 146
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 350
+
+[[preset]]
+name = "Tidal Wall"
+rotary_potentiometer_1 = 900
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 620
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1000
+
+[[preset]]
+name = "Braid"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 500
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 150
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 146
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Over the Air"
+rotary_potentiometer_1 = 500
+rotary_potentiometer_2 = 350
+rotary_potentiometer_3 = 580
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 576
+rotary_potentiometer_6 = 146
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 450

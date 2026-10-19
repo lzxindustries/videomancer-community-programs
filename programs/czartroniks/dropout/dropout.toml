@@ -1,0 +1,148 @@
+# Dropout - Program Configuration
+#
+# Catalogue combo #50 (seed 20260920): datamosh bars + head-switch noise
+# band.  See dropout.vhd and SUMMARY.md.  v0.2.0: Distance is % of half the
+# line width, Band 8..256 lines, Bands exponential (8/16/32/64/128 lines at
+# 0/25/50/75/100%).  Presets are hand-written (capture from hardware).
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.dropout"
+program_name = "Dropout"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Glitch", "Retro", "VHS"]
+program_type = "processing"
+description = "Hashed datamosh bars held for N frames (smear, chroma dropout) under a rolling head-switch band with skew and snow."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Bars"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 750
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Distance"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Hold"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 64
+initial_value = 465
+display_float_digits = 0
+suffix_label = "fr"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Band"
+control_mode = "linear"
+display_min_value = 8
+display_max_value = 256
+initial_value = 0
+display_float_digits = 0
+suffix_label = "ln"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Noise"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 376
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Skew"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 623
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Roll"
+value_labels = ["Fixed", "Roll"]
+initial_value_label = "Fixed"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Dropout"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Smear"
+value_labels = ["Shift", "Smear"]
+initial_value_label = "Smear"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Burst"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Noise"
+value_labels = ["Snow", "Lines"]
+initial_value_label = "Lines"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Bands"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 554
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "P-Frame Smear"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_3 = 800
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Bad Tracking"
+rotary_potentiometer_4 = 380
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Fat Bars"
+rotary_potentiometer_1 = 900
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_3 = 0
+linear_potentiometer_12 = 1023

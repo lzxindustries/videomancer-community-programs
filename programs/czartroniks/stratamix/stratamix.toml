@@ -1,0 +1,152 @@
+# Stratamix - Program Configuration
+#
+# Three catalogue effects (seed 20260927): depth-from-luma parallax,
+# posterization, and multi-source mixing (add / screen / multiply /
+# difference / overlay).  Two knobs each; switches and slider set the
+# interaction.  See stratamix.vhd.
+
+[program]
+processing_delay_clks = 32
+program_id = "com.czartroniks.stratamix"
+program_name = "Stratamix"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Distortion", "Mixer", "Stylize"]
+program_type = "processing"
+description = "Luma is depth: the picture shifts by its own brightness and is blended with the still one; posterized strata, contours, tints."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Depth"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 104
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Pivot"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 516
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Levels"
+value_labels = ["2", "4", "8", "16", "32", "64"]
+initial_value_label = "8"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Tint"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 398
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Mode"
+value_labels = ["Add", "Screen", "Multiply", "Difference", "Overlay"]
+initial_value_label = "Overlay"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Mix"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 921
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Order"
+value_labels = ["Before", "After"]
+initial_value_label = "Before"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Layers"
+value_labels = ["Same", "Alternate"]
+initial_value_label = "Same"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Chroma"
+value_labels = ["Shifted", "Still"]
+initial_value_label = "Shifted"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Key"
+value_labels = ["All", "Above"]
+initial_value_label = "All"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Contour"
+value_labels = ["Plain", "Lines"]
+initial_value_label = "Plain"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Strata"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 243
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Terraces"
+rotary_potentiometer_1 = 800
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 250
+rotary_potentiometer_4 = 500
+rotary_potentiometer_5 = 100
+rotary_potentiometer_6 = 700
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 500
+
+[[preset]]
+name = "Colour Ghost"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 350
+rotary_potentiometer_6 = 400
+toggle_switch_7 = 1
+toggle_switch_9 = 1
+linear_potentiometer_12 = 200
+
+[[preset]]
+name = "Relief Map"
+rotary_potentiometer_1 = 650
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 430
+rotary_potentiometer_4 = 700
+rotary_potentiometer_5 = 1000
+rotary_potentiometer_6 = 900
+toggle_switch_7 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 800

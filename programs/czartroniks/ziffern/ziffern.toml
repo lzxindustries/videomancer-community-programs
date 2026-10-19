@@ -1,0 +1,231 @@
+# Ziffern — Kraftwerk-inspired 3D zooming digit wall.
+#
+# A green "old computer screen" wall of pixelated digits 1-9 in an even grid.
+# The digits change at random, staggered times.  P12 "Zoom" is a manual position:
+# 100% = all numbers far back on one plane (small); pulling it down brings them
+# forward in perspective at a range of per-number speeds (fast ones reach the
+# front early, the slowest at 0%), and at 0% all numbers are co-planar at the
+# front.  Movement follows P12 through a short glide filter (settles ~1/8 s after
+# the slider stops) so knob ticks and pot noise never stutter the field.
+# Background is black or a dark tint; S9 keys incoming video into the black areas.
+# Forked structurally from the ziggurat accumulator-coordinate engine.
+
+[program]
+processing_delay_clks = 12
+program_id = "com.czartroniks.ziffern"
+program_version = "1.0.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Ziffern"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pattern", "Color", "Computer"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "A zooming green wall of randomly-changing digits 1-9 (Kraftwerk-style number field)."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 382          # hue around the wheel (483 = ~170 deg green)
+display_min_value = 0
+display_max_value = 360
+name_label = "Color"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 329          # 0% = frozen (replaces the old Animate switch)
+display_min_value = 0
+display_max_value = 100
+name_label = "Change Rate"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Number Set"
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 215          # 512 = unity; 100% = 4 numbers high at full zoom
+display_min_value = 0
+display_max_value = 100
+name_label = "Size"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023         # 0% = packed; up = gap grows, font size unchanged
+display_min_value = 0
+display_max_value = 100
+name_label = "Spacing"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 582
+display_min_value = 0
+display_max_value = 100
+name_label = "Glow"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Luma Mod"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Background"
+value_labels = ["Black", "Tint"]
+initial_value_label = "Tint"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Video"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Font"
+value_labels = ["Plain", "Alien"]
+initial_value_label = "Plain"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023         # 100% = all numbers far back (one plane)
+display_min_value = 0
+display_max_value = 100
+name_label = "Zoom"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Kraftwerk Green"
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Slow Drift"
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 60
+rotary_potentiometer_3 = 200
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 450
+rotary_potentiometer_6 = 120
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Full Throw"
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 500
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Amber Terminal"
+rotary_potentiometer_1 = 160
+rotary_potentiometer_2 = 200
+rotary_potentiometer_3 = 50
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 200
+rotary_potentiometer_6 = 80
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Luma Pop"
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 200
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 200
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 300
+
+[[preset]]
+name = "Burn"
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 200
+rotary_potentiometer_6 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 700

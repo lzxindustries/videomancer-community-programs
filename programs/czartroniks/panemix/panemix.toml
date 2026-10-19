@@ -1,0 +1,170 @@
+# Panemix - Program Configuration
+#
+# Three catalogue effects (seed 20260925, #105): split-screen / quad-mirror,
+# multi-source mixing and false colour.  Two knobs each; switches and slider
+# set the interaction.  See panemix.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 32
+program_id = "com.czartroniks.panemix"
+program_name = "Panemix"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Colorizer", "Stylize", "Glitch"]
+program_type = "processing"
+description = "Wiping split-screen panes (repeat or mirror) blended with the picture, false-coloured through 8 cycling palettes."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Panes"
+value_labels = ["1", "2", "3", "4"]
+initial_value_label = "2"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Wipe"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 485
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Blend"
+value_labels = ["Add", "Screen", "Multiply", "Difference", "Overlay"]
+initial_value_label = "Screen"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Mix"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Palette"
+value_labels = ["Thermal", "Ironbow", "Plasma", "Rainbow", "Ice", "Night Vision", "White Hot", "X-Ray"]
+initial_value_label = "Rainbow"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Range"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 200
+initial_value = 1023
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Style"
+value_labels = ["Repeat", "Mirror"]
+initial_value_label = "Mirror"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Luma"
+value_labels = ["Palette", "Keep"]
+initial_value_label = "Palette"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Index"
+value_labels = ["Luma", "Diff"]
+initial_value_label = "Luma"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Iso"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Heat"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 504
+display_float_digits = 1
+suffix_label = "%"
+
+# Presets: hand-written (v0.1 values remapped onto the v0.2 label zones:
+# Blend fifths, Palette eighths).  Replace with hardware captures
+# (./capture_preset.sh) once the look is settled.
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Mirror Heat"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_3 = 100
+rotary_potentiometer_4 = 600
+rotary_potentiometer_6 = 700
+toggle_switch_9 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 300
+
+[[preset]]
+name = "Quad Plasma"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 800
+rotary_potentiometer_5 = 320
+rotary_potentiometer_6 = 400
+toggle_switch_8 = 1
+linear_potentiometer_12 = 800
+
+[[preset]]
+name = "X-ray Strip"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 307
+rotary_potentiometer_4 = 1023
+rotary_potentiometer_5 = 1000
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_10 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Rainbow Film"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 717
+rotary_potentiometer_4 = 1023
+rotary_potentiometer_5 = 448
+rotary_potentiometer_6 = 640
+toggle_switch_7 = 0
+toggle_switch_9 = 1
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Night Flip"
+rotary_potentiometer_1 = 100
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 1023
+rotary_potentiometer_5 = 704
+rotary_potentiometer_6 = 600
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 150

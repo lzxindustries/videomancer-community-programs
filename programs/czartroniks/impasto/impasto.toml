@@ -1,0 +1,162 @@
+# Impasto - Program Configuration
+#
+# Two catalogue effects (seed 20260916): Perlin / simplex displacement and
+# oil paint / Kuwahara smoothing.  Three knobs each; switches and slider
+# set the interaction.  See impasto.vhd and SUMMARY.md.
+# K4 Brush is exponential: 0% = 4 px, 50% = 16 px, 75% = 33 px, 100% = 64 px
+# each side; the vertical brush drags about half that many lines, and K5 Edge
+# sets the step that stops it.  The brush paints colour as well as luma.  P12 Amount: Warp = displacement up to +-255 px; Steer = share
+# of the picture whose pick the noise flips (up to half).
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.impasto"
+program_name = "Impasto"
+program_version = "0.3.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Painterly", "Distortion", "Texture"]
+program_type = "processing"
+description = "Edge-keeping brush smoothing with stroke relief, warped by drifting value noise; noise can steer the brush instead."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Scale"
+control_mode = "linear"
+display_min_value = 4
+display_max_value = 512
+initial_value = 410
+display_float_digits = 0
+suffix_label = " px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Drift"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 453
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Stroke"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 96
+display_float_digits = 0
+suffix_label = "x"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Brush"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 448
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Edge"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 805
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Relief"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 645
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Noise"
+value_labels = ["Warp", "Steer"]
+initial_value_label = "Warp"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Field"
+value_labels = ["Smooth", "Blocky"]
+initial_value_label = "Smooth"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Pick"
+value_labels = ["Nearest", "Farthest"]
+initial_value_label = "Nearest"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Relief"
+value_labels = ["Left", "Right"]
+initial_value_label = "Left"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Knife"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Amount"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 253
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Wet Canvas"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 1023
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 600
+linear_potentiometer_12 = 500
+
+[[preset]]
+name = "Palette Knife"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_4 = 768
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 800
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Halo Oil"
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 100
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 100
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# v0.3.2 (resolution scaling): seed 1 stalls nextpnr's router1 (60-min limit);
+# seed 2 builds all 8 (own HD timing 106.1/99.6/92.9 MHz Analog/HDMI/Dual).
+seed = 2

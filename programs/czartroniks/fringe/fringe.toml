@@ -1,0 +1,141 @@
+# Fringe — a moiré interference instrument.
+#
+# Two layers of procedural black-and-white line-work, combined by a boolean
+# blend into a single mask and painted against a solid ground.  Ten textures
+# per layer, each infinite and seamless at any scale; where the two layers'
+# pitches, forms or phases approach one another, large interference fringes
+# bloom across the frame.
+#
+# Nothing animates by itself.  Scale, X phase and the slider's Y phase are
+# smoothed by a subtle one-pole glide (~16 frames); texture select and every
+# switch snap instantly.  All motion is performed.
+#
+# Author: czartroniks
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.fringe"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Fringe"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Illusion", "Pattern", "Optics", "Grid"]
+program_type = "synthesis"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Moire instrument: two line textures blended by boolean logic, scale and phase performed by hand."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Layer A ---------------------------------------------------------------
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Texture A"
+value_labels = ["Circles", "Squares", "Spokes", "Wavy H", "Wavy V",
+                "Diagonal", "Anti-Diag", "Grid", "Hex", "Checker"]
+initial_value_label = "Circles"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512
+display_min_value = 0
+display_max_value = 100
+name_label = "Scale A"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 538
+display_min_value = -100
+display_max_value = 100
+name_label = "Phase A"
+suffix_label = "%"
+
+# --- Layer B ---------------------------------------------------------------
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Texture B"
+value_labels = ["Circles", "Squares", "Spokes", "Wavy H", "Wavy V",
+                "Diagonal", "Anti-Diag", "Grid", "Hex", "Checker"]
+initial_value_label = "Circles"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 440
+display_min_value = 0
+display_max_value = 100
+name_label = "Scale B"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 543
+display_min_value = -100
+display_max_value = 100
+name_label = "Phase B"
+suffix_label = "%"
+
+# --- Performance slider: Sweep = Y phase of layer B (relative phase is what beats)
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 322
+display_min_value = -100
+display_max_value = 100
+name_label = "Sweep"
+suffix_label = "%"
+
+# --- Switches --------------------------------------------------------------
+
+# S7 + S8 together select the blend of the two layer masks:
+#   S7 off, S8 off  Over    A or B        union
+#   S7 on,  S8 off  Meet    A and B       intersection
+#   S7 off, S8 on   Fringe  A xor B       pure interference
+#   S7 on,  S8 on   Cut     A and not B   A carved by B
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Meet"
+value_labels = ["Over", "Meet"]
+initial_value_label = "Over"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Fringe"
+value_labels = ["Solid", "Fringe"]
+initial_value_label = "Fringe"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Weight"
+value_labels = ["Bold", "Fine"]
+initial_value_label = "Bold"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Ground"
+value_labels = ["Black", "White"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Colour"
+value_labels = ["Mono", "Colour"]
+initial_value_label = "Mono"

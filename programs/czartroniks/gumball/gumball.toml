@@ -1,0 +1,198 @@
+# Gumball — video as a wall of glossy spheres.
+#
+# Pixelation where every "pixel" is a lit 3D ball: hex-packed rows (each row
+# offset by half a cell), one sphere per cell coloured from the live video,
+# shaded with a movable light — diffuse dome + specular hotspot.  Oversized
+# spheres squash flat against their neighbours along the hex boundaries.
+# The Relief fader morphs the whole field from flat mosaic tiles to deep
+# shadowed wet-gloss 3D.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.gumball"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Gumball"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pixel", "Pattern", "Color"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Video re-rendered as hex-packed glossy spheres with movable specular lighting."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 148
+display_min_value = 12
+display_max_value = 128
+name_label = "Ball Size"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 617
+display_min_value = 0
+display_max_value = 360
+name_label = "Light Angle"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 328
+display_min_value = 0
+display_max_value = 100
+name_label = "Specular"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 998
+display_min_value = 0
+display_max_value = 100
+name_label = "Shine"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 603
+display_min_value = 0
+display_max_value = 100
+name_label = "Squash"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 75
+display_max_value = 270
+name_label = "Candy"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Backdrop"
+value_labels = ["Black", "Video"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Luma Size"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Packing"
+value_labels = ["Hex", "Square"]
+initial_value_label = "Hex"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Chrome"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 731
+display_min_value = 0
+display_max_value = 100
+name_label = "Relief"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Glass Beads"
+rotary_potentiometer_1 = 300      # ~49 px
+rotary_potentiometer_2 = 640      # light from top-left
+rotary_potentiometer_3 = 550
+rotary_potentiometer_4 = 500
+rotary_potentiometer_5 = 640      # touching, slight squash
+rotary_potentiometer_6 = 128      # unity chroma
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 768
+
+[[preset]]
+name = "Gumball Machine"
+rotary_potentiometer_1 = 520      # big balls
+rotary_potentiometer_2 = 640
+rotary_potentiometer_3 = 800      # hot highlight
+rotary_potentiometer_4 = 780      # tight gloss
+rotary_potentiometer_5 = 420      # round, just touching
+rotary_potentiometer_6 = 620      # heavy candy saturation
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023    # full wet-gloss climax
+
+[[preset]]
+name = "Ball Bearings"
+rotary_potentiometer_1 = 180      # small
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 1023     # blowout speculars
+rotary_potentiometer_4 = 900      # pinpoint
+rotary_potentiometer_5 = 300      # separated beads
+rotary_potentiometer_6 = 128
+toggle_switch_7 = 1               # dim video behind the bearings
+toggle_switch_8 = 0
+toggle_switch_9 = 1               # square grid
+toggle_switch_10 = 1              # chrome mono
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Pressed Mosaic"
+rotary_potentiometer_1 = 420
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 260      # soft sheen only
+rotary_potentiometer_4 = 120      # broad satin
+rotary_potentiometer_5 = 1023     # fully squashed: domed tile wall
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 0
+toggle_switch_8 = 1               # luma breathes the dome sizes
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600

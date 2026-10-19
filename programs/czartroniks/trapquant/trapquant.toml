@@ -1,0 +1,157 @@
+# Trapquant - Program Configuration
+#
+# Two catalogue effects (seed 20260926, #120): perspective keystone /
+# corner-pin and posterization.  Three knobs each; switches and slider set
+# the interaction.  See trapquant.vhd.
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.trapquant"
+program_name = "Trapquant"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Retro", "Glitch", "Stylize"]
+program_type = "processing"
+description = "Straight-sided keystone (top/bottom width, slide, tilt, mirror tiles) posterized with centred dither; bands ride the trapezoid."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Top"
+control_mode = "linear"
+display_min_value = 25
+display_max_value = 225
+initial_value = 511
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Bottom"
+control_mode = "linear"
+display_min_value = 25
+display_max_value = 225
+initial_value = 0
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Slide"
+control_mode = "linear"
+display_min_value = -50
+display_max_value = 50
+initial_value = 552
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Luma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 788
+display_float_digits = 0
+suffix_label = " b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Chroma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 853
+display_float_digits = 0
+suffix_label = " b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Dither"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Edges"
+value_labels = ["Fill", "Mirror"]
+initial_value_label = "Mirror"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Order"
+value_labels = ["Source", "Screen"]
+initial_value_label = "Source"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Ramp"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Dither"
+value_labels = ["2x2", "Lines"]
+initial_value_label = "2x2"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Chroma"
+value_labels = ["Poster", "Keep"]
+initial_value_label = "Poster"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Tilt"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 618
+display_float_digits = 1
+suffix_label = "%"
+
+# Presets translated from v0.1.4 so each keeps its picture: K1/K2 are now the
+# real widths (v0.1 knobs set the source step, i.e. 1/width), Slide is a
+# fraction of the width, and K4/K5 sit at their bit-depth zone centres.
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Road Ahead"
+rotary_potentiometer_1 = 690
+rotary_potentiometer_2 = 0
+rotary_potentiometer_4 = 292
+rotary_potentiometer_6 = 900
+toggle_switch_7 = 1
+toggle_switch_9 = 1
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Screen Bands"
+rotary_potentiometer_1 = 168
+rotary_potentiometer_2 = 569
+rotary_potentiometer_4 = 146
+rotary_potentiometer_5 = 146
+rotary_potentiometer_6 = 0
+toggle_switch_8 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 300
+
+[[preset]]
+name = "Soft Lean"
+rotary_potentiometer_1 = 546
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_3 = 612
+rotary_potentiometer_4 = 877
+rotary_potentiometer_6 = 300
+toggle_switch_11 = 1
+linear_potentiometer_12 = 900

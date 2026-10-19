@@ -1,0 +1,106 @@
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.inferno"
+program_version = "2.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Inferno"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Render", "Pattern", "Screen"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Pixelated two-layer noise fire: K2 block size, 32-step palette, rolling smoke, Canny luma-edge mode, blue flame, overlay."
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Fuel"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 767
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Pixels"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Smoke"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 419
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Turblnce"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 685
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Depth/Edge"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 691
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Rise"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 559
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Ember"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Luma Mod"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Blue Flame"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Overlay"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Intensify"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 5
+initial_value = 0
+suffix_label = "x"

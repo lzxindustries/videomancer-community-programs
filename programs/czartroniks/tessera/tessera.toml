@@ -1,0 +1,124 @@
+# Tessera — tumbling triangles rain down the screen (line-buffer sprite engine).
+#
+# v1.0.0 (v17 engine): 1-64 triangles (K5), random in-plane orientation, uniform end-over-end
+# tumble with flutter (side-to-side swing), shared spin (K2); P12 scales every
+# triangle 0.25x-1.5x of its count's natural size (0.75/sqrt(count) of the
+# screen); T10 depth layers; T11 two-sided video fill (back face = toned-down
+# outline colour).  BG knob uses a toned-down palette.  Switches 7-9 unused.
+
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.tessera"
+program_version = "1.0.5"
+abi_version = ">=1.0,<2.0"
+program_name = "Tessera"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Shape", "Render", "Demo"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Equilateral triangles tumble end-over-end and rain down the screen as outlines."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 498
+display_min_value = 0
+display_max_value = 100
+name_label = "Outline Color"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Spin"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "BG Color"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 567
+display_min_value = 0
+display_max_value = 100
+name_label = "Fall Speed"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Count"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 256
+display_min_value = 0
+display_max_value = 100
+name_label = "Tumble Speed"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Depth"
+value_labels = ["Flat", "Layers"]
+initial_value_label = "Layers"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Video"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Scale"
+suffix_label = "%"
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# seeds 1-6 each hung nextpnr's router1 (a rip-up livelock) in at least one
+# config up to v1.0.4; v1.0.5 removed the duplicate-input LUTs behind it.
+# Seed 7 builds all 8 (v1.0.5 own HD timing 80.0/85.3/77.4 MHz Analog/HDMI/Dual).
+seed = 7

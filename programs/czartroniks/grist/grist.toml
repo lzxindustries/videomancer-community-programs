@@ -1,0 +1,228 @@
+# Grist — the grain from Morsel's cookie dough, promoted to the whole
+# instrument.
+#
+# Three hash octaves (per-pixel tooth, 4 px mottle, 8-64 px blocks) plus
+# sparse pores feed one comparator: out = 512 + (Y - thr + grain) * gain.
+# P12 DEVELOP rides the gain from transparent additive film grain up to a
+# hard mezzotint where the picture re-renders itself as pure stipple
+# density.  S7 chooses a frozen etching or living frame-seeded grain.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.grist"
+program_version = "0.3.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Grist"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Material", "Pattern"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Film grain to mezzotint: hash-grain octaves, pores and one develop comparator re-render the video as stipple."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 204
+display_min_value = 0
+display_max_value = 100
+name_label = "Fine"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Coarse"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 454
+display_min_value = 8
+display_max_value = 64
+name_label = "Block"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Response"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 490
+display_min_value = -100
+display_max_value = 100
+name_label = "Pits"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 457
+display_min_value = 0
+display_max_value = 100
+name_label = "Exposure"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Animate"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Soft"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Mono"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Etch"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 416
+display_min_value = 0
+display_max_value = 100
+name_label = "Develop"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Film Stock"
+rotary_potentiometer_1 = 550
+rotary_potentiometer_2 = 250
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 700      # mid-tone grain, clean blacks and whites
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1               # living grain
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 180
+
+[[preset]]
+name = "Mezzotint"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 450
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1               # B/W print
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023    # full develop
+
+[[preset]]
+name = "Concrete"
+rotary_potentiometer_1 = 400
+rotary_potentiometer_2 = 900      # the octave stack carries it
+rotary_potentiometer_3 = 800      # 64 px blocks
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 415
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0               # frozen material
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 300
+
+[[preset]]
+name = "Corroded"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_2 = 500
+rotary_potentiometer_3 = 500
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 159      # dense dark pitting
+rotary_potentiometer_6 = 560
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 420
+
+[[preset]]
+name = "Star Dust"
+rotary_potentiometer_1 = 350
+rotary_potentiometer_2 = 200
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 800
+rotary_potentiometer_6 = 300      # darkened print
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 250
+
+[[preset]]
+name = "Etched Print"
+rotary_potentiometer_1 = 500
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 500
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 447
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1              # posterize plates + boiling contours
+toggle_switch_11 = 0
+linear_potentiometer_12 = 500

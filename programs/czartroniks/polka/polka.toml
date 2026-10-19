@@ -1,0 +1,227 @@
+# POLKA v2 — retro polka dots: palettes, layouts, and a swell fader.
+#
+# A field of perfect circles over a configurable background.  Eight 50s
+# background+dot palettes (tintable as a set with one knob), six dot
+# layouts from a strict grid to waves and hand-thrown scatter, five ways
+# to hand the palette's dot colours out, video portholes, and the SWELL
+# fader that merges the field into round negative-space holes.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.polka"
+program_version = "2.2.3"
+abi_version = ">=1.0,<2.0"
+program_name = "POLKA"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pattern", "Color"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Retro polka dots: 8 tintable 50s palettes, 8 layouts (brick, clusters, tumble, scatter, halftone fade), portholes, swell fader."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 169
+display_min_value = 0
+display_max_value = 100
+name_label = "Dot Size"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 284
+display_min_value = 0
+display_max_value = 100
+name_label = "Spacing"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Layout"
+value_labels = ["Grid", "Brick", "Honeycomb", "Diamond", "Cluster", "Tumble", "Scatter", "Fade"]
+initial_value_label = "Grid"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Palette"
+value_labels = ["Diner Cherry", "Seafoam Coral", "Atomic Teal", "Butter Turq", "Blush Charcoal", "Mint Chocolate", "Midnight Fiesta", "Linen Ink"]
+initial_value_label = "Diner Cherry"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Tint"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Color Mode"
+value_labels = ["Solid", "Duotone", "Rows", "Confetti", "Cycle"]
+initial_value_label = "Solid"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Swap"
+value_labels = ["Normal", "Inverted"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Backdrop"
+value_labels = ["Palette", "Video"]
+initial_value_label = "Palette"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Fill"
+value_labels = ["Paint", "Porthole"]
+initial_value_label = "Paint"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Edges"
+value_labels = ["Hard", "Soft"]
+initial_value_label = "Hard"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Motion"
+value_labels = ["Still", "Sway"]
+initial_value_label = "Still"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 40
+display_min_value = 0
+display_max_value = 100
+name_label = "Swell"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Diner Classic"
+rotary_potentiometer_1 = 430
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 0            # grid
+rotary_potentiometer_4 = 0            # diner cherry
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0            # solid
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Soda Fountain"
+rotary_potentiometer_1 = 520
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 320          # honeycomb
+rotary_potentiometer_4 = 200          # seafoam coral
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 716          # confetti (5 even label bands)
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1                  # sway
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Atomic Lounge"
+rotary_potentiometer_1 = 380
+rotary_potentiometer_2 = 560
+rotary_potentiometer_3 = 576          # cluster
+rotary_potentiometer_4 = 330          # atomic teal
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 512          # rows
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 120
+
+[[preset]]
+name = "Thrown Confetti"
+rotary_potentiometer_1 = 330
+rotary_potentiometer_2 = 330
+rotary_potentiometer_3 = 832          # scatter
+rotary_potentiometer_4 = 850          # midnight fiesta
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 716          # confetti
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1                  # soft
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Porthole Blush"
+rotary_potentiometer_1 = 520
+rotary_potentiometer_2 = 500
+rotary_potentiometer_3 = 320          # honeycomb
+rotary_potentiometer_4 = 580          # blush charcoal
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1                   # porthole
+toggle_switch_10 = 1                  # soft
+toggle_switch_11 = 0
+linear_potentiometer_12 = 300
+
+[[preset]]
+name = "Ink Reverse"
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 360
+rotary_potentiometer_3 = 192          # brick
+rotary_potentiometer_4 = 1000         # linen ink
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1                   # swapped: ink ground, linen dots
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 650         # merged, round holes
+
+[[preset]]
+name = "Halftone Fade"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 260
+rotary_potentiometer_3 = 960          # fade
+rotary_potentiometer_4 = 1000         # linen ink
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1                   # ink ground
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0

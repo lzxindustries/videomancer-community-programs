@@ -1,0 +1,209 @@
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.warpfield"
+program_version = "1.1.4"
+abi_version = ">=1.0,<2.0"
+program_name = "Warpfield"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Render", "Pattern", "Screen"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Radial starfield: stars fly toward or away from you. Twinkle, 8 palettes, centre drift, nebula, luma mode, video overlay."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Layers"
+value_labels = ["1", "2", "3", "4", "5", "6"]
+initial_value_label = "5"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 620
+display_min_value = 0
+display_max_value = 100
+name_label = "Density"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Brightness"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Palette"
+value_labels = ["Silver", "Candle", "Twilight", "Neon", "Ember", "Honey", "Rainbow", "B&W"]
+initial_value_label = "Twilight"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 158
+display_min_value = 0
+display_max_value = 100
+name_label = "Size"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 431
+display_min_value = 0
+display_max_value = 100
+name_label = "Drift"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Direction"
+value_labels = ["Toward", "Away"]
+initial_value_label = "Toward"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Video"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Luma Mode"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Background"
+value_labels = ["Off", "Deep Space"]
+initial_value_label = "Deep Space"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Gate"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 648
+display_min_value = 0
+display_max_value = 100
+name_label = "Warp"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Cruise"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 64
+rotary_potentiometer_5 = 200
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 350
+
+[[preset]]
+name = "Hyperspace"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 550
+rotary_potentiometer_3 = 1023
+rotary_potentiometer_4 = 448
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Star Drift"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 800
+rotary_potentiometer_4 = 192
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 110
+
+[[preset]]
+name = "Nebula Dive"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 750
+rotary_potentiometer_3 = 850
+rotary_potentiometer_4 = 320
+rotary_potentiometer_5 = 550
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 480
+
+[[preset]]
+name = "Retreat"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 450
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 576
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 420
+
+[[preset]]
+name = "Tunnel Weave"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 500
+rotary_potentiometer_3 = 950
+rotary_potentiometer_4 = 704
+rotary_potentiometer_5 = 350
+rotary_potentiometer_6 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 620

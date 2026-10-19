@@ -1,0 +1,151 @@
+# Globeswap - Program Configuration
+#
+# Catalogue combo #134 (seed 20260927): polar warp (spherize / tunnel)
+# + colour channel swap / offset + solarization.  See globeswap.vhd and
+# SUMMARY.md.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.globeswap"
+program_name = "Globeswap"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Distortion", "Colorizer", "Glitch"]
+program_type = "processing"
+description = "Sphere or tunnel lens with Y/U/V read from split columns, channel swaps and negatives, and a Sabattier fold gated by region."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Lens"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 444
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Size"
+control_mode = "linear"
+display_min_value = 3
+display_max_value = 146
+initial_value = 0
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Swap"
+value_labels = ["None", "U<>V", "Y>U", "U>Y", "Y<>V", "Rotate", "-Y", "-YUV"]
+initial_value_label = "Y<>V"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Offset"
+control_mode = "linear"
+display_min_value = -256
+display_max_value = 256
+initial_value = 652
+display_float_digits = 0
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Solar"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 797
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Fold"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Fringe"
+value_labels = ["Even", "Rim"]
+initial_value_label = "Rim"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Swap"
+value_labels = ["All", "Solar"]
+initial_value_label = "All"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Split"
+value_labels = ["Chroma", "Luma"]
+initial_value_label = "Chroma"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Lens"
+value_labels = ["Row", "Disc"]
+initial_value_label = "Disc"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Fold"
+value_labels = ["Luma", "Colour"]
+initial_value_label = "Colour"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Globe"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 849
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Prism Globe"
+rotary_potentiometer_1 = 950
+rotary_potentiometer_2 = 500
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 0
+toggle_switch_7 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Solar Tunnel"
+rotary_potentiometer_1 = 150
+rotary_potentiometer_2 = 900
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 995
+rotary_potentiometer_6 = 980
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 200
+
+[[preset]]
+name = "Torn Channels"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_3 = 400
+rotary_potentiometer_4 = 900
+rotary_potentiometer_5 = 462
+rotary_potentiometer_6 = 160
+toggle_switch_9 = 1
+linear_potentiometer_12 = 400

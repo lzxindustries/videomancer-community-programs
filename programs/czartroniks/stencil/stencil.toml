@@ -1,0 +1,159 @@
+# Stencil - catalogue combo #2: averaged mosaic that the P12 stencil key eats into the picture.  See stencil.vhd.
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.stencil"
+program_name = "Stencil"
+program_version = "0.2.3"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pixel", "Mask", "Grid"]
+program_type = "processing"
+description = "Cell-averaged mosaic that eats into the picture by luma or saturation: soft stencil edges, grout, tint wash, negative reveal."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Cells"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 917
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Aspect"
+value_labels = ["Square", "Wide", "Wider", "Strip"]
+initial_value_label = "Strip"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Grout"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 508
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Tint"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Soft"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 786
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Source"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 557
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Mask"
+value_labels = ["Normal", "Invert"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Key From"
+value_labels = ["Original", "Mosaic"]
+initial_value_label = "Original"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Reveal"
+value_labels = ["Original", "Negative"]
+initial_value_label = "Original"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Luma"
+value_labels = ["Mosaic", "Sharp"]
+initial_value_label = "Mosaic"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Grout"
+value_labels = ["All", "Masked"]
+initial_value_label = "All"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Stencil"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 372
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Tiled Shadows"
+rotary_potentiometer_1 = 500
+rotary_potentiometer_3 = 450
+rotary_potentiometer_5 = 200
+linear_potentiometer_12 = 450
+
+[[preset]]
+name = "Bright Tiles"
+rotary_potentiometer_1 = 640
+rotary_potentiometer_3 = 300
+toggle_switch_7 = 1
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Colour Key"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_4 = 700
+rotary_potentiometer_6 = 1000
+toggle_switch_9 = 1
+linear_potentiometer_12 = 500
+
+[[preset]]
+name = "Blocky Mask"
+rotary_potentiometer_1 = 800
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 300
+toggle_switch_8 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Stained Glass"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 100
+linear_potentiometer_12 = 1000
+
+[[preset]]
+name = "Strip Scan"
+rotary_potentiometer_1 = 900
+rotary_potentiometer_2 = 1000
+rotary_potentiometer_3 = 0
+toggle_switch_10 = 1
+linear_potentiometer_12 = 600

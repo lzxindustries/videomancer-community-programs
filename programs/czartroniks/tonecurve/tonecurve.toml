@@ -1,0 +1,155 @@
+# Tonecurve - Program Configuration
+#
+# Three catalogue effects (seed 20260918): tone curves / S-curve contrast,
+# picture-in-picture with warping, and colour bleed / chroma lag.  Two knobs
+# each; switches and slider set the interaction.  v0.2.0 change list and the
+# review backlog are in SUMMARY.md.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.tonecurve"
+program_name = "Tonecurve"
+program_version = "0.2.1"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Signal", "Vision"]
+program_type = "processing"
+description = "Eight blended tone curves with overdrive, bled and lagging chroma, and a wobbling inset; route each to the main or the inset."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# Continuous sweep, neighbouring curves blended: 0 gamma 0.5, 1 gamma 0.7,
+# 2 gamma 1.5, 3 gamma 2.2, 4 inverse S, 5 soft S, 6 hard S, 7 crush.
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Curve"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 7
+initial_value = 405
+display_float_digits = 1
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Contrast"
+control_mode = "linear"
+display_min_value = 25
+display_max_value = 425
+initial_value = 41
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Size"
+value_labels = ["1/2", "1/4", "1/8"]
+initial_value_label = "1/2"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Warp"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 539
+display_float_digits = 1
+suffix_label = "%"
+
+# IIR smear 2^n px, n = 0..7 (0 = off)
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Bleed"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 7
+initial_value = 473
+display_float_digits = 0
+suffix_label = ""
+
+# Square law: 100% = 254 px in HD, 127 px in SD
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Lag"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 456
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Curve In"
+value_labels = ["Main", "Inset"]
+initial_value_label = "Main"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Place"
+value_labels = ["Corner", "Centre"]
+initial_value_label = "Centre"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Bleed In"
+value_labels = ["Main", "Inset"]
+initial_value_label = "Inset"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Inset"
+value_labels = ["Picture", "Negative"]
+initial_value_label = "Picture"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Lag In"
+value_labels = ["Main", "Inset"]
+initial_value_label = "Main"
+
+# Curve strength 0.25x .. 2x (100% at 439); above 100% the curve overdrives
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Amount"
+control_mode = "linear"
+display_min_value = 25
+display_max_value = 200
+initial_value = 801
+display_float_digits = 0
+suffix_label = "%"
+
+# Presets: v0.1.0 values translated to the v0.2.0 mappings (same curve,
+# lag in px and curve strength).  Re-capture on hardware.
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Hard Press"
+rotary_potentiometer_1 = 877
+rotary_potentiometer_2 = 400
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 248
+toggle_switch_10 = 1
+linear_potentiometer_12 = 439
+
+[[preset]]
+name = "Soft Monitor"
+rotary_potentiometer_1 = 731
+rotary_potentiometer_2 = 150
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 400
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 311
+
+[[preset]]
+name = "Crushed"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 300
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0
+linear_potentiometer_12 = 254

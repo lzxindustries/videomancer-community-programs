@@ -1,0 +1,188 @@
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.livewire"
+program_version = "1.1.4"
+abi_version = ">=1.0,<2.0"
+program_name = "Livewire"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Edges", "Render", "Print"]
+core = "yuv444_30b"
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+description = "Edges as a living material: neon, corona discharge, oil-slick spectral, painted cel, wet ink."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Mode"
+value_labels = ["Neon", "Kirlian", "Spectral", "Cel", "Ink Bleed"]
+initial_value_label = "Spectral"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Scale"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 404
+display_min_value = 0
+display_max_value = 100
+name_label = "Thresh"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Material"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Character"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Colour"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Invert"
+value_labels = ["Normal", "Inverted"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Interior"
+value_labels = ["Material", "Video"]
+initial_value_label = "Video"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Polarity"
+value_labels = ["Both", "One Side"]
+initial_value_label = "Both"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Rainbow"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Persist"
+value_labels = ["Halo", "Trails"]
+initial_value_label = "Halo"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Emerge"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Neon Sign"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 448
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 256
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 768
+
+[[preset]]
+name = "Cel Shade"
+rotary_potentiometer_1 = 704
+rotary_potentiometer_2 = 384
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Oil Slick"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 448
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 640
+
+[[preset]]
+name = "Comet Trails"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 768
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 820
+
+[firmware]
+# nextpnr placement seed for the stock LZX build: with v1.1.3 seed 1 stalls router1 on HD Standalone;
+# seeds 2, 3 and 4 all build 8/8, and seed 2 has the best HD margin.
+seed = 2

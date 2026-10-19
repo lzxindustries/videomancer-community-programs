@@ -1,0 +1,217 @@
+# Slit Scan v3 -- clean blocks of lines, each slid sideways as if it were a
+# different moment in time.  With no frame buffer the time is simulated: a
+# virtual camera sways or drifts, its position is remembered for 256
+# frames, and band k shows the live picture shifted by how far the camera
+# moved since its moment, plus a staircase pattern scaled by the slider.
+# Full resolution, sharp band edges.  (v2, the coarse time-strip, lives on
+# as the "Time Strip" program.)
+
+[program]
+processing_delay_clks = 4
+program_id = "com.czartroniks.slitscan"
+program_version = "3.0.1"
+abi_version = ">=1.0,<2.0"
+program_name = "Slit Scan"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Temporal", "Glitch", "Warp"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Slit-scan blocks: bands of lines slid sideways as if each were a different moment, rippling with a simulated camera."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Bands"
+value_labels = ["2", "3", "4", "6", "8", "12", "16", "24", "32", "48", "64", "96", "128"]
+initial_value_label = "48"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Pattern"
+value_labels = ["Ramp", "Fold", "Random", "Wave", "Zigzag"]
+initial_value_label = "Random"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 793
+display_min_value = 0
+display_max_value = 100
+name_label = "Motion"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 456
+display_min_value = 0
+display_max_value = 100
+name_label = "Span"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 345
+display_min_value = 0
+display_max_value = 100
+name_label = "Speed"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 352
+display_min_value = 0
+display_max_value = 100
+name_label = "Split"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Axis"
+value_labels = ["Horizontal", "Vertical"]
+initial_value_label = "Vertical"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Edges"
+value_labels = ["Wrap", "Mirror"]
+initial_value_label = "Wrap"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Gaps"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Motion"
+value_labels = ["Sway", "Drift"]
+initial_value_label = "Drift"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Flip"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 840
+display_min_value = 0
+display_max_value = 100
+name_label = "Offset"
+suffix_label = "%"
+
+# --- Presets (hand-written starting points; capture real ones on HW) ---
+# Labelled raw values: Bands zone i ~ 39 + 79 i, Pattern zone i ~ 102 + 205 i.
+
+[[preset]]
+name = "Staircase"
+rotary_potentiometer_1 = 354
+rotary_potentiometer_2 = 102
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 500
+
+[[preset]]
+name = "Venetian"
+rotary_potentiometer_1 = 669
+rotary_potentiometer_2 = 921
+rotary_potentiometer_3 = 200
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 300
+
+[[preset]]
+name = "Shredded"
+rotary_potentiometer_1 = 827
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 500
+rotary_potentiometer_4 = 600
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Strip Wave"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 716
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 800
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Drift Lag"
+rotary_potentiometer_1 = 433
+rotary_potentiometer_2 = 307
+rotary_potentiometer_3 = 800
+rotary_potentiometer_4 = 900
+rotary_potentiometer_5 = 500
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 200
+
+[[preset]]
+name = "Chroma Steps"
+rotary_potentiometer_1 = 275
+rotary_potentiometer_2 = 102
+rotary_potentiometer_3 = 250
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600

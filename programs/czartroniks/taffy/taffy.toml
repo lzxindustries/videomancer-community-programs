@@ -1,0 +1,234 @@
+[program]
+processing_delay_clks = 4
+program_id = "com.czartroniks.taffy"
+program_version = "0.4.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Taffy"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Warp", "Optics"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Scan the slider down the picture and the lines it touches stretch outward from the centre, snapping back behind it."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 420
+display_min_value = 0
+display_max_value = 100
+name_label = "Pull"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 260
+display_min_value = 0
+display_max_value = 100
+name_label = "Relax"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 40
+display_min_value = 1
+display_max_value = 255
+name_label = "Height"
+suffix_label = "ln"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 511
+name_label = "Centre"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 759
+display_min_value = 0
+display_max_value = 100
+name_label = "Depth"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 700
+display_min_value = 0
+display_max_value = 100
+name_label = "Soft"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Polarity"
+value_labels = ["Stretch", "Squeeze"]
+initial_value_label = "Stretch"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Hold"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Steps"
+value_labels = ["Smooth", "Stepped"]
+initial_value_label = "Smooth"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Mode"
+value_labels = ["Sustain", "One Shot"]
+initial_value_label = "One Shot"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Position"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Scanner"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 200
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Long Trail"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 90
+rotary_potentiometer_3 = 90
+rotary_potentiometer_4 = 120
+rotary_potentiometer_5 = 850
+rotary_potentiometer_6 = 500
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Single Line"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 40
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Soft Lens"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 60
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 900
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Terraces"
+rotary_potentiometer_1 = 800
+rotary_potentiometer_2 = 200
+rotary_potentiometer_3 = 400
+rotary_potentiometer_4 = 100
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 800
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Wake"
+rotary_potentiometer_1 = 420
+rotary_potentiometer_2 = 260
+rotary_potentiometer_3 = 40
+rotary_potentiometer_4 = 140
+rotary_potentiometer_5 = 800
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Pinch"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 250
+rotary_potentiometer_3 = 220
+rotary_potentiometer_4 = 60
+rotary_potentiometer_5 = 500
+rotary_potentiometer_6 = 400
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512

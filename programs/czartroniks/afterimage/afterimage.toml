@@ -1,0 +1,178 @@
+# Afterimage — 1-bit frame-store feedback test-bed.  A 256x128 one-bit
+# dithered frame lives in EBR (two banks, ping-pong by frame parity); each
+# frame's cell = this frame's dithered sample blended with LAST frame's cell
+# read back from a displaced address.  Old ink survives stochastically
+# (Persist), so trails dissolve grain by grain; Feedback picks where the
+# old frame is read from (hold / zoom / drift / spin); Diffuse random-walks
+# the source.  The bit map IS the picture: ink/paper palettes or live video
+# keyed through the ink.
+
+[program]
+processing_delay_clks = 12
+program_id = "com.czartroniks.afterimage"
+program_version = "1.0.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Afterimage"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pixel", "Temporal", "Computer"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "1-bit dithered frame store, stochastic feedback: trails, zoom/drift/spin tunnels, diffusion, ordered fade, freeze, palettes."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Feedback"
+value_labels = ["Hold", "Zoom In", "Zoom Out", "Left", "Right", "Up", "Down", "Spin"]
+initial_value_label = "Hold"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Grid"
+value_labels = ["256x128", "128x64", "64x32", "32x16"]
+initial_value_label = "256x128"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 194
+display_min_value = -100
+display_max_value = 100
+name_label = "Exposure"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Dither"
+value_labels = ["Bayer 8x8", "Bayer 4x4", "Threshold", "Noise"]
+initial_value_label = "Bayer 8x8"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Palette"
+value_labels = ["Mono", "Paper", "Game Boy", "Phosphor", "Amber", "Blueprint", "Ember", "Neon"]
+initial_value_label = "Mono"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Diffuse"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Fade"
+value_labels = ["Grain", "Bayer"]
+initial_value_label = "Grain"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Mirror"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Ink"
+value_labels = ["Solid", "Video"]
+initial_value_label = "Video"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Input"
+value_labels = ["Live", "Freeze"]
+initial_value_label = "Live"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 570
+display_min_value = 25
+display_max_value = 100
+name_label = "Persist"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Camera Trails"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Tunnel"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 384
+rotary_potentiometer_6 = 100
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 800
+
+[[preset]]
+name = "Game Boy Smear"
+rotary_potentiometer_1 = 860
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 500
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Ordered Fade"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 900
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 200
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 900

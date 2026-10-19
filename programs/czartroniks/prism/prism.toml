@@ -1,0 +1,102 @@
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.prism"
+program_version = "1.1.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Prism"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Edges"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Rainbow edges. P12 W, K1 fade, K2 thr, K3 noise, K4 postr, K5 contr, K6 scheme, S7 key, S8 kpos, S9 smth, S10 curve, S11 rev."
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Col/Fade"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Band W"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 325
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Edge Thr"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Noise"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 16
+initial_value = 8
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Poster"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Contrast"
+control_mode = "linear"
+display_min_value = 100
+display_max_value = 900
+initial_value = 209
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Scheme"
+value_labels = ["Rainbow", "Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet"]
+initial_value_label = "Rainbow"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Video Key"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Key Pos"
+value_labels = ["Under", "Over"]
+initial_value_label = "Under"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Smooth"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Curve En"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Reverse"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"

@@ -1,0 +1,183 @@
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.cga"
+program_version = "2.0.9"
+abi_version = ">=1.0,<2.0"
+program_name = "CGA"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Computer", "Pixel", "Color"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "IBM CGA re-render: 4-colour palettes, 640 mono and composite artifact colour on a native 320x200 grid, with dither and snow."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Mode"
+value_labels = ["Grn/Red", "Cyn/Mag", "Cyn/Red", "Mono 640", "Composite"]
+initial_value_label = "Cyn/Mag"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "H Size"
+value_labels = ["2x", "4x", "CGA", "8x", "16x"]
+initial_value_label = "8x"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "V Size"
+value_labels = ["2x", "4x", "CGA", "8x", "16x"]
+initial_value_label = "8x"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 836
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Color"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Ink"
+value_labels = ["Black", "Blue", "Green", "Cyan", "Red", "Magenta", "Brown", "Gray"]
+initial_value_label = "Black"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Stability"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Intensity"
+value_labels = ["Low", "High"]
+initial_value_label = "High"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Scanlines"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Color Mode"
+value_labels = ["Nearest", "Luma"]
+initial_value_label = "Luma"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Snow"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 679
+display_min_value = 0
+display_max_value = 100
+name_label = "Dither"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Mode 4 Hi"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Blue Screen"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 560
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 192
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Composite"
+rotary_potentiometer_1 = 1000
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 560
+rotary_potentiometer_5 = 600
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Green Mono"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 600
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 320
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Snowstorm"
+rotary_potentiometer_1 = 100
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 800
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0

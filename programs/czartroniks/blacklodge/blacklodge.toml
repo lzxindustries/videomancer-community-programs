@@ -1,0 +1,224 @@
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.blacklodge"
+program_version = "1.0.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Blacklodge"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Render", "Pattern", "Film"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Twin Peaks Red Room: swaying crimson velvet curtain over a walking cream/brown chevron floor in perspective."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Folds"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 288
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Depth"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 242
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Width"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 632
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Apex"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 461
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Walk"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 736
+display_min_value = -100
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "ViewHt"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Sway"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Chevrons"
+value_labels = ["Rays", "Rows"]
+initial_value_label = "Rays"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Brown"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Flicker"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Key"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Horizon"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 389
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# --- Presets ---
+
+# Canonical look (the original v0.1 defaults).
+[[preset]]
+name = "Red Room"
+rotary_potentiometer_1 = 307
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 1023
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 389
+
+# Dense heavy folds, deep shadow, slow walk forward, light flicker.
+[[preset]]
+name = "Deep Velvet"
+rotary_potentiometer_1 = 850
+rotary_potentiometer_2 = 940
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 600
+rotary_potentiometer_6 = 400
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+# Off-centre vanishing point, raised viewer, near-black stripes — an intimate corner.
+[[preset]]
+name = "Alcove"
+rotary_potentiometer_1 = 500
+rotary_potentiometer_2 = 650
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 220
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 820
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 560
+
+# Flat, bright, still — sway frozen, black-and-cream floor under the spotlight.
+[[preset]]
+name = "Stage Lit"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 623
+
+# Rows chevrons flowing toward the viewer.
+[[preset]]
+name = "Vertical Weave"
+rotary_potentiometer_1 = 307
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 640
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 420
+
+# Incoming video composited into the floor, low horizon for a wide reflection field.
+[[preset]]
+name = "Signal Floor"
+rotary_potentiometer_1 = 307
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 300

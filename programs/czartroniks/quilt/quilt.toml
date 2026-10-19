@@ -20,7 +20,7 @@
 [program]
 processing_delay_clks = 28
 program_id = "com.czartroniks.quilt"
-program_version = "1.0.1"
+program_version = "1.0.3"
 abi_version = ">=1.0,<2.0"
 program_name = "Quilt"
 author = "czartroniks"
@@ -38,7 +38,7 @@ url = "https://github.com/lzxindustries/videomancer-community-programs"
 parameter_id = "rotary_potentiometer_1"
 name_label = "Grid Scale"
 value_labels = ["Large", "Big", "Medium", "Small"]
-initial_value_label = "Medium"
+initial_value_label = "Large"
 
 [[parameter]]
 parameter_id = "rotary_potentiometer_2"
@@ -93,7 +93,7 @@ name_label = "Palette Tint"
 parameter_id = "rotary_potentiometer_6"
 name_label = "Texture Scale"
 value_labels = ["Fine", "Small", "Medium", "Coarse"]
-initial_value_label = "Medium"
+initial_value_label = "Fine"
 
 # --- Toggle Switches (7-11, binary) ---
 

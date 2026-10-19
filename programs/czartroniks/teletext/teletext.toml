@@ -1,0 +1,144 @@
+# Teletext - Program Configuration
+#
+# Catalogue combo #47 (seed 20260920): datamosh bars + ASCII / dither-art
+# + scanline shear.  See teletext.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 60
+program_id = "com.czartroniks.teletext"
+program_name = "Teletext"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Stylize", "Glitch", "Retro"]
+program_type = "processing"
+description = "Video redrawn as 8x8 ASCII or block-dither glyphs per cell, with datamosh bars and per-line shear tearing the glyph raster."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Bars"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 825
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Distance"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 1020
+initial_value = 0
+display_float_digits = 0
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Cell"
+value_labels = ["8 px", "16 px", "32 px", "64 px"]
+initial_value_label = "32 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Contrast"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 400
+initial_value = 302
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Shear"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 30
+initial_value = 54
+display_float_digits = 0
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Rate"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 225
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Ink"
+value_labels = ["White", "Black"]
+initial_value_label = "White"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Colour"
+value_labels = ["Mono", "Cell"]
+initial_value_label = "Cell"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Mosh"
+value_labels = ["Video", "Cells"]
+initial_value_label = "Video"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Shear"
+value_labels = ["Wave", "Tear"]
+initial_value_label = "Wave"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Glyphs"
+value_labels = ["ASCII", "Blocks"]
+initial_value_label = "ASCII"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Reveal"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Green Screen"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_5 = 0
+rotary_potentiometer_4 = 400
+toggle_switch_8 = 1
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Torn Blocks"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_3 = 384
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 700
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 800
+
+[[preset]]
+name = "Paper Print"
+rotary_potentiometer_1 = 100
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 100
+toggle_switch_7 = 1
+linear_potentiometer_12 = 600

@@ -1,0 +1,207 @@
+# Mondrian — De Stijl composition generator.
+#
+# A mostly-white canvas recursively divided into clean axis-aligned rectangles
+# by thick black grid lines, with a scattering of blocks filled in primary red,
+# yellow and blue (optionally black) — in the style of Piet Mondrian.  A repaint
+# of the Quilt subdivision engine.  Static image; K2 (Composition) re-randomises
+# the layout.  P12 (Density) is the master recursion control; K5 (Colour Amount)
+# sets how much colour vs white.  With S11 Luma Mod on, blocks take colour only
+# where the input luma is above K3 (Luma Level), else they stay white.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.mondrian"
+program_version = "1.0.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Mondrian"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Grid", "Pattern", "Shape"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "De Stijl composition: white canvas, black grid lines, red/yellow/blue blocks."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 762
+display_min_value = 32
+display_max_value = 256
+name_label = "Grid Scale"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 603
+name_label = "Composition"
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Luma Level"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Split Jitter"
+value_labels = ["Centered", "Slight", "Medium", "Wild"]
+initial_value_label = "Wild"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 531
+display_min_value = 0
+display_max_value = 100
+name_label = "Colour Amount"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 156
+display_min_value = 2
+display_max_value = 32
+name_label = "Line Width"
+suffix_label = "px"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Grid Lines"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Black Blocks"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Grid"
+value_labels = ["Square", "Not Square"]
+initial_value_label = "Not Square"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Video Fill"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Luma Mod"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 875
+display_min_value = 0
+display_max_value = 100
+name_label = "Density"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Classic"
+rotary_potentiometer_1 = 600       # medium grid
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 620
+rotary_potentiometer_4 = 350       # slight jitter
+rotary_potentiometer_5 = 220       # ~20% colour
+rotary_potentiometer_6 = 600       # 20 px lines
+toggle_switch_7 = 1                # grid lines on
+toggle_switch_8 = 0                # no black blocks
+toggle_switch_9 = 0                # square grid
+toggle_switch_10 = 0               # video fill off
+toggle_switch_11 = 0               # luma mod off
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Bold Primaries"
+rotary_potentiometer_1 = 200       # big blocks
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 480
+rotary_potentiometer_4 = 0         # centered, clean rectangles
+rotary_potentiometer_5 = 420       # ~40% colour
+rotary_potentiometer_6 = 800       # 26 px lines
+toggle_switch_7 = 1
+toggle_switch_8 = 1                # allow black blocks
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 420      # lower density -> bigger blocks
+
+[[preset]]
+name = "Big Rectangles"
+rotary_potentiometer_1 = 500
+rotary_potentiometer_2 = 740
+rotary_potentiometer_3 = 200
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 350       # 12 px lines
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1                # not-square: rectangles span several grid cells
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Luma Mask"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_2 = 880
+rotary_potentiometer_3 = 320
+rotary_potentiometer_4 = 350
+rotary_potentiometer_5 = 260
+rotary_potentiometer_6 = 600
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1                # not-square merges
+toggle_switch_10 = 0
+toggle_switch_11 = 1               # luma mod: colour blocks only where the input is bright
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Video Windows"
+rotary_potentiometer_1 = 300       # big-ish cells so video shows
+rotary_potentiometer_2 = 420
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 500       # ~50% colour -> more video windows
+rotary_potentiometer_6 = 600
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1               # video fill on
+toggle_switch_11 = 0
+linear_potentiometer_12 = 520

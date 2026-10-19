@@ -1,0 +1,120 @@
+[program]
+processing_delay_clks = 0
+program_id = "com.czartroniks.pixelbeach"
+program_version = "3.24.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Pixel Beach"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Render", "Pattern", "Screen"]
+program_type = "synthesis"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Side-profile 8-bit shorebreak: shallow-water physics, waves that steepen, crash, foam, and drain back. Sun, gulls, wet sand."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Rhythm"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 400
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Tide"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 449
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Foam"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 412
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Chop"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 418
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Swell"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 519
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Time"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 758
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Gulls"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Pixels"
+value_labels = ["16px", "8px"]
+initial_value_label = "8px"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Storm"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Sky"
+value_labels = ["Day", "Night"]
+initial_value_label = "Day"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Crab"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Sun"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+suffix_label = "%"
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed for all 8 configs).
+# Chosen for HDMI pin skew (tools/hdmi_pin_skew.py). v3.24.2 (resolution scaling)
+# moved seed 6's HD HDMI HSYNC to -0.35 ns (the U/V-swap zone); seed 1 keeps every
+# HD pin >= 0.96 ns from the clock (HD HDMI -0.96, HD Analog HDMI +1.22, HD Dual
+# HDMI -1.24) and builds all 8 (screened 2026-10-18).
+seed = 1

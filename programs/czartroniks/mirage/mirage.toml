@@ -1,0 +1,143 @@
+# Mirage - catalogue combo #4: solarization + displacement mapping.  See mirage.vhd.
+
+[program]
+processing_delay_clks = 28
+program_id = "com.czartroniks.mirage"
+program_name = "Mirage"
+program_version = "0.1.5"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Film", "Glitch", "Curve"]
+program_type = "processing"
+description = "Solarization meets luma displacement: contour bands can drive the warp, mask it, or be drawn on top of it."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Threshold"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 499
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Gain"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 840
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Lift"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 768
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Amount"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Smooth"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Pivot"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 256
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Map"
+value_labels = ["Original", "Solar"]
+initial_value_label = "Solar"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Order"
+value_labels = ["Solar 1st", "Warp 1st"]
+initial_value_label = "Warp 1st"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Warp"
+value_labels = ["All", "Region"]
+initial_value_label = "All"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Fold"
+value_labels = ["Luma", "Chroma"]
+initial_value_label = "Luma"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Edges"
+value_labels = ["Fill", "Wrap"]
+initial_value_label = "Fill"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Bands"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 3
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Heat Haze"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 248
+rotary_potentiometer_4 = 620
+rotary_potentiometer_5 = 700
+toggle_switch_7 = 1
+toggle_switch_11 = 1
+
+[[preset]]
+name = "Torn Contours"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 872
+rotary_potentiometer_4 = 512
+toggle_switch_10 = 1
+linear_potentiometer_12 = 900
+
+[[preset]]
+name = "Bands Only"
+rotary_potentiometer_1 = 400
+rotary_potentiometer_2 = 728
+rotary_potentiometer_4 = 900
+toggle_switch_8 = 1
+toggle_switch_9 = 1

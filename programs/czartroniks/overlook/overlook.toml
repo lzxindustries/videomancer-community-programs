@@ -1,0 +1,251 @@
+# Overlook — the Shining corridor carpet (David Hicks' "Hexagon").
+#
+# Serpentine orange polylines interlocking over a dark plum field, solid
+# red hexagons floating in the negative space.  P12 zooms about screen
+# centre; K3 tilts the carpet into a corridor floor receding to a fogged
+# horizon; S9 turns the red hexagons into a halftone of the input video.
+
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.overlook"
+program_version = "1.3.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Overlook"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pattern", "Film", "Render"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "The Overlook Hotel carpet: orange serpentines and red hexagons, zoomed, drifted, tilted into a corridor, video halftone."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512
+display_min_value = -100
+display_max_value = 100
+name_label = "Drift X"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512
+display_min_value = -100
+display_max_value = 100
+name_label = "Drift Y"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Perspective"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 563
+display_min_value = 0
+display_max_value = 100
+name_label = "Weight"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512
+display_min_value = 60
+display_max_value = 140
+name_label = "Hex Size"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Scheme"
+value_labels = ["Classic", "Gold Room", "Lobby Blue", "Deep Night", "Mono Amber"]
+initial_value_label = "Classic"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Mirror"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Weave"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Halftone"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Inverse"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Night"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 618
+display_min_value = 0
+display_max_value = 100
+name_label = "Zoom"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Carpet"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 563
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 618
+
+[[preset]]
+name = "Corridor"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 380
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 563
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 618
+
+[[preset]]
+name = "Gold Room"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 700
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 672
+
+[[preset]]
+name = "Lobby Drift"
+rotary_potentiometer_1 = 560
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 563
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 500
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 566
+
+[[preset]]
+name = "Room 237"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 563
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 792
+
+[[preset]]
+name = "Valley"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 420
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 563
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 640
+
+[[preset]]
+name = "Halftone"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 450
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 406
+
+[[preset]]
+name = "Wall to Wall"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 563
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 406

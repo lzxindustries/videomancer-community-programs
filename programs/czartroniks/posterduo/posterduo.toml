@@ -1,0 +1,140 @@
+# Posterduo - Program Configuration
+#
+# Catalogue combo #112 (seed 20260925): posterization + duotone / tritone.
+# See posterduo.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.posterduo"
+program_name = "Posterduo"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Colorizer", "Stylize", "Retro"]
+program_type = "processing"
+description = "Dithered posterize and a two-ink duotone: banded or smooth inks, tritone midtones, band swap, inks snapped to a 9-colour set."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Luma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 192
+display_float_digits = 0
+suffix_label = "b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Dither"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 411
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Pitch"
+value_labels = ["2 px", "4 px", "8 px", "16 px"]
+initial_value_label = "2 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Shadow"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 7
+initial_value = 179
+display_float_digits = 0
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Light"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 7
+initial_value = 240
+display_float_digits = 0
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Contrast"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 400
+initial_value = 822
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Order"
+value_labels = ["Post-Tone", "Tone-Post"]
+initial_value_label = "Post-Tone"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Tritone"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Luma"
+value_labels = ["Keep", "Flat"]
+initial_value_label = "Keep"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Bands"
+value_labels = ["Same", "Swap"]
+initial_value_label = "Same"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Chroma"
+value_labels = ["Smooth", "Poster"]
+initial_value_label = "Poster"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Balance"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 716
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Band Swap"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_6 = 700
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+
+[[preset]]
+name = "Dithered Inks"
+rotary_potentiometer_1 = 100
+rotary_potentiometer_2 = 1000
+rotary_potentiometer_3 = 384
+toggle_switch_8 = 1
+
+[[preset]]
+name = "Poster Inks"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 700
+toggle_switch_7 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 600

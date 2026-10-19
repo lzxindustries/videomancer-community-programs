@@ -1,0 +1,258 @@
+# Matrix Rain — classic "digital rain" generator.
+#
+# A black field of square glyph cells (size set by P12); each column carries three
+# independent falling drops (own speed per drop, random respawn gap), a fading green
+# tail, and glyphs that mutate at random.  Half-width katakana + digits + a few
+# Latin/symbols, rasterized from GNU Unifont at build time (matrix_rain.py).
+# Image (P12): the input picture's hold on the rain -- glyphs grow and tails
+# linger under bright areas, shrink under dark. Background (S10): black or video.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.matrix_rain"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Matrix Rain"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pattern", "Generator", "Color"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Matrix digital rain: falling katakana; the input image sizes the glyphs and holds the tails; black or video background."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 250          # ~25%: slow drift (0-100% = 0.125-1.3 rows/frame)
+display_min_value = 0
+display_max_value = 100
+name_label = "Fall Speed"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 720          # ~70%: gaps short, all drops visible
+display_min_value = 0
+display_max_value = 100
+name_label = "Density"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 480          # ~14 rows of tail
+display_min_value = 0
+display_max_value = 100
+name_label = "Tail Length"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 300          # moderate mutation
+display_min_value = 0
+display_max_value = 100
+name_label = "Mutation"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0            # 0 = phosphor green (top step = white)
+display_min_value = 0
+display_max_value = 100
+name_label = "Colour"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 450          # zoom 1 -> 32px cells (readable default)
+display_min_value = 16
+display_max_value = 128
+name_label = "Glyph Size"
+suffix_label = "px"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Head Glow"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Mirror"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Rise"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Background"
+value_labels = ["Black", "Video"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Glitch"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0            # plain rain
+display_min_value = 0
+display_max_value = 100
+name_label = "Image"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Classic Green"
+rotary_potentiometer_1 = 250
+rotary_potentiometer_2 = 720
+rotary_potentiometer_3 = 480
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 450
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Heavy Downpour"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 1000
+rotary_potentiometer_3 = 820
+rotary_potentiometer_4 = 540
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 200
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Sparse Drift"
+rotary_potentiometer_1 = 120
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 360
+rotary_potentiometer_4 = 120
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 650
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Toxic Lime"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 800
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 904
+rotary_potentiometer_6 = 450
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Matrix Vision"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 1000
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 200
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Rain Over Video"
+rotary_potentiometer_1 = 250
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 520
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 450
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Rising Code"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 800
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 450
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Glitch Signal"
+rotary_potentiometer_1 = 350
+rotary_potentiometer_2 = 820
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 500
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 450
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 600

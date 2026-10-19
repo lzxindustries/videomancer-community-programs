@@ -6,6 +6,26 @@
 --
 -- quilt.vhd  (v1.0 — per-pixel recursive-subdivision improv quilt)
 --
+-- v1.0.2 (2026-10-17): resolution scaling.  The picture column/row counters
+-- (and the luma map's source column) run in virtual 1080-line units stepped
+-- from the video timing ID (registers_in(8)): 1.0 per pixel/line at 1080p,
+-- 1.5 at 720p, x 2.0 / y 4.44 per field line at 480i — so cells, pieces,
+-- textures, seams and puff keep their size relative to screen height (SD
+-- shows the left 1440 units of the 1080p layout, 4:3, square cells stay
+-- square).  Equality tests on the counters became crossing flags; the luma
+-- map blocks are 32 virtual units (box sum weighted by the step).  Seam and
+-- thin texture lines keep at least one SD field line.  1080p is bit-identical;
+-- latency unchanged (28).
+--
+-- v1.0.3 (2026-10-18): fit for the stock SDK's SD Standalone core, same
+-- picture bit for bit.  Pure-delay registers removed: the pixel position is
+-- no longer carried down the pipeline (each consumer reads a delayed copy of
+-- the position counters, p_qpos), the luma map's per-cell dens/hide step
+-- lands on S1b's clock instead of being copied down three stages, the leaf's
+-- seam/puff/texture features are built two stages earlier (22 bits carried
+-- instead of 48), and the three IO-align pad stages sit after S10b (12 bits)
+-- instead of after s_io (32 bits).
+--
 -- Fills the whole screen with a loosely grid-based field of randomly coloured
 -- and textured rectangular patches.  Each coarse grid cell is recursively split
 -- (horizontally or vertically) into varied sub-rectangles, log-cabin fashion, so
@@ -46,7 +66,8 @@
 -- Output contracts: the program makes its own avid (hsync-parity locked, see
 -- p_gavid) and blanks to neutral outside it; drawn luma stays in 64..880.
 -- program_top latency is C_PROCESSING_DELAY_CLKS = 28 (a multiple of 4, as the
--- SDK requires): the 24-deep pipe, the s_io register and three IO-align pads.
+-- SDK requires): the 24 pixel stages, three IO-align pad stages (after S10b)
+-- and the s_io register.
 --
 -- Author: czartroniks
 
@@ -62,10 +83,13 @@ use work.video_timing_pkg.all;
 
 architecture quilt of program_top is
 
-    constant LATENCY : natural := 24;   -- +1 S1a2 candidate-hash, +1 S10a2 evolve, +2 S10h Hilbert
-    -- data_in -> data_out: LATENCY pipe stages + s_io + 3 IO-align pads.  Must
-    -- match processing_delay_clks in quilt.toml.
-    constant C_PROCESSING_DELAY_CLKS : natural := LATENCY + 4;
+    -- 24 pixel stages (+1 S1a2 candidate-hash, +1 S10a2 evolve, +2 S10h
+    -- Hilbert) + the 3 IO-align pad stages, which sit after S10b where the
+    -- pixel is 12 bits wide instead of after s_io (32 bits).
+    constant LATENCY : natural := 27;
+    -- data_in -> data_out: LATENCY pipe stages + s_io.  Must match
+    -- processing_delay_clks in quilt.toml.
+    constant C_PROCESSING_DELAY_CLKS : natural := LATENCY + 1;
     constant DMAX    : natural := 4;          -- subdivision levels
     constant MIN_W   : natural := 8;          -- don't split a span narrower than this
     constant SEAM_W  : natural := 2;          -- seam line half-thickness (px)
@@ -98,11 +122,12 @@ architecture quilt of program_top is
     constant C_LC : t_lc := (x"9E37", x"7C15", x"D2B9", x"3F41");
 
     --------------------------------------------------------------------------
-    -- Pipeline node: running rectangle bounds + seed + freeze + pixel coords.
+    -- Pipeline node: running rectangle bounds + seed + freeze.  The pixel
+    -- coordinates are not carried: each stage that needs them reads its own
+    -- delayed copy of the position counters (q_x*/q_y*, see p_qpos).
     --------------------------------------------------------------------------
     type t_node is record
         x0, x1, y0, y1 : unsigned(11 downto 0);
-        px, py         : unsigned(11 downto 0);
         seed           : unsigned(15 downto 0);
         dens           : unsigned(7 downto 0);   -- per-cell subdivide threshold base
         hide           : std_logic;              -- Luma Mod: cell luma below K4 threshold
@@ -259,15 +284,16 @@ architecture quilt of program_top is
     end function;
 
     -- Descend stage: step into the pixel's half and fold the choice into the seed.
-    function descend(n : t_node; orient, doit : std_logic; nx : unsigned(11 downto 0))
+    function descend(n : t_node; orient, doit : std_logic; nx : unsigned(11 downto 0);
+                     px, py : unsigned(11 downto 0))
         return t_node is
         variable r : t_node;
         variable lo, hi, pix : unsigned(11 downto 0);
     begin
         r := n;
         if doit = '1' then
-            if orient = '0' then lo := n.x0; hi := n.x1; pix := n.px;
-            else                 lo := n.y0; hi := n.y1; pix := n.py; end if;
+            if orient = '0' then lo := n.x0; hi := n.x1; pix := px;
+            else                 lo := n.y0; hi := n.y1; pix := py; end if;
             if pix < nx then
                 hi := nx;
                 r.seed := n.seed xor ("00000000" & nx(7 downto 0));
@@ -285,9 +311,66 @@ architecture quilt of program_top is
     end function;
 
     --------------------------------------------------------------------------
+    -- Resolution scaling: per-mode steps from the video timing ID.
+    --------------------------------------------------------------------------
+    -- x step in half virtual units per pixel: 1080 2 (1.0), 720p 3 (1.5),
+    -- SD 4 (2.0: 720 px span 1440 units, a 4:3 window of the 1080 canvas).
+    function f_vstep_x(t : std_logic_vector(3 downto 0)) return unsigned is
+    begin
+        case to_integer(unsigned(t)) is
+            when 0 | 4 | 8 | 12 => return to_unsigned(4, 3);
+            when 5 | 6 | 14     => return to_unsigned(3, 3);
+            when others         => return to_unsigned(2, 3);
+        end case;
+    end function;
+    -- y step in Q4.8 virtual units per FIELD line (1080 / active lines,
+    -- doubled for interlaced modes).
+    function f_vstep_y(t : std_logic_vector(3 downto 0)) return unsigned is
+    begin
+        case to_integer(unsigned(t)) is
+            when 0          => return to_unsigned(1138, 12);  -- 480i: 2 x 1080/486
+            when 4          => return to_unsigned(576, 12);   -- 480p: 1080/480
+            when 8          => return to_unsigned(960, 12);   -- 576i: 2 x 1080/576
+            when 12         => return to_unsigned(480, 12);   -- 576p: 1080/576
+            when 5 | 6 | 14 => return to_unsigned(384, 12);   -- 720p: 1.5
+            when 1 | 2 | 10 => return to_unsigned(512, 12);   -- 1080i: 2.0
+            when others     => return to_unsigned(256, 12);   -- 1080p: 1.0
+        end case;
+    end function;
+    -- Thin horizontal features (y): seam half-width and texture-line width in
+    -- virtual units, at least about one field-line step so SD never skips them.
+    function f_seam_y(t : std_logic_vector(3 downto 0)) return unsigned is
+    begin
+        if to_integer(unsigned(t)) = 0 then return to_unsigned(3, 3);   -- 480i
+        else                                return to_unsigned(2, 3); end if;
+    end function;
+    function f_thin_y(t : std_logic_vector(3 downto 0)) return unsigned is
+    begin
+        case to_integer(unsigned(t)) is
+            when 0      => return to_unsigned(5, 3);   -- 480i step 4.44
+            when 8      => return to_unsigned(4, 3);   -- 576i step 3.75
+            when 4      => return to_unsigned(3, 3);   -- 480p step 2.25
+            when others => return to_unsigned(2, 3);
+        end case;
+    end function;
+
+    --------------------------------------------------------------------------
     -- Position + per-frame parameters
     --------------------------------------------------------------------------
     signal pixel_x, pixel_y : unsigned(11 downto 0) := (others => '0');
+    -- Resolution scaling: pixel_x/pixel_y are the integer parts of virtual
+    -- 1080-line accumulators (x Q.1, y Q.8 per field line).  At 1080p every
+    -- step is exactly 1.0, so they equal the old pixel/line counters.
+    signal s_xs     : unsigned(2 downto 0)  := to_unsigned(2, 3);
+    signal s_ys     : unsigned(11 downto 0) := to_unsigned(256, 12);
+    signal s_seamy  : unsigned(2 downto 0)  := to_unsigned(2, 3);
+    signal s_thy    : unsigned(2 downto 0)  := to_unsigned(2, 3);
+    signal s_thyt   : unsigned(2 downto 0)  := to_unsigned(2, 3);   -- s_thy capped at period/4
+    signal pixel_xa : unsigned(12 downto 0) := (others => '0');
+    signal pixel_ya : unsigned(19 downto 0) := (others => '0');
+    signal s_cmaskh : unsigned(8 downto 0)  := to_unsigned(127, 9);  -- cell mask, half units
+    signal s_xcol   : std_logic := '1';     -- this pixel is the first of a cell column
+    signal s_yfst   : std_logic := '1';     -- this line is the first of a 32-unit block row
     signal prev_hsync_n     : std_logic := '1';
     signal prev_vsync_n     : std_logic := '1';
 
@@ -324,6 +407,7 @@ architecture quilt of program_top is
     -- Raster measurement (source side)
     --------------------------------------------------------------------------
     signal s_vx         : unsigned(11 downto 0) := (others => '0');  -- source pixel index
+    signal s_vxa        : unsigned(12 downto 0) := (others => '0');  -- source virtual x (Q.1, luma map)
     signal s_wline      : unsigned(11 downto 0) := to_unsigned(1920, 12);  -- last line width
     signal s_ylast      : unsigned(11 downto 0) := to_unsigned(1079, 12);  -- running last active row
     signal s_hlast      : unsigned(11 downto 0) := to_unsigned(1079, 12);  -- previous frame's last row
@@ -403,6 +487,27 @@ architecture quilt of program_top is
     signal gv   : std_logic_vector(0 to LATENCY - 1) := (others => '0');  -- generated avid
 
     --------------------------------------------------------------------------
+    -- Delayed position copies (p_qpos).  Stage k of the pixel pipeline needs
+    -- the picture position as it was k clocks ago.  Instead of carrying 24
+    -- bits of px/py down every stage, each consumer gets its own copy:
+    --   * x: a second column accumulator that replays pixel_xa's own update
+    --     rule k clocks late — reset on the hsync edge seen in pipe(k-1/k),
+    --     step on gv(k-1) — so q_xa<k> = pixel_xa delayed by k exactly.
+    --   * y: pixel_y only changes on an hsync or vsync edge, so q_y<k> loads
+    --     it on the same edge seen k clocks late (the edges are always more
+    --     than k clocks apart, so the value loaded is the one k clocks ago).
+    -- Consumers: S1b coverage (k = 3), descend levels 0-3 (k = 7, 10, 13,
+    -- 16) and S10a's leaf-local coords (k = 17, one register after k = 16).
+    --------------------------------------------------------------------------
+    signal q_xa3, q_xa7, q_xa10, q_xa13, q_xa16 : unsigned(12 downto 0) := (others => '0');
+    signal q_y3, q_y7, q_y10, q_y13, q_y16      : unsigned(11 downto 0) := (others => '0');
+    signal q_x17, q_y17                         : unsigned(11 downto 0) := (others => '0');
+    signal q_x3, q_x7, q_x10, q_x13, q_x16      : unsigned(11 downto 0);
+    -- s_xcol 3 clocks late: the luma map's per-column dens/hide step (L_*)
+    -- lands on S1b's clock, so S1c reads L_* directly (no s1a/s1a2/s1b copies).
+    signal s_xcol_d  : std_logic_vector(1 to 3) := (others => '0');
+
+    --------------------------------------------------------------------------
     -- Luma map (Luma Mod).  A patch's subdivide/hide decisions must be identical
     -- for every pixel in it, so they cannot read per-pixel luma.  Each frame the
     -- input luma is averaged over 32x32-pixel blocks (a box across the block's
@@ -439,7 +544,7 @@ architecture quilt of program_top is
     attribute no_rw_check of est_ram : signal is true;
 
     -- write side: block box sums and the RMW pipeline E0..E4
-    signal s_hsum   : unsigned(12 downto 0) := (others => '0');
+    signal s_hsum   : unsigned(14 downto 0) := (others => '0');   -- step-weighted box sum
     signal e0_go, e1_go, e2_go, e3_go, e4_go : std_logic := '0';
     signal e0_first, e1_first, e2_first     : std_logic := '0';
     signal e0_col, e1_col, e2_col, e3_col, e4_col : unsigned(5 downto 0) := (others => '0');
@@ -495,14 +600,10 @@ architecture quilt of program_top is
     -- 14-bit subtract -> 16-bit hash, x4, all combinational), so they now get
     -- their own stage S1a2.
     signal s1a_ax, s1a_ay  : t_s14_4;                      -- per-candidate aligned origin
-    signal s1a_px, s1a_py  : unsigned(11 downto 0);
-    signal s1a_dh          : t_dh_4;                       -- per-candidate cell dens/hide
     signal s1a_base        : t_node;                       -- plain square cell (seed unset)
 
     signal s1a2_hk         : t_u16_4;                      -- per-candidate cell hash/seed
     signal s1a2_ax, s1a2_ay: t_s14_4;
-    signal s1a2_px, s1a2_py: unsigned(11 downto 0);
-    signal s1a2_dh         : t_dh_4;
     signal s1a2_base       : t_node;                       -- plain square cell (seed filled)
 
     -- S1b builds all 4 clamped candidate cells in parallel; S1c just argmaxes.
@@ -510,8 +611,6 @@ architecture quilt of program_top is
     signal s1b_cov         : std_logic_vector(0 to 3);
     -- pairwise priority compares, pz(i) >= pz(j), for (i,j) = 01 02 03 12 13 23
     signal s1b_p           : std_logic_vector(0 to 5);
-    signal s1b_px, s1b_py  : unsigned(11 downto 0);
-    signal s1b_dh          : t_dh_4;
     signal s1b_base        : t_node;
 
     signal s1_n  : t_node;                                 -- selected coarse cell node
@@ -541,7 +640,21 @@ architecture quilt of program_top is
         cbase, tbase   : unsigned(3 downto 0);    -- base colour / texture number
         p, hide        : std_logic;               -- colour/texture phase, Luma Mod hide
     end record;
-    signal s10a_lf, s10h_lf, s10h2_lf : t_leaf;
+    signal s10a_lf, s10h_lf, s10h2_lf : t_leaf;   -- lx..m2 are only read from s10a_lf
+    -- The leaf's seam / puff / texture-coordinate features, built in S10h from
+    -- lx/ly/m1/m2 (which then go no further) and carried to S10b: 22 bits
+    -- instead of the 48 bits of coordinates.  Only the texture NUMBER waits for
+    -- the evolve result, so S10b is just the 16-way texture pick.
+    type t_tex is record
+        seam           : std_logic;               -- within the seam width
+        puff           : unsigned(3 downto 0);    -- puff ramp index (0 = none)
+        rx, ry, rd, ra : unsigned(1 downto 0);    -- 2-bit ramp fields
+        chk            : std_logic;               -- checker: x bit s = y bit s
+        wxy, wyb       : std_logic;               -- block parity x xor y / y (bit s+1)
+        bv             : unsigned(3 downto 0);    -- Bayer value (dither, dots)
+        nv, nh         : std_logic;               -- near a vertical / horizontal cell line
+    end record;
+    signal s10h_tx, s10h2_tx, s10a2_tx : t_tex;
     signal s10a_sx, s10a_sy : unsigned(12 downto 0);   -- x0+x1, y0+y1 (2x leaf centre)
     signal s10h_dhi   : unsigned(5 downto 0);          -- Hilbert digits, levels 5..3
     signal s10h_st    : std_logic_vector(1 downto 0);  -- orientation after level 3
@@ -555,17 +668,22 @@ architecture quilt of program_top is
     -- Evolved leaf indices: the base colour/texture numbers already advanced by
     -- this leaf's colour/texture generation, so the 16-bit leaf seed never has to
     -- reach S10b.
-    signal s10a2_lx, s10a2_ly : unsigned(11 downto 0);
-    signal s10a2_m1, s10a2_m2 : unsigned(11 downto 0);
     signal s10a2_cidx       : unsigned(3 downto 0);
     signal s10a2_tidx       : unsigned(3 downto 0);
     signal s10a2_hide       : std_logic;
 
-    signal s10_seam       : std_logic;                -- within the seam width
-    signal s10_puff       : unsigned(3 downto 0);     -- puff ramp index (0 = none)
-    signal s10_pidx       : unsigned(3 downto 0);
-    signal s10_tval       : unsigned(1 downto 0);   -- texture shade (computed in S10b)
-    signal s10_hide       : std_logic;
+    -- S10b result, then the 3 IO-align pad stages that bring the total latency
+    -- to a multiple of 4 (here the pixel is 12 bits wide; after s_io it is 32)
+    type t_s10 is record
+        seam : std_logic;                         -- within the seam width
+        puff : unsigned(3 downto 0);              -- puff ramp index (0 = none)
+        pidx : unsigned(3 downto 0);
+        tval : unsigned(1 downto 0);              -- texture shade (computed in S10b)
+        hide : std_logic;
+    end record;
+    type t_s10_3 is array (0 to 2) of t_s10;
+    signal s10_r   : t_s10;
+    signal s10_pad : t_s10_3;
 
     -- palette + texture
     signal s11_y, s11_u, s11_v : unsigned(9 downto 0);
@@ -577,11 +695,8 @@ architecture quilt of program_top is
     signal s12_y, s12_u, s12_v : unsigned(9 downto 0);
     signal s12_hide            : std_logic;
 
-    -- output, then IO-align pads that bring the total latency to a multiple of 4
+    -- output register
     signal s_io       : t_video_stream_yuv444_30b;
-    signal s_io_pad_0 : t_video_stream_yuv444_30b;
-    signal s_io_pad_1 : t_video_stream_yuv444_30b;
-    signal s_io_pad_2 : t_video_stream_yuv444_30b;
 
 begin
 
@@ -596,10 +711,28 @@ begin
         variable v_mlo  : unsigned(6 downto 0);
         variable v_off  : boolean;
         variable v_p0, v_p1, v_p2 : unsigned(7 downto 0);   -- pass, pass+1, pass+2
+        variable v_nx : unsigned(12 downto 0);
+        variable v_ny : unsigned(19 downto 0);
     begin
         if rising_edge(clk) then
             prev_hsync_n <= data_in.hsync_n;
             prev_vsync_n <= data_in.vsync_n;
+
+            -- Resolution scaling: per-mode steps, free-running from the timing
+            -- ID (static while a mode runs).
+            s_xs    <= f_vstep_x(registers_in(8)(3 downto 0));
+            s_ys    <= f_vstep_y(registers_in(8)(3 downto 0));
+            s_seamy <= f_seam_y(registers_in(8)(3 downto 0));
+            s_thy   <= f_thin_y(registers_in(8)(3 downto 0));
+            -- texture lines keep ~1/4 of their period (Fine 8: 2, Small 16: <= 4)
+            -- so a fine texture's density does not change at SD
+            if s_tex_shift = 3 then
+                s_thyt <= to_unsigned(2, 3);
+            elsif s_tex_shift = 4 and s_thy > 4 then
+                s_thyt <= to_unsigned(4, 3);
+            else
+                s_thyt <= s_thy;
+            end if;
 
             v_h_edge := '0'; v_v_edge := '0';
             if data_in.hsync_n = '0' and prev_hsync_n = '1' then v_h_edge := '1'; end if;
@@ -607,16 +740,27 @@ begin
             s_line_go <= v_h_edge;
 
             -- picture column: counts the GENERATED avid, so the quilt lines up
-            -- with the avid that actually leaves the program
-            if v_h_edge = '1' then     pixel_x <= (others => '0');
-            elsif g_avid = '1' then    pixel_x <= pixel_x + 1; end if;
+            -- with the avid that actually leaves the program.  Virtual units;
+            -- s_xcol flags the first pixel of each cell column (its offset in
+            -- the cell is below one step — the old "(x and mask) = 0").
+            if v_h_edge = '1' then
+                pixel_xa <= (others => '0');
+                s_xcol   <= '1';
+            elsif g_avid = '1' then
+                v_nx     := pixel_xa + s_xs;
+                pixel_xa <= v_nx;
+                if (v_nx(8 downto 0) and s_cmaskh) < resize(s_xs, 9) then s_xcol <= '1';
+                else                                                     s_xcol <= '0'; end if;
+            end if;
 
             -- source column (luma map) + per-line width (generated avid length)
             if v_h_edge = '1' then
                 if s_vx /= 0 then s_wline <= s_vx; end if;
-                s_vx <= (others => '0');
+                s_vx  <= (others => '0');
+                s_vxa <= (others => '0');
             elsif data_in.avid = '1' then
-                s_vx <= s_vx + 1;
+                s_vx  <= s_vx + 1;
+                s_vxa <= s_vxa + s_xs;
             end if;
 
             if data_in.avid = '1' then
@@ -627,11 +771,16 @@ begin
 
             -- rows: held at 0 from vsync until the first active line, then one
             -- per hsync, so row 0 is the top line of the picture
+            -- (virtual units; s_yfst flags the first line of each 32-unit block
+            -- row — the old "pixel_y(4:0) = 0" — from a toggle of bit 13)
             if v_v_edge = '1' then
-                pixel_y <= (others => '0');
-                s_yarm  <= '1';
+                pixel_ya <= (others => '0');
+                s_yfst   <= '1';
+                s_yarm   <= '1';
             elsif v_h_edge = '1' and s_yarm = '0' then
-                pixel_y <= pixel_y + 1;
+                v_ny     := pixel_ya + s_ys;
+                pixel_ya <= v_ny;
+                s_yfst   <= v_ny(13) xor pixel_ya(13);
             end if;
 
             -- Once per field — guarded, because analog vsync serrates into
@@ -675,19 +824,19 @@ begin
                 -- block constants put each cell's luma sample in the 32x32 block
                 -- at its centre (up-left of centre for the even block counts).
                 case to_integer(unsigned(registers_in(0)(9 downto 8))) is
-                    when 0      => s_g <= 8; s_cellmask <= to_unsigned(255, 12);
+                    when 0      => s_g <= 8; s_cellmask <= to_unsigned(255, 12); s_cmaskh <= to_unsigned(511, 9);
                                    s_csz1 <= to_signed(256, 14); s_csz2 <= to_signed(512, 14);
                                    s_ctbmask <= "111000"; s_boff <= to_unsigned(3, 6);
                                    s_bstep <= to_unsigned(8, 6); s_bcadd <= to_unsigned(11, 7);
-                    when 1      => s_g <= 7; s_cellmask <= to_unsigned(127, 12);
+                    when 1      => s_g <= 7; s_cellmask <= to_unsigned(127, 12); s_cmaskh <= to_unsigned(255, 9);
                                    s_csz1 <= to_signed(128, 14); s_csz2 <= to_signed(256, 14);
                                    s_ctbmask <= "111100"; s_boff <= to_unsigned(1, 6);
                                    s_bstep <= to_unsigned(4, 6); s_bcadd <= to_unsigned(5, 7);
-                    when 2      => s_g <= 6; s_cellmask <= to_unsigned(63, 12);
+                    when 2      => s_g <= 6; s_cellmask <= to_unsigned(63, 12); s_cmaskh <= to_unsigned(127, 9);
                                    s_csz1 <= to_signed(64, 14); s_csz2 <= to_signed(128, 14);
                                    s_ctbmask <= "111110"; s_boff <= to_unsigned(0, 6);
                                    s_bstep <= to_unsigned(2, 6); s_bcadd <= to_unsigned(2, 7);
-                    when others => s_g <= 5; s_cellmask <= to_unsigned(31, 12);
+                    when others => s_g <= 5; s_cellmask <= to_unsigned(31, 12); s_cmaskh <= to_unsigned(63, 9);
                                    s_csz1 <= to_signed(32, 14); s_csz2 <= to_signed(64, 14);
                                    s_ctbmask <= "111111"; s_boff <= to_unsigned(0, 6);
                                    s_bstep <= to_unsigned(1, 6); s_bcadd <= to_unsigned(1, 7);
@@ -762,6 +911,9 @@ begin
         end if;
     end process p_position;
 
+    pixel_x <= pixel_xa(12 downto 1);
+    pixel_y <= pixel_ya(19 downto 8);
+
     --------------------------------------------------------------------------
     -- Generated avid (see the declarations).  g_ph is this line's hsync->avid
     -- rise parity, g_par the voted usual parity; a line whose avid lands off
@@ -815,23 +967,35 @@ begin
     -- line), and the result goes to the est RAM and to this frame's map bank.
     -- One event per 32 clocks, so the pipeline never overlaps itself.
     --------------------------------------------------------------------------
+    -- Resolution scaling: blocks are 32 VIRTUAL units (64 half units of s_vxa);
+    -- each pixel's luma is weighted by its step (2/3/4 half units), so a block
+    -- sums to ~64x its mean at every resolution (1080p: exactly 2x the old
+    -- 32-pixel sum, so the average is bit-identical).
     p_lmap_w : process(clk)
         variable v_y8  : unsigned(7 downto 0);
-        variable v_sum : unsigned(12 downto 0);
+        variable v_yw  : unsigned(14 downto 0);
+        variable v_sum : unsigned(14 downto 0);
+        variable v_end : unsigned(6 downto 0);
     begin
         if rising_edge(clk) then
             v_y8  := unsigned(data_in.y(9 downto 2));
+            case to_integer(s_xs) is
+                when 3      => v_yw := shift_left(resize(v_y8, 15), 1) + resize(v_y8, 15);
+                when 4      => v_yw := shift_left(resize(v_y8, 15), 2);
+                when others => v_yw := shift_left(resize(v_y8, 15), 1);
+            end case;
+            v_end := resize(s_vxa(5 downto 0), 7) + resize(s_xs, 7);   -- bit 6: last pixel of the block
             e0_go <= '0';
             if data_in.avid = '1' then
-                if s_vx(4 downto 0) = 0 then v_sum := resize(v_y8, 13);
-                else                         v_sum := s_hsum + resize(v_y8, 13); end if;
+                if s_vxa(5 downto 0) < resize(s_xs, 6) then v_sum := v_yw;
+                else                                         v_sum := s_hsum + v_yw; end if;
                 s_hsum <= v_sum;
-                if s_vx(4 downto 0) = 31 then
+                if v_end(6) = '1' then
                     e0_go  <= '1';
-                    e0_avg <= v_sum(12 downto 5);
-                    e0_col <= s_vx(10 downto 5);
-                    if pixel_y(4 downto 0) = 0 then e0_first <= '1';
-                    else                            e0_first <= '0'; end if;
+                    if v_sum(14) = '1' then e0_avg <= (others => '1');   -- 720p 22-px block
+                    else                    e0_avg <= v_sum(13 downto 6); end if;
+                    e0_col <= s_vxa(11 downto 6);
+                    e0_first <= s_yfst;
                 end if;
             end if;
 
@@ -898,8 +1062,8 @@ begin
     -- column 0.  At every column start the next column is prefetched: two reads
     -- through the one map port (own row, up row), each re-registered in fabric
     -- and turned straight into dens/hide with this frame's settings.  The
-    -- column-start step lands on the same clock as p_pipe's S0 register, so
-    -- S1a sees this column's cells (L_own/L_up) and the previous column's
+    -- column-start step of L_* runs 3 clocks late, on p_pipe's S1b clock, so
+    -- S1c sees this column's cells (L_own/L_up) and the previous column's
     -- (L_lown/L_lup) — exactly the four Not-Square candidate cells.
     --------------------------------------------------------------------------
     p_lmap_r : process(clk)
@@ -941,18 +1105,26 @@ begin
             end case;
             if s_line_go = '1' then r_st <= to_unsigned(1, 3); end if;
 
-            if g_avid = '1' and (pixel_x and s_cellmask) = 0 then
+            if g_avid = '1' and s_xcol = '1' then           -- first pixel of a cell column
+                pf_go <= '1';
+                pf_bc <= resize(pixel_x(10 downto 5), 7) + s_bcadd;
+            end if;
+            -- The same column step 3 clocks late (gv(2) is g_avid then, q_x3 is
+            -- pixel_x then), so L_* change on S1b's clock and S1c reads them as
+            -- they are.  This column's N_* prefetch lands 4 clocks after the
+            -- column start, so the late step still takes the values the old
+            -- on-time step did.
+            s_xcol_d <= s_xcol & s_xcol_d(1 to 2);
+            if gv(2) = '1' and s_xcol_d(3) = '1' then
                 L_own <= N_own;
                 L_up  <= N_up;
-                if pixel_x = 0 then        -- left of column 0: reuse column 0
+                if q_x3 = 0 then           -- left of column 0: reuse column 0
                     L_lown <= N_own;
                     L_lup  <= N_up;
                 else
                     L_lown <= L_own;
                     L_lup  <= L_up;
                 end if;
-                pf_go <= '1';
-                pf_bc <= resize(pixel_x(10 downto 5), 7) + s_bcadd;
             end if;
 
             pf_a <= pf_go; pf_b <= pf_a; pf_c <= pf_b; pf_d <= pf_c;
@@ -979,6 +1151,45 @@ begin
     end process p_lmap_r;
 
     --------------------------------------------------------------------------
+    -- Delayed position copies (see the declarations).  pipe(j) holds data_in
+    -- from j+1 clocks ago, so (pipe(k-1), pipe(k)) show the sync edge that
+    -- p_position saw k clocks ago, and gv(k-1) is g_avid from k clocks ago.
+    --------------------------------------------------------------------------
+    p_qpos : process(clk)
+        procedure step_x(signal q : inout unsigned(12 downto 0); constant k : natural) is
+        begin
+            if pipe(k - 1).hsync_n = '0' and pipe(k).hsync_n = '1' then
+                q <= (others => '0');
+            elsif gv(k - 1) = '1' then
+                q <= q + s_xs;
+            end if;
+        end procedure;
+        procedure step_y(signal q : out unsigned(11 downto 0); constant k : natural) is
+        begin
+            if (pipe(k - 1).hsync_n = '0' and pipe(k).hsync_n = '1') or
+               (pipe(k - 1).vsync_n = '0' and pipe(k).vsync_n = '1') then
+                q <= pixel_y;
+            end if;
+        end procedure;
+    begin
+        if rising_edge(clk) then
+            step_x(q_xa3, 3);   step_y(q_y3, 3);
+            step_x(q_xa7, 7);   step_y(q_y7, 7);
+            step_x(q_xa10, 10); step_y(q_y10, 10);
+            step_x(q_xa13, 13); step_y(q_y13, 13);
+            step_x(q_xa16, 16); step_y(q_y16, 16);
+            q_x17 <= q_xa16(12 downto 1);
+            q_y17 <= q_y16;
+        end if;
+    end process p_qpos;
+
+    q_x3  <= q_xa3(12 downto 1);
+    q_x7  <= q_xa7(12 downto 1);
+    q_x10 <= q_xa10(12 downto 1);
+    q_x13 <= q_xa13(12 downto 1);
+    q_x16 <= q_xa16(12 downto 1);
+
+    --------------------------------------------------------------------------
     -- Main pipeline.
     --------------------------------------------------------------------------
     p_pipe : process(clk)
@@ -997,6 +1208,7 @@ begin
         variable c01, c02, c03, c12, c13, c23 : std_logic;  -- vv(i) >= vv(j)
         variable w1, w2, w3 : std_logic;               -- winner one-hot (w0 implied)
         variable v_kw       : integer range 0 to 3;
+        variable v_dh4      : t_dh_4;                  -- S1c candidate dens/hide
         variable dtmp       : t_dec;
         variable n          : t_node;
         variable lw, lh     : unsigned(11 downto 0);
@@ -1027,6 +1239,7 @@ begin
         variable v_wxb, v_wyb : std_logic;                        -- block parity (bit s+1)
         variable v_drow, v_dcol : unsigned(1 downto 0);           -- dither cell (scaled)
         variable pidx       : integer range 0 to 15;
+        variable v_tx       : t_tex;                   -- S10h texture features
         variable ty, tu, tv : unsigned(9 downto 0);
 
         -- one hash stage: re-hash seed, decode split controls, and precompute the
@@ -1091,7 +1304,7 @@ begin
             for i in 1 to LATENCY - 1 loop gv(i) <= gv(i - 1); end loop;
 
             -- S0: picture position.  p_lmap_r steps the luma map's per-cell
-            -- dens/hide (L_*) on this same clock, so S1a sees them aligned.
+            -- dens/hide (L_*) three clocks later, so S1c sees them aligned.
             s0_x <= pixel_x;
             s0_y <= pixel_y;
 
@@ -1107,24 +1320,16 @@ begin
                 when others => v_x0 := s0_x(11 downto 8) & "00000000";
                                v_y0 := s0_y(11 downto 8) & "00000000"; v_sz := 256;
             end case;
-            -- Per-candidate cell dens/hide from the luma map, in candidate
-            -- order (own, left, up, up-left).  With Luma Mod off they are the
-            -- plain P12 density and never hide.
-            s1a_dh(0) <= L_own;
-            s1a_dh(1) <= L_lown;
-            s1a_dh(2) <= L_up;
-            s1a_dh(3) <= L_lup;
             -- square base cell (also the gap fallback in Not-Square).  Its seed
-            -- is candidate 0's hash, filled in by S1a2.
+            -- is candidate 0's hash, filled in by S1a2; its dens/hide are
+            -- L_own's, read by S1c.
             s1a_base.x0     <= v_x0;
             s1a_base.x1     <= v_x0 + v_sz;
             s1a_base.y0     <= v_y0;
             s1a_base.y1     <= v_y0 + v_sz;
-            s1a_base.px     <= s0_x;
-            s1a_base.py     <= s0_y;
             s1a_base.seed   <= (others => '0');
-            s1a_base.dens   <= L_own.dens;
-            s1a_base.hide   <= L_own.hide;
+            s1a_base.dens   <= (others => '0');
+            s1a_base.hide   <= '0';
             s1a_base.frozen <= '0';
             -- 2x2 candidate cell origins (current + three up-left neighbours)
             for k in 0 to 3 loop
@@ -1133,8 +1338,6 @@ begin
                 s1a_ax(k) <= v_axk;
                 s1a_ay(k) <= v_ayk;
             end loop;
-            s1a_px   <= s0_x;
-            s1a_py   <= s0_y;
 
             -- S1a2: the four candidate cell hashes, on their own stage so the
             -- origin subtract and the 16-bit init_seed no longer chain inside one
@@ -1151,17 +1354,14 @@ begin
             s1a2_base <= v_bn;
             s1a2_ax   <= s1a_ax;
             s1a2_ay   <= s1a_ay;
-            s1a2_px   <= s1a_px;
-            s1a2_py   <= s1a_py;
-            s1a2_dh   <= s1a_dh;
 
             -- S1b: size + jitter each candidate, test 2x2 coverage, and build the
             -- clamped candidate node — all 4 in parallel (no cross-candidate
             -- dependency), so S1c only has to argmax.  Each axis spans 1 or 2 grid
             -- cells (hash bits 7/6); a size-2 cell stays grid-aligned (no jitter)
             -- so its reach never exceeds 2 cells and the 2x2 neighbourhood holds.
-            v_pxs   := signed(resize(s1a2_px, 14));
-            v_pys   := signed(resize(s1a2_py, 14));
+            v_pxs   := signed(resize(q_x3, 14));
+            v_pys   := signed(resize(q_y3, 14));
             for k in 0 to 3 loop
                 v_rank := 0;
                 if s1a2_hk(k)(7) = '1' and s1a2_hk(k)(3) = '1' then
@@ -1200,9 +1400,6 @@ begin
             if v_pz(1) >= v_pz(2) then s1b_p(3) <= '1'; else s1b_p(3) <= '0'; end if;
             if v_pz(1) >= v_pz(3) then s1b_p(4) <= '1'; else s1b_p(4) <= '0'; end if;
             if v_pz(2) >= v_pz(3) then s1b_p(5) <= '1'; else s1b_p(5) <= '0'; end if;
-            s1b_px   <= s1a2_px;
-            s1b_py   <= s1a2_py;
-            s1b_dh   <= s1a2_dh;
             s1b_base <= s1a2_base;
 
             -- S1c: argmax over covered candidates; no cover (which includes
@@ -1225,20 +1422,27 @@ begin
             w2 := (not c02) and (not c12) and c23;
             w3 := (not c03) and (not c13) and (not c23);
             v_kw := to_integer(unsigned'((w2 or w3) & (w1 or w3)));
+            -- per-candidate cell dens/hide from the luma map, in candidate order
+            -- (own, left, up, up-left); L_* step on S1b's clock (p_lmap_r).
+            -- With Luma Mod off they are the plain P12 density and never hide.
+            v_dh4(0) := L_own;
+            v_dh4(1) := L_lown;
+            v_dh4(2) := L_up;
+            v_dh4(3) := L_lup;
             if s1b_cov = "0000" then
-                s1_n <= s1b_base;
+                s1_n      <= s1b_base;
+                s1_n.dens <= L_own.dens;
+                s1_n.hide <= L_own.hide;
             else
                 s1_n.x0     <= s1b_cand(v_kw).x0;
                 s1_n.x1     <= s1b_cand(v_kw).x1;
                 s1_n.y0     <= s1b_cand(v_kw).y0;
                 s1_n.y1     <= s1b_cand(v_kw).y1;
                 s1_n.seed   <= s1b_cand(v_kw).seed;
-                s1_n.px     <= s1b_px;
-                s1_n.py     <= s1b_py;
                 -- the winning rectangle's OWN cell decides its piecing and
                 -- whether it hides, so it stays whole across grid lines
-                s1_n.dens   <= s1b_dh(v_kw).dens;
-                s1_n.hide   <= s1b_dh(v_kw).hide;
+                s1_n.dens   <= v_dh4(v_kw).dens;
+                s1_n.hide   <= v_dh4(v_kw).hide;
                 s1_n.frozen <= '0';
             end if;
 
@@ -1246,32 +1450,32 @@ begin
             do_hash(h0_n, h0_or, h0_ds, h0_sg, h0_hf, h0_w, h0_mid, 0, s1_n);
             dtmp := calc_split(h0_w, h0_mid, h0_ds, h0_sg, h0_hf, C_JIT_MODE);
             d0_n <= h0_n; d0_or <= h0_or; d0_dt <= dtmp.doit; d0_nx <= dtmp.nx;
-            n0 <= descend(d0_n, d0_or, d0_dt, d0_nx);
+            n0 <= descend(d0_n, d0_or, d0_dt, d0_nx, q_x7, q_y7);
 
             -- Level 1
             do_hash(h1_n, h1_or, h1_ds, h1_sg, h1_hf, h1_w, h1_mid, 1, n0);
             dtmp := calc_split(h1_w, h1_mid, h1_ds, h1_sg, h1_hf, C_JIT_MODE);
             d1_n <= h1_n; d1_or <= h1_or; d1_dt <= dtmp.doit; d1_nx <= dtmp.nx;
-            n1 <= descend(d1_n, d1_or, d1_dt, d1_nx);
+            n1 <= descend(d1_n, d1_or, d1_dt, d1_nx, q_x10, q_y10);
 
             -- Level 2
             do_hash(h2_n, h2_or, h2_ds, h2_sg, h2_hf, h2_w, h2_mid, 2, n1);
             dtmp := calc_split(h2_w, h2_mid, h2_ds, h2_sg, h2_hf, C_JIT_MODE);
             d2_n <= h2_n; d2_or <= h2_or; d2_dt <= dtmp.doit; d2_nx <= dtmp.nx;
-            n2 <= descend(d2_n, d2_or, d2_dt, d2_nx);
+            n2 <= descend(d2_n, d2_or, d2_dt, d2_nx, q_x13, q_y13);
 
             -- Level 3
             do_hash(h3_n, h3_or, h3_ds, h3_sg, h3_hf, h3_w, h3_mid, 3, n2);
             dtmp := calc_split(h3_w, h3_mid, h3_ds, h3_sg, h3_hf, C_JIT_MODE);
             d3_n <= h3_n; d3_or <= h3_or; d3_dt <= dtmp.doit; d3_nx <= dtmp.nx;
-            n3 <= descend(d3_n, d3_or, d3_dt, d3_nx);
+            n3 <= descend(d3_n, d3_or, d3_dt, d3_nx, q_x16, q_y16);
 
             -- S10a: leaf-local coords + per-axis edge mins
             n  := n3;
             lw := n.x1 - n.x0;
             lh := n.y1 - n.y0;
-            lx := n.px - n.x0;
-            ly := n.py - n.y0;
+            lx := q_x17 - n.x0;
+            ly := q_y17 - n.y0;
             bb := (lw - 1) - lx;
             dd := (lh - 1) - ly;
             if lx < bb then m1 := lx; else m1 := bb; end if;
@@ -1326,6 +1530,84 @@ begin
             s10h_ord <= s10a_sx(11) xor s_hdir;
             s10h_lf  <= s10a_lf;
 
+            -- S10h, in parallel: the leaf's seam distance, puff ramp and texture
+            -- coordinate features from its local coords (lx/ly/m1/m2 go no
+            -- further).  Texture coords are read as small fixed bit-slices
+            -- (see below); S10b only picks the texture by number.
+            if s10a_lf.m1 < s10a_lf.m2 then seamd := s10a_lf.m1; else seamd := s10a_lf.m2; end if;
+            -- (min(m1,m2) < SEAM_W, with the horizontal seam widened to one
+            -- field line at 480i so SD never skips it)
+            if s10a_lf.m1 < to_unsigned(SEAM_W, 12) or s10a_lf.m2 < resize(s_seamy, 12) then
+                v_tx.seam := '1';
+            else
+                v_tx.seam := '0';
+            end if;
+            -- Puff ramp: 15 at the patch edge falling to 0 at a radius that
+            -- follows the grid scale (8 / 16 / 16 / 32 px), read as fixed slices
+            -- of the edge distance.  Puffed mode only.
+            v_t4 := (others => '0');
+            case s_g is
+                when 5 =>
+                    if seamd(11 downto 3) = 0 then v_t4 := (not seamd(2 downto 0)) & '1'; end if;
+                when 6 | 7 =>
+                    if seamd(11 downto 4) = 0 then v_t4 := not seamd(3 downto 0); end if;
+                when others =>
+                    if seamd(11 downto 5) = 0 then v_t4 := not seamd(4 downto 1); end if;
+            end case;
+            if s_relief = '0' then v_t4 := (others => '0'); end if;
+            v_tx.puff := v_t4;
+
+            vdiag   := s10a_lf.lx + s10a_lf.ly;
+            v_adiag := s10a_lf.lx + (not s10a_lf.ly);
+            -- All texture coords are read as small fixed bit-slices selected by the
+            -- Texture knob (a 4:1 mux), NOT 12-bit barrel shifters — the texture
+            -- only needs a 2-bit ramp field (coord>>(s-1))(1:0) and a couple of
+            -- single bits.  This both scales every pattern with the knob and keeps
+            -- HD timing (barrel shifters here were the congestion bottleneck).
+            --   v_r* = 2-bit ramp field at [s:s-1]; v_*b = bit s; v_w*b = bit s+1.
+            case s_tex_shift is
+                when 3 =>
+                    v_rx := s10a_lf.lx(3 downto 2); v_ry := s10a_lf.ly(3 downto 2);
+                    v_rd := vdiag(3 downto 2);   v_ra := v_adiag(3 downto 2);
+                    v_bxb := s10a_lf.lx(3); v_byb := s10a_lf.ly(3);
+                    v_wxb := s10a_lf.lx(4); v_wyb := s10a_lf.ly(4);
+                    v_drow := s10a_lf.ly(2 downto 1); v_dcol := s10a_lf.lx(2 downto 1);
+                    v_pm := to_unsigned(7, 12);
+                when 4 =>
+                    v_rx := s10a_lf.lx(4 downto 3); v_ry := s10a_lf.ly(4 downto 3);
+                    v_rd := vdiag(4 downto 3);   v_ra := v_adiag(4 downto 3);
+                    v_bxb := s10a_lf.lx(4); v_byb := s10a_lf.ly(4);
+                    v_wxb := s10a_lf.lx(5); v_wyb := s10a_lf.ly(5);
+                    v_drow := s10a_lf.ly(3 downto 2); v_dcol := s10a_lf.lx(3 downto 2);
+                    v_pm := to_unsigned(15, 12);
+                when 5 =>
+                    v_rx := s10a_lf.lx(5 downto 4); v_ry := s10a_lf.ly(5 downto 4);
+                    v_rd := vdiag(5 downto 4);   v_ra := v_adiag(5 downto 4);
+                    v_bxb := s10a_lf.lx(5); v_byb := s10a_lf.ly(5);
+                    v_wxb := s10a_lf.lx(6); v_wyb := s10a_lf.ly(6);
+                    v_drow := s10a_lf.ly(4 downto 3); v_dcol := s10a_lf.lx(4 downto 3);
+                    v_pm := to_unsigned(31, 12);
+                when others =>
+                    v_rx := s10a_lf.lx(6 downto 5); v_ry := s10a_lf.ly(6 downto 5);
+                    v_rd := vdiag(6 downto 5);   v_ra := v_adiag(6 downto 5);
+                    v_bxb := s10a_lf.lx(6); v_byb := s10a_lf.ly(6);
+                    v_wxb := s10a_lf.lx(7); v_wyb := s10a_lf.ly(7);
+                    v_drow := s10a_lf.ly(5 downto 4); v_dcol := s10a_lf.lx(5 downto 4);
+                    v_pm := to_unsigned(63, 12);
+            end case;
+            bidx := to_integer(v_drow & v_dcol);
+            v_bv := C_BAYER(bidx);
+            v_nv := (s10a_lf.lx and v_pm) < 2;    -- near a vertical cell line
+            v_nh := (s10a_lf.ly and v_pm) < resize(s_thyt, 12);   -- near a horizontal cell line (>= 1 SD field line)
+            v_tx.rx := v_rx;  v_tx.ry := v_ry;  v_tx.rd := v_rd;  v_tx.ra := v_ra;
+            if v_bxb = v_byb then v_tx.chk := '1'; else v_tx.chk := '0'; end if;
+            v_tx.wxy := v_wxb xor v_wyb;
+            v_tx.wyb := v_wyb;
+            v_tx.bv  := v_bv;
+            if v_nv then v_tx.nv := '1'; else v_tx.nv := '0'; end if;
+            if v_nh then v_tx.nh := '1'; else v_tx.nh := '0'; end if;
+            s10h_tx <= v_tx;
+
             -- S10h2: levels 2..0, then pick the slot for the mode.
             v_ho := s10h_st(1);
             v_hc := s10h_st(0);
@@ -1342,6 +1624,7 @@ begin
             if s_evo_snake = '1' then s10h2_k <= v_ks;
             else                      s10h2_k <= s10h_lf.krnd; end if;
             s10h2_lf <= s10h_lf;
+            s10h2_tx <= s10h_tx;
 
             -- Evolve, part 2 (S10a2): gen = pass + (k < pos).  The colour and
             -- texture generations alternate off the per-leaf phase bit, so each
@@ -1360,114 +1643,62 @@ begin
             -- freezes the quilt as it stands instead of snapping it back.
             v_cg := s_evo_g(v_ic);
             v_tg := s_evo_g(v_it);
-            s10a2_lx   <= s10h2_lf.lx;
-            s10a2_ly   <= s10h2_lf.ly;
-            s10a2_m1   <= s10h2_lf.m1;
-            s10a2_m2   <= s10h2_lf.m2;
+            s10a2_tx   <= s10h2_tx;
             s10a2_cidx <= s10h2_lf.cbase + v_cg;
             s10a2_tidx <= s10h2_lf.tbase + v_tg;
             s10a2_hide <= s10h2_lf.hide;
 
-            -- S10b: seam distance + palette index + texture emboss shade.  The
-            -- texture is computed HERE (one stage ahead of the palette fetch) so
-            -- the 16-way pattern logic and the palette muxes don't share a stage.
-            -- Texture -> 2-bit shade: stripe/diagonal types ramp across the period
-            -- (rounded "thread" -> depth); the rest are deep binary.  Shift/AND/add.
-            if s10a2_m1 < s10a2_m2 then seamd := s10a2_m1; else seamd := s10a2_m2; end if;
-            if seamd < to_unsigned(SEAM_W, 12) then s10_seam <= '1'; else s10_seam <= '0'; end if;
-            -- Puff ramp: 15 at the patch edge falling to 0 at a radius that
-            -- follows the grid scale (8 / 16 / 16 / 32 px), read as fixed slices
-            -- of the edge distance.  Puffed mode only.
-            v_t4 := (others => '0');
-            case s_g is
-                when 5 =>
-                    if seamd(11 downto 3) = 0 then v_t4 := (not seamd(2 downto 0)) & '1'; end if;
-                when 6 | 7 =>
-                    if seamd(11 downto 4) = 0 then v_t4 := not seamd(3 downto 0); end if;
-                when others =>
-                    if seamd(11 downto 5) = 0 then v_t4 := not seamd(4 downto 1); end if;
-            end case;
-            if s_relief = '0' then v_t4 := (others => '0'); end if;
-            s10_puff <= v_t4;
-            s10_pidx  <= s10a2_cidx xor s_tint;
-            s10_hide  <= s10a2_hide;
-
-            vdiag   := s10a2_lx + s10a2_ly;
-            v_adiag := s10a2_lx + (not s10a2_ly);
-            -- All texture coords are read as small fixed bit-slices selected by the
-            -- Texture knob (a 4:1 mux), NOT 12-bit barrel shifters — the texture
-            -- only needs a 2-bit ramp field (coord>>(s-1))(1:0) and a couple of
-            -- single bits.  This both scales every pattern with the knob and keeps
-            -- HD timing (barrel shifters here were the congestion bottleneck).
-            --   v_r* = 2-bit ramp field at [s:s-1]; v_*b = bit s; v_w*b = bit s+1.
-            case s_tex_shift is
-                when 3 =>
-                    v_rx := s10a2_lx(3 downto 2); v_ry := s10a2_ly(3 downto 2);
-                    v_rd := vdiag(3 downto 2);   v_ra := v_adiag(3 downto 2);
-                    v_bxb := s10a2_lx(3); v_byb := s10a2_ly(3);
-                    v_wxb := s10a2_lx(4); v_wyb := s10a2_ly(4);
-                    v_drow := s10a2_ly(2 downto 1); v_dcol := s10a2_lx(2 downto 1);
-                    v_pm := to_unsigned(7, 12);
-                when 4 =>
-                    v_rx := s10a2_lx(4 downto 3); v_ry := s10a2_ly(4 downto 3);
-                    v_rd := vdiag(4 downto 3);   v_ra := v_adiag(4 downto 3);
-                    v_bxb := s10a2_lx(4); v_byb := s10a2_ly(4);
-                    v_wxb := s10a2_lx(5); v_wyb := s10a2_ly(5);
-                    v_drow := s10a2_ly(3 downto 2); v_dcol := s10a2_lx(3 downto 2);
-                    v_pm := to_unsigned(15, 12);
-                when 5 =>
-                    v_rx := s10a2_lx(5 downto 4); v_ry := s10a2_ly(5 downto 4);
-                    v_rd := vdiag(5 downto 4);   v_ra := v_adiag(5 downto 4);
-                    v_bxb := s10a2_lx(5); v_byb := s10a2_ly(5);
-                    v_wxb := s10a2_lx(6); v_wyb := s10a2_ly(6);
-                    v_drow := s10a2_ly(4 downto 3); v_dcol := s10a2_lx(4 downto 3);
-                    v_pm := to_unsigned(31, 12);
-                when others =>
-                    v_rx := s10a2_lx(6 downto 5); v_ry := s10a2_ly(6 downto 5);
-                    v_rd := vdiag(6 downto 5);   v_ra := v_adiag(6 downto 5);
-                    v_bxb := s10a2_lx(6); v_byb := s10a2_ly(6);
-                    v_wxb := s10a2_lx(7); v_wyb := s10a2_ly(7);
-                    v_drow := s10a2_ly(5 downto 4); v_dcol := s10a2_lx(5 downto 4);
-                    v_pm := to_unsigned(63, 12);
-            end case;
-            bidx := to_integer(v_drow & v_dcol);
-            v_bv := C_BAYER(bidx);
-            v_nv := (s10a2_lx and v_pm) < 2;    -- near a vertical cell line
-            v_nh := (s10a2_ly and v_pm) < 2;    -- near a horizontal cell line
+            -- S10b: texture emboss shade.  The texture is picked HERE (one stage
+            -- ahead of the palette fetch) so the 16-way pattern logic and the
+            -- palette muxes don't share a stage.  Texture -> 2-bit shade:
+            -- stripe/diagonal types ramp across the period (rounded "thread" ->
+            -- depth); the rest are deep binary.
             v_t2 := "01";
             case to_integer(s10a2_tidx) is
                 when 0  => v_t2 := "01";                                       -- solid
-                when 1  => v_t2 := v_rx;                                       -- v ridges
-                when 2  => v_t2 := v_ry;                                       -- h ridges
-                when 3  => v_t2 := v_rd;                                       -- diagonal
-                when 4  => v_t2 := v_ra;                                       -- anti-diagonal
+                when 1  => v_t2 := s10a2_tx.rx;                                -- v ridges
+                when 2  => v_t2 := s10a2_tx.ry;                                -- h ridges
+                when 3  => v_t2 := s10a2_tx.rd;                                -- diagonal
+                when 4  => v_t2 := s10a2_tx.ra;                                -- anti-diagonal
                 when 5  =>                                                     -- checker (deep)
-                    if v_bxb = v_byb then v_t2 := "00"; else v_t2 := "11"; end if;
+                    if s10a2_tx.chk = '1' then v_t2 := "00"; else v_t2 := "11"; end if;
                 when 6  =>                                                     -- cross-hatch
-                    if v_nv or v_nh then v_t2 := "11"; else v_t2 := "00"; end if;
-                when 7  => v_t2 := v_bv(3 downto 2);                           -- ordered dither
+                    if s10a2_tx.nv = '1' or s10a2_tx.nh = '1' then v_t2 := "11"; else v_t2 := "00"; end if;
+                when 7  => v_t2 := s10a2_tx.bv(3 downto 2);                           -- ordered dither
                 when 8  =>                                                     -- dots
-                    if v_bv > 11 then v_t2 := "11"; elsif v_bv > 6 then v_t2 := "10";
+                    if s10a2_tx.bv > 11 then v_t2 := "11"; elsif s10a2_tx.bv > 6 then v_t2 := "10";
                     else v_t2 := "00"; end if;
                 when 9  =>                                                     -- v pinstripe
-                    if v_nv then v_t2 := "11"; else v_t2 := "01"; end if;
+                    if s10a2_tx.nv = '1' then v_t2 := "11"; else v_t2 := "01"; end if;
                 when 10 =>                                                     -- h pinstripe
-                    if v_nh then v_t2 := "11"; else v_t2 := "01"; end if;
+                    if s10a2_tx.nh = '1' then v_t2 := "11"; else v_t2 := "01"; end if;
                 when 11 =>                                                     -- basketweave
-                    if (v_wxb xor v_wyb) = '0' then v_t2 := v_ry;
-                    else v_t2 := v_rx; end if;
+                    if s10a2_tx.wxy = '0' then v_t2 := s10a2_tx.ry;
+                    else v_t2 := s10a2_tx.rx; end if;
                 when 12 =>                                                     -- herringbone
-                    if v_wyb = '0' then v_t2 := v_rd;
-                    else v_t2 := v_ra; end if;
+                    if s10a2_tx.wyb = '0' then v_t2 := s10a2_tx.rd;
+                    else v_t2 := s10a2_tx.ra; end if;
                 when 13 =>                                                     -- woven grid
-                    if v_nv or v_nh then v_t2 := "11"; else v_t2 := v_rx; end if;
-                when 14 => v_t2 := v_rd;                                       -- diagonal (alt)
-                when others => v_t2 := v_ry;                                   -- h ridges (alt)
+                    if s10a2_tx.nv = '1' or s10a2_tx.nh = '1' then v_t2 := "11"; else v_t2 := s10a2_tx.rx; end if;
+                when 14 => v_t2 := s10a2_tx.rd;                                -- diagonal (alt)
+                when others => v_t2 := s10a2_tx.ry;                            -- h ridges (alt)
             end case;
-            s10_tval <= v_t2;
+            s10_r.tval <= v_t2;
+            s10_r.seam <= s10a2_tx.seam;
+            s10_r.puff <= s10a2_tx.puff;
+            s10_r.pidx <= s10a2_cidx xor s_tint;
+            s10_r.hide <= s10a2_hide;
+
+            -- IO-align pads: 3 stages that bring the total latency to a
+            -- multiple of 4 (24 + 3 + s_io = 28), placed where the pixel is
+            -- 12 bits wide.  The per-frame controls read after them (S11/S12)
+            -- only change at vsync, so their 3-clock-later read is invisible.
+            s10_pad(0) <= s10_r;
+            s10_pad(1) <= s10_pad(0);
+            s10_pad(2) <= s10_pad(1);
 
             -- S11: palette fetch (texture shade just rides through)
-            pidx := to_integer(s10_pidx);
+            pidx := to_integer(s10_pad(2).pidx);
             if s_palmode = '0' then
                 ty := FAB_Y(pidx); tu := FAB_U(pidx); tv := FAB_V(pidx);
             else
@@ -1479,23 +1710,23 @@ begin
             -- deep shadow.  S8 Relief: Flat halves the emboss and has no puff;
             -- Puffed is the full emboss plus the puff shading.
             if s_relief = '1' then
-                case s10_tval is
+                case s10_pad(2).tval is
                     when "00"   => v_emb := to_signed(TEX_HI, 11);
                     when "10"   => v_emb := to_signed(-TEX_D1, 11);
                     when "11"   => v_emb := to_signed(-TEX_D2, 11);
                     when others => v_emb := (others => '0');
                 end case;
             else
-                case s10_tval is
+                case s10_pad(2).tval is
                     when "00"   => v_emb := to_signed(TEX_HI / 2, 11);
                     when "10"   => v_emb := to_signed(-(TEX_D1 / 2), 11);
                     when "11"   => v_emb := to_signed(-(TEX_D2 / 2), 11);
                     when others => v_emb := (others => '0');
                 end case;
             end if;
-            s11_delta <= v_emb - signed(resize(C_PUFF(to_integer(s10_puff)), 11));
-            s11_seam  <= s10_seam;
-            s11_hide  <= s10_hide;
+            s11_delta <= v_emb - signed(resize(C_PUFF(to_integer(s10_pad(2).puff)), 11));
+            s11_seam  <= s10_pad(2).seam;
+            s11_hide  <= s10_pad(2).hide;
 
             -- S12: assemble colour: seam, else palette luma + emboss/puff delta,
             -- held inside 64..880 (black up to the brightest palette entry).
@@ -1536,23 +1767,8 @@ begin
         end if;
     end process p_pipe;
 
-    -- IO-align pad: delays video and syncs together, so only the total
-    -- latency changes (25 -> 28).
-    p_io_align_pad : process(clk)
-    begin
-        if rising_edge(clk) then
-            s_io_pad_0 <= s_io;
-            s_io_pad_1 <= s_io_pad_0;
-            s_io_pad_2 <= s_io_pad_1;
-        end if;
-    end process p_io_align_pad;
-
-    data_out.y       <= s_io_pad_2.y;
-    data_out.u       <= s_io_pad_2.u;
-    data_out.v       <= s_io_pad_2.v;
-    data_out.hsync_n <= s_io_pad_2.hsync_n;
-    data_out.vsync_n <= s_io_pad_2.vsync_n;
-    data_out.avid    <= s_io_pad_2.avid;
-    data_out.field_n <= s_io_pad_2.field_n;
+    -- (the IO-align pads that bring the latency to 28 are in the pipeline,
+    -- after S10b: s10_pad)
+    data_out <= s_io;
 
 end architecture quilt;

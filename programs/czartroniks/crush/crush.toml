@@ -1,0 +1,142 @@
+# Crush - Program Configuration
+#
+# Two catalogue effects (seed 20260919): sync loss / horizontal collapse
+# and mosaic with per-cell colour averaging.  Three knobs each; switches
+# and slider set the interaction.  See crush.vhd.
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.crush"
+program_name = "Crush"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Grid", "Glitch", "Retro"]
+program_type = "processing"
+description = "Averaged mosaic squeezed toward a drifting line with sync-loss tearing; tiles stay square or squeeze with the picture."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Line"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 34
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Sync"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 63
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Roll"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 474
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Cells"
+value_labels = ["2 px", "4 px", "8 px", "16 px", "32 px", "64 px", "128 px", "256 px"]
+initial_value_label = "2 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Aspect"
+value_labels = ["Square", "Wide", "Wider", "Strip"]
+initial_value_label = "Square"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Grout"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 626
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Tiles"
+value_labels = ["Square", "Squeeze"]
+initial_value_label = "Squeeze"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Collapse"
+value_labels = ["Both Sides", "Right Side"]
+initial_value_label = "Both Sides"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Loss"
+value_labels = ["Lines", "Rows"]
+initial_value_label = "Rows"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Beyond"
+value_labels = ["Black", "Stretch"]
+initial_value_label = "Stretch"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Grout"
+value_labels = ["Black", "White"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Collapse"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 63
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Tile Crush"
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 600
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 562
+
+[[preset]]
+name = "Drain Left"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 32
+rotary_potentiometer_4 = 200
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+linear_potentiometer_12 = 629
+
+[[preset]]
+name = "Wide Mosaic"
+rotary_potentiometer_2 = 0
+rotary_potentiometer_4 = 704
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 500
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0

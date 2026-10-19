@@ -1,0 +1,261 @@
+# HYPNOS -- razor-sharp op-art rings (no input video).
+#
+# 1960s op-art target: Vasarely / Bridget Riley / the Vertigo spiral.  Every edge
+# is a one-pixel anti-aliased line computed from the analytic phase gradient, at
+# any ring size, warp or spiral; rings finer than ~3 px fade to an even grey
+# instead of moire.  The centre travels +/-2 screens off-frame (target -> arc ->
+# near-parallel stripes).  Four shapes (circle / square / hexagon / flower), an
+# integer-arm Vertigo spiral, tunnel-to-dome warp, four ink/paper palettes, and
+# the slider is a bipolar ring-travel speed (centre = still).
+#
+# Glide is always on (centre, period and warp ease to their new values).
+
+[program]
+processing_delay_clks = 0
+program_id = "com.czartroniks.hypnos"
+program_version = "1.0.4"
+abi_version = ">=1.0,<2.0"
+program_name = "Hypnos"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Illusion", "Optics", "Pattern"]
+program_type = "synthesis"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Razor-sharp op-art rings: circle/square/hex/flower, off-screen centre, Vertigo spiral, warp, palettes, bipolar speed"
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 480            # detent = frame centre; ends = 2 screens off
+display_min_value = -100
+display_max_value = 100
+name_label = "Center X"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 527
+display_min_value = -100
+display_max_value = 100
+name_label = "Center Y"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 655            # ring density: 2048 px period -> 4 px (exponential)
+display_min_value = 0
+display_max_value = 100
+name_label = "Period"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 612            # detent = flat; CCW tunnel, CW dome
+display_min_value = -100
+display_max_value = 100
+name_label = "Warp"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0            # detent = plain rings; whole arms -8..+8
+display_min_value = -8
+display_max_value = 8
+name_label = "Spiral"
+suffix_label = "x"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 448            # ink : paper band width
+display_min_value = 5
+display_max_value = 95
+name_label = "Duty"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Form"
+value_labels = ["Round", "Angular"]
+initial_value_label = "Angular"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Six-fold"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Ink"
+value_labels = ["White", "Colour"]
+initial_value_label = "Colour"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Paper"
+value_labels = ["Black", "Colour"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Invert"
+value_labels = ["Normal", "Invert"]
+initial_value_label = "Invert"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 945            # SPEED: centre = still, up = rings stream out, down = in
+display_min_value = -100
+display_max_value = 100
+name_label = "Speed"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Op-Art Target"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 430
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Vertigo"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 470
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 640
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 620
+
+[[preset]]
+name = "Riley Stripes"
+rotary_potentiometer_1 = 980
+rotary_potentiometer_2 = 120
+rotary_potentiometer_3 = 330
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 580
+
+[[preset]]
+name = "Rainbow Tunnel"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 520
+rotary_potentiometer_4 = 150
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 600
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 760
+
+[[preset]]
+name = "Square Spiral"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 450
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 576
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Hex Hive"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 500
+rotary_potentiometer_4 = 640
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 420
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 440
+
+[[preset]]
+name = "Flower Bloom"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 450
+rotary_potentiometer_4 = 700
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Warp Speed"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 60
+rotary_potentiometer_5 = 352
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023

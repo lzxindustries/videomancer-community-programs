@@ -1,0 +1,190 @@
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.shearline"
+program_version = "1.1.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Shearline"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Temporal", "Glitch", "Warp"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Each scanline redraws the one above, sheared and fanned: video streaks into diagonal comet trails that age through the hues."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 565
+display_min_value = -100
+display_max_value = 100
+name_label = "Fan"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 376
+display_min_value = 0
+display_max_value = 100
+name_label = "Trail"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 94
+display_min_value = 0
+display_max_value = 100
+name_label = "Slope Mod"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 71
+display_min_value = 0
+display_max_value = 100
+name_label = "Spectrum"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 943
+display_min_value = 0
+display_max_value = 100
+name_label = "Mix"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Direction"
+value_labels = ["Right", "Left"]
+initial_value_label = "Right"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Blend"
+value_labels = ["Smear", "Comet"]
+initial_value_label = "Smear"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 494
+display_min_value = 0
+display_max_value = 100
+name_label = "Shear"
+suffix_label = "%"
+
+# --- Presets (designed, not yet HW-captured) ---
+
+[[preset]]
+name = "Drip"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 640
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 64
+
+[[preset]]
+name = "Comet"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 720
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 256
+
+[[preset]]
+name = "Warp Speed"
+rotary_potentiometer_1 = 900
+rotary_potentiometer_2 = 780
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Rainbow Tail"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 820
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 420
+rotary_potentiometer_5 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 384
+
+[[preset]]
+name = "Tunnel"
+rotary_potentiometer_1 = 140
+rotary_potentiometer_2 = 760
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Screamer"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 900
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 900
+
+[[preset]]
+name = "Left Sweep"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 740
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 1023
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512

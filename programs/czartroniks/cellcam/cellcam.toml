@@ -1,0 +1,166 @@
+# Cellcam - Program Configuration
+#
+# Catalogue combo #86 (seed 20260923): edge detect + chroma subsampling
+# + pixelation.  See cellcam.vhd.
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.cellcam"
+program_name = "Cellcam"
+program_version = "0.3.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pixel", "Edges", "Signal"]
+program_type = "processing"
+description = "Live pixelation zoom: cells outlined by the luma steps around them (or raw edges), with held, live or smeared chroma."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# Crawl: dot crawl on the edges; past 50% it spreads over the whole picture
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Crawl"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+# Shape: cell height vs width, exponential: 1/4 (flat) .. square at 0 .. ~4x (tall)
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Shape"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 679
+display_float_digits = 0
+suffix_label = "%"
+
+# Gain: exponential, 1/8x at 0, 2x at 50%, 31x at 100%
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Gain"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 766
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Width"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 250
+display_float_digits = 0
+suffix_label = "px"
+
+# Hold: chroma held across 1..16 cells
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Hold"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 16
+initial_value = 642
+display_float_digits = 0
+suffix_label = "x"
+
+# Smear: chroma lag 0..127 px; past 25% the chroma also bleeds (8/16/32 px, x2 at HD)
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Smear"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 646
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Edges"
+value_labels = ["Over", "Only"]
+initial_value_label = "Over"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Source"
+value_labels = ["Cells", "Raw"]
+initial_value_label = "Raw"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Chroma"
+value_labels = ["Cells", "Live"]
+initial_value_label = "Cells"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Ink"
+value_labels = ["Black", "White"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Tint"
+value_labels = ["Colour", "Mono"]
+initial_value_label = "Colour"
+
+# Cell: cell size 2..129 px, quadratic (10 at 25%, 34 at 50%, 74 at 75%);
+# the grid is centred, so the slider zooms the pixelation about the centre
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Cell"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 281
+display_float_digits = 1
+suffix_label = "%"
+
+# Presets: hand-written (capture from hardware when dialled in).
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Comic Cells"
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 608
+rotary_potentiometer_4 = 146
+linear_potentiometer_12 = 340
+
+[[preset]]
+name = "White Wire"
+rotary_potentiometer_1 = 800
+rotary_potentiometer_3 = 632
+toggle_switch_7 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+
+[[preset]]
+name = "Raw Crawl"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 0
+rotary_potentiometer_6 = 80
+toggle_switch_8 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Live Blocks"
+rotary_potentiometer_6 = 600
+toggle_switch_9 = 1
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Thick Sketch"
+rotary_potentiometer_3 = 768
+rotary_potentiometer_4 = 1023
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_10 = 1

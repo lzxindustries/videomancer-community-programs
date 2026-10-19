@@ -1,0 +1,243 @@
+# Daedalus — the picture drawn as a labyrinth.
+#
+# Forked from VideoSky, which cut the video into a line-screen: rules that were
+# the level sets of a rotatable accumulator field. A maze is not a level set,
+# it is a tiling -- so Daedalus reads the half of the accumulator VideoSky threw
+# away (the period index) as a cell grid and draws a Truchet weave on it: every
+# tile joins its four edge ports in pairs (two staircases, or an over/under
+# crossing), so the ink is unbroken right-angle lines that never branch. Relief
+# warps the coordinate before it is split into cell and sub-cell, so the whole
+# labyrinth drapes over the image instead of tearing.
+
+[program]
+processing_delay_clks = 12
+program_id = "com.czartroniks.daedalus"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Daedalus"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Print", "Render", "Edges"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "One continuous right-angle labyrinth that weaves over and under itself, redrawing the picture and draping over its form"
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 539
+display_min_value = 0
+display_max_value = 100
+name_label = "Ink"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 244
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 746
+display_min_value = 0
+display_max_value = 100
+name_label = "Pitch"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 491
+display_min_value = 0
+display_max_value = 360
+name_label = "Angle"
+suffix_label = "deg"
+
+# The knotted-ness: raises the tile-mirror and crossing probabilities together.
+# At 0 every cell takes the same tile and the staircases chain into long ordered
+# diagonal runs; at max ~24% of cells are over/under crossings and the rest a
+# coin flip of the two staircases. Every position does something.
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 478
+display_min_value = 0
+display_max_value = 100
+name_label = "Tangle"
+suffix_label = "%"
+
+# Enum knob: the config binary stores the LABEL INDEX and the firmware scales it
+# onto the 10-bit register, so index i arrives as i*1023/5 -- 0, 204, 409, 613,
+# 818, 1023 -- landing inside the bands the VHDL decodes. A numeric
+# initial_value is rejected by the validator when value_labels are present.
+# Sim caveat: lzx-vhdl-cli resolves initial_value_label for TOGGLES only and
+# feeds pots a bare 512, which lands on Night -- pass
+# --set rotary_potentiometer_6=0 to sim the intended default.
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Scheme"
+value_labels = ["Parchment", "Gallery", "Night", "Blueprint", "Cyanotype", "Copper"]
+initial_value_label = "Cyanotype"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Blackout"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Tint"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Width"
+value_labels = ["Fixed", "Modulated"]
+initial_value_label = "Fixed"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Drift"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 619
+display_min_value = 0
+display_max_value = 100
+name_label = "Relief"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Blackwork"            # the tattoo: one uniform-weight labyrinth over the
+rotary_potentiometer_1 = 560  # whole frame, all tone from the blacked-in masses
+rotary_potentiometer_2 = 420
+rotary_potentiometer_3 = 520
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 1023 # fully knotted
+rotary_potentiometer_6 = 204  # Gallery
+toggle_switch_7 = 1           # blackout
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0          # fixed width -- relief is the only shaper
+toggle_switch_11 = 0
+linear_potentiometer_12 = 680 # Relief
+
+[[preset]]
+name = "Weave"                # tangle at zero: the staircases chain into long
+rotary_potentiometer_1 = 512  # ordered diagonal runs -- basket, not maze
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 400
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 0    # no mirroring anywhere
+rotary_potentiometer_6 = 613  # Blueprint
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0   # flat
+
+[[preset]]
+name = "Circuit"              # finest pitch, thin constant trace
+rotary_potentiometer_1 = 300  # thin pen
+rotary_potentiometer_2 = 560
+rotary_potentiometer_3 = 700  # ~24 px cells
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 613  # Blueprint
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 240
+
+[[preset]]
+name = "Labyrinth"            # half-knotted at 45 degrees: runs AND turns
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 460
+rotary_potentiometer_4 = 128  # 45 deg
+rotary_potentiometer_5 = 540
+rotary_potentiometer_6 = 0    # Parchment
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Chasing"              # coarse, drifting, printed in the source's colour
+rotary_potentiometer_1 = 540
+rotary_potentiometer_2 = 500
+rotary_potentiometer_3 = 220  # broad cells
+rotary_potentiometer_4 = 256  # 90 deg
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 818  # Cyanotype
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1           # tint
+toggle_switch_10 = 1          # modulated -- the shadows fatten the line
+toggle_switch_11 = 1          # drift
+linear_potentiometer_12 = 320
+
+[[preset]]
+name = "Shatter"              # the climax: the warp folds everywhere at once
+rotary_potentiometer_1 = 500
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 1023 # Copper
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0          # fixed width
+toggle_switch_11 = 1          # drift
+linear_potentiometer_12 = 1023
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# v1.0.3 (resolution scaling): seed 1 stalls nextpnr's router1 (60-min limit);
+# seed 2 builds all 8 (own HD timing 88.3/91.1/86.4 MHz Analog/HDMI/Dual).
+seed = 2

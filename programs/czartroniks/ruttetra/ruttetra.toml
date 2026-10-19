@@ -1,0 +1,153 @@
+# Rutt Etra — classic scan-processor Z-displacement.
+#
+# Incoming video is redrawn as horizontal scanlines vertically displaced by
+# luma: bright material rises out of a sagging dark floor, drawn as glowing
+# lines on black, with hidden-line terrain occlusion.  P12 RELIEF is the
+# performance control (displacement depth); knobs set line density,
+# thickness, color, input contrast, a bipolar line-grid roll, and
+# horizontal smoothing of the displaced profile.
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.ruttetra"
+program_version = "0.2.4"
+abi_version = ">=1.0,<2.0"
+program_name = "Rutt Etra"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pixel", "Edges", "Tube"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Classic Rutt-Etra scan processor: video redrawn as luma-displaced scanlines with hidden-line terrain occlusion."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Scan Lines"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 612
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Thickness/Glow"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 469
+display_float_digits = 0
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Line Color"
+value_labels = ["White", "Green", "Amber", "Cyan", "Magenta", "Video", "Fire", "Terrain"]
+initial_value_label = "Video"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Contrast"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 200
+initial_value = 743
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Roll"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 722
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Smoothing"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 257
+display_float_digits = 0
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Peaks"
+value_labels = ["Bright", "Dark"]
+initial_value_label = "Dark"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Hidden Line"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Shading"
+value_labels = ["Banded", "Luma"]
+initial_value_label = "Banded"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Roll Motion"
+value_labels = ["Run", "Freeze"]
+initial_value_label = "Run"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Input"
+value_labels = ["Positive", "Negative"]
+initial_value_label = "Positive"
+
+# --- Performance Slider ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Relief"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 55
+display_float_digits = 0
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Green Phosphor"
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 192
+linear_potentiometer_12 = 650
+
+[[preset]]
+name = "Topographic"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_3 = 960
+rotary_potentiometer_6 = 450
+linear_potentiometer_12 = 820
+
+[[preset]]
+name = "Flyover"
+rotary_potentiometer_3 = 704
+rotary_potentiometer_5 = 800
+rotary_potentiometer_6 = 400
+linear_potentiometer_12 = 750
+
+[[preset]]
+name = "Deep Cut"
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 832
+toggle_switch_7 = 1
+linear_potentiometer_12 = 900

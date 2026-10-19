@@ -1,0 +1,150 @@
+# Lenscreen - Program Configuration
+#
+# Three catalogue effects (seed 20260925, #106): composite luma/chroma
+# crosstalk, halftone and lens (sphere / tunnel).  Two knobs each; switches
+# and slider set the interaction.  See lenscreen.vhd and SUMMARY.md.
+# v0.2.0: Radius is % of the half-height; P12 (was "Zoom") is Squeeze,
+# same behaviour -- up squeezes the picture narrower.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.lenscreen"
+program_name = "Lenscreen"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Stylize", "Glitch", "Retro"]
+program_type = "processing"
+description = "Sphere or tunnel lens under a halftone dot screen (flat or warped with the lens) with dot-crawl and rainbow-comb crosstalk."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Bulge"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 697
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Radius"
+control_mode = "linear"
+display_min_value = 3
+display_max_value = 140
+initial_value = 737
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Cell"
+value_labels = ["4 px", "8 px", "16 px", "32 px"]
+initial_value_label = "8 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Dot"
+value_labels = ["Circle", "Diamond", "Square", "Line"]
+initial_value_label = "Diamond"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Cross-Y"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 539
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Cross-C"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 579
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Lens"
+value_labels = ["Sphere", "Tunnel"]
+initial_value_label = "Sphere"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Screen"
+value_labels = ["Flat", "Lensed"]
+initial_value_label = "Lensed"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Ink"
+value_labels = ["Mono", "Colour"]
+initial_value_label = "Colour"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Cross-Y"
+value_labels = ["Dots", "Print"]
+initial_value_label = "Dots"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Fringe"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Squeeze"
+control_mode = "linear"
+display_min_value = 50
+display_max_value = 200
+initial_value = 896
+display_float_digits = 0
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Fisheye Print"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 900
+rotary_potentiometer_3 = 512
+rotary_potentiometer_5 = 100
+rotary_potentiometer_6 = 100
+toggle_switch_9 = 0
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Tunnel Comb"
+rotary_potentiometer_1 = 100
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 100
+rotary_potentiometer_4 = 800
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 1023
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_10 = 1
+linear_potentiometer_12 = 200
+
+[[preset]]
+name = "Flat Screen"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 700
+toggle_switch_8 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 340

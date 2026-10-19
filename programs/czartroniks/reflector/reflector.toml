@@ -1,0 +1,137 @@
+# Reflector - catalogue combo #8: two-mirror kaleidoscope + bloom.  See reflector.vhd.
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.reflector"
+program_name = "Reflector"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Mirror", "Optics", "Pattern"]
+program_type = "processing"
+description = "Two-mirror kaleidoscope meets bloom: panes multiply as the axis moves, the source slides, glow follows or ignores the folds."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Axis"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 795
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Folds"
+value_labels = ["None", "One", "Two", "Three"]
+initial_value_label = "Two"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Slide"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 877
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Glow"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 602
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Threshold"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 410
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Radius"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 538
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Glow"
+value_labels = ["Mirrored", "Straight"]
+initial_value_label = "Mirrored"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Panes"
+value_labels = ["Plain", "Negative"]
+initial_value_label = "Plain"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Tint"
+value_labels = ["Off", "Warm"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Seams"
+value_labels = ["Off", "Glow"]
+initial_value_label = "Glow"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Focus"
+value_labels = ["Sharp", "Soft"]
+initial_value_label = "Sharp"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Sweep"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 469
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Cathedral"
+rotary_potentiometer_2 = 900
+rotary_potentiometer_4 = 700
+rotary_potentiometer_6 = 800
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+
+[[preset]]
+name = "Drifting Glass"
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 784
+toggle_switch_7 = 1
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Negative Space"
+rotary_potentiometer_2 = 1000
+rotary_potentiometer_4 = 200
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 800

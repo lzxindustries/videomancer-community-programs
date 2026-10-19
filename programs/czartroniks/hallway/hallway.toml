@@ -1,0 +1,151 @@
+# Hallway - Program Configuration
+#
+# Catalogue combo #84 (seed 20260923): split-screen + lens distortion
+# + kaleidoscope.  See hallway.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.hallway"
+program_name = "Hallway"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Geometry", "Distortion", "Stylize"]
+program_type = "processing"
+description = "One to four panes of mirror folds around a sliding strip, each seen through a barrel lens with chromatic fringing."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Panes"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 4
+initial_value = 635
+display_float_digits = 0
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Wipe"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 395
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Barrel"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 627
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Fringe"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 509
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Segment"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 989
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Slide"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Mirror"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Lens"
+value_labels = ["Screen", "Pane"]
+initial_value_label = "Pane"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Fold"
+value_labels = ["Mirror", "Repeat"]
+initial_value_label = "Mirror"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Edges"
+value_labels = ["Black", "Mirror"]
+initial_value_label = "Mirror"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Fringe"
+value_labels = ["U wide", "V wide"]
+initial_value_label = "U wide"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Depth"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 327
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Four Lenses"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_3 = 1000
+rotary_potentiometer_5 = 768
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Deep Prism"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_4 = 900
+rotary_potentiometer_5 = 255
+toggle_switch_10 = 1
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Tiled Pinch"
+rotary_potentiometer_1 = 600
+rotary_potentiometer_3 = 100
+rotary_potentiometer_5 = 768
+toggle_switch_9 = 1
+linear_potentiometer_12 = 0
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# seed 1 stalled nextpnr's router1 on SD Standalone; seed 3 builds all 8.
+seed = 3

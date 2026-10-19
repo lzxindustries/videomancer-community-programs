@@ -1,0 +1,156 @@
+# Solarcell - Program Configuration
+#
+# Catalogue combo #81 (seed 20260923): solarization + mosaic with per-cell
+# colour averaging.  See solarcell.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 28
+program_id = "com.czartroniks.solarcell"
+program_name = "Solarcell"
+program_version = "0.3.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Colorizer", "Stylize", "Retro"]
+program_type = "processing"
+description = "Colour-averaged mosaic cells, solarized before or after averaging; staircase threshold per row, contour lines, grid, vivid."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Level"
+control_mode = "linear"
+display_min_value = 15
+display_max_value = 80
+initial_value = 540
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Gain"
+control_mode = "linear"
+display_min_value = 100
+display_max_value = 1600
+initial_value = 202
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Rows"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 64
+initial_value = 905
+display_float_digits = 0
+suffix_label = "ln"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Cell"
+control_mode = "linear"
+display_min_value = 4
+display_max_value = 131
+initial_value = 519
+display_float_digits = 0
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Mix"
+control_mode = "linear"
+display_min_value = 25
+display_max_value = 100
+initial_value = 535
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Offset"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 723
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Chroma"
+value_labels = ["Keep", "Fold"]
+initial_value_label = "Fold"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Order"
+value_labels = ["Solar-Mos", "Mos-Solar"]
+initial_value_label = "Mos-Solar"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Colour"
+value_labels = ["Average", "Vivid"]
+initial_value_label = "Vivid"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Grid"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Iso"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Fold"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 901
+display_float_digits = 1
+suffix_label = "%"
+
+# Presets are hand-written (v0.2 values remapped to the v0.3 controls);
+# capture real ones from the device with ./capture_preset.sh.
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Staircase"
+rotary_potentiometer_3 = 504
+rotary_potentiometer_4 = 228
+rotary_potentiometer_6 = 900
+toggle_switch_7 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Iso Mosaic"
+rotary_potentiometer_2 = 960
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 205
+
+[[preset]]
+name = "Fine Fold"
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 460
+toggle_switch_9 = 1
+
+[[preset]]
+name = "Stained Glass"
+rotary_potentiometer_1 = 900
+rotary_potentiometer_3 = 848
+rotary_potentiometer_4 = 400
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 600

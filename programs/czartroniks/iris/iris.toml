@@ -1,0 +1,245 @@
+# IRIS -- perspective dot-tunnel eye with a three-layer colour split.
+#
+# A large iris circle nearly fills the screen; a dark pupil sits anywhere
+# inside it.  Hundreds of round dots on spiral arms sweep from the pupil to
+# the rim, born as pinpoints and growing geometrically, squeezed on the side
+# where the pupil is near the rim and fanning wide on the far side -- a cone
+# seen in perspective, so steering the pupil tilts the whole tunnel in 3D.
+# The field is drawn three times (red, green, blue) as transparent light
+# layers; SPLIT fans them apart with distance from the pupil, from white
+# cores with coloured crescents to clean primaries at the rim.
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.iris"
+program_version = "1.4.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Iris"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pattern", "Illusion", "Optics"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Perspective spiral dot tunnel: pupil-steered iris of growing round dots, RGB layers split by distance, ink and flow modes"
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 454
+display_min_value = -100
+display_max_value = 100
+name_label = "Pupil X"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 446
+display_min_value = -100
+display_max_value = 100
+name_label = "Pupil Y"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 799
+display_min_value = 0
+display_max_value = 100
+name_label = "Pupil Size"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 478            # 48 arms
+display_min_value = 6
+display_max_value = 96
+name_label = "Arms"
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 639
+display_min_value = 3
+display_max_value = 48
+name_label = "Rings"
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 692
+display_min_value = -100
+display_max_value = 100
+name_label = "Twist"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Fill"
+value_labels = ["Dots", "Mesh"]
+initial_value_label = "Dots"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Backdrop"
+value_labels = ["Solid", "Video"]
+initial_value_label = "Solid"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Mode"
+value_labels = ["Light", "Ink"]
+initial_value_label = "Light"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Motion"
+value_labels = ["Still", "Flow"]
+initial_value_label = "Still"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Iris"
+value_labels = ["Framed", "Full Bleed"]
+initial_value_label = "Framed"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Split"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Reference"              # the reference image
+rotary_potentiometer_1 = 307
+rotary_potentiometer_2 = 563
+rotary_potentiometer_3 = 317
+rotary_potentiometer_4 = 478
+rotary_potentiometer_5 = 614
+rotary_potentiometer_6 = 716
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 325
+
+[[preset]]
+name = "Sunburst"               # straight spokes, white dots, no split
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 317
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Misregister"            # ink on paper, big split
+rotary_potentiometer_1 = 450
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 200
+rotary_potentiometer_4 = 700
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 640
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 566
+
+[[preset]]
+name = "Vortex"                 # full bleed, flowing, tight twist
+rotary_potentiometer_1 = 350
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 250
+rotary_potentiometer_4 = 478
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 900
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Honeycomb"              # Mesh: dark interstices become the figure
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 250
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 560
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Window"                 # the reference over incoming video
+rotary_potentiometer_1 = 307
+rotary_potentiometer_2 = 563
+rotary_potentiometer_3 = 317
+rotary_potentiometer_4 = 478
+rotary_potentiometer_5 = 614
+rotary_potentiometer_6 = 716
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 325
+
+[[preset]]
+name = "Triad"                  # Split at the top: the outer iris in RGB triads
+rotary_potentiometer_1 = 307
+rotary_potentiometer_2 = 563
+rotary_potentiometer_3 = 317
+rotary_potentiometer_4 = 478
+rotary_potentiometer_5 = 614
+rotary_potentiometer_6 = 716
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023

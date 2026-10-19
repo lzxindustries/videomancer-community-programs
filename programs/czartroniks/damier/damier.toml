@@ -1,0 +1,251 @@
+# DAMIER -- op-art checkerboards.
+#
+# A clean checkerboard re-drawn square by square from a vocabulary of shapes
+# (16 layouts on K1), folded by three mirror switches into bilateral, quad or
+# 8-fold kaleidoscope symmetry (the lattice spins while any mirror is on), bent
+# by travelling waves (sine or zigzag, bend or squeeze) and, on the slider,
+# filled with concentric rings in each square's own shape that tighten until
+# they alias into moire.  Loosely descended from GILT's Kiss robe.
+
+[program]
+processing_delay_clks = 40
+program_id = "com.czartroniks.damier"
+program_version = "0.4.8"
+abi_version = ">=1.0,<2.0"
+program_name = "Damier"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pattern", "Illusion", "Mirror"]
+program_type = "synthesis"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Op-art checkerboards: 16 square patterns, mirror folds, travelling waves, and rings that tighten into moire"
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+# Enum knobs: the config binary stores the LABEL INDEX and the firmware loads
+# it raw at program load, so the default label is the FIRST label (index 0
+# decodes the same either way).  Knob turns and presets give 0..1023.
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Layout"
+value_labels = ["Classic", "Vega", "Albers", "Harlequin", "Pinwheel", "Chevron", "Truchet", "Weave", "Bullseye", "Fractal", "Quartered", "Mosaic", "Rings", "Zebra", "Robe", "Shimmer"]
+initial_value_label = "Albers"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 630
+display_min_value = 0
+display_max_value = 100
+name_label = "Scale"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 855
+display_min_value = 0
+display_max_value = 100
+name_label = "Wave"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 392
+display_min_value = 0
+display_max_value = 360
+name_label = "Angle"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 554
+display_min_value = 0
+display_max_value = 100
+name_label = "Speed"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Palette"
+value_labels = ["Op", "Riley", "Vega", "Kiss", "Bauhaus", "Memphis", "Neon", "Pastel", "Seventies", "Mondrian", "Delft", "Ruby", "Lagoon", "Sunset", "Acid", "Prism"]
+initial_value_label = "Mondrian"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Mirror"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Flip"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Kaleido"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Shape"
+value_labels = ["Sine", "Zigzag"]
+initial_value_label = "Zigzag"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Motion"
+value_labels = ["Bend", "Squeeze"]
+initial_value_label = "Squeeze"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 151
+display_min_value = 0
+display_max_value = 100
+name_label = "Resonance"
+suffix_label = "%"
+
+# --- Presets (labelled knobs take raw 0..1023: label i = i * 1023 / 15) ---
+
+[[preset]]
+name = "Vega Dots"
+rotary_potentiometer_1 = 68     # Vega
+rotary_potentiometer_2 = 560
+rotary_potentiometer_3 = 220
+rotary_potentiometer_4 = 128
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 0      # Op
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Riley Current"
+rotary_potentiometer_1 = 886    # Zebra
+rotary_potentiometer_2 = 520
+rotary_potentiometer_3 = 620
+rotary_potentiometer_4 = 256
+rotary_potentiometer_5 = 380
+rotary_potentiometer_6 = 0      # Op
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Squares Move"
+rotary_potentiometer_1 = 0      # Classic
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 520
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 360
+rotary_potentiometer_6 = 68     # Riley
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Kaleidoscope"
+rotary_potentiometer_1 = 273    # Pinwheel
+rotary_potentiometer_2 = 560
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 128
+rotary_potentiometer_5 = 460
+rotary_potentiometer_6 = 273    # Bauhaus
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Targets"
+rotary_potentiometer_1 = 0      # Classic
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 0      # Op
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 420
+
+[[preset]]
+name = "Kiss Robe"
+rotary_potentiometer_1 = 955    # Robe
+rotary_potentiometer_2 = 480
+rotary_potentiometer_3 = 260
+rotary_potentiometer_4 = 256
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 205    # Kiss
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 250
+
+[[preset]]
+name = "Truchet Flow"
+rotary_potentiometer_1 = 409    # Truchet
+rotary_potentiometer_2 = 520
+rotary_potentiometer_3 = 420
+rotary_potentiometer_4 = 96
+rotary_potentiometer_5 = 420
+rotary_potentiometer_6 = 341    # Memphis
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 520
+
+[[preset]]
+name = "Chevron Pop"
+rotary_potentiometer_1 = 341    # Chevron
+rotary_potentiometer_2 = 540
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 886    # Sunset
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 900

@@ -1,0 +1,219 @@
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.lagoon"
+program_version = "1.4.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Lagoon"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Optics", "Warp"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Underwater filter: ripple refraction, rolling swell, dancing caustics, blue-green grade. Slider dives from dry to deep."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 411
+display_min_value = 0
+display_max_value = 95
+name_label = "Ripple"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 353
+display_min_value = 0
+display_max_value = 255
+name_label = "Waves"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 800
+display_min_value = -100
+display_max_value = 100
+name_label = "Speed"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 85
+display_min_value = 0
+display_max_value = 100
+name_label = "Scale"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Tint"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 403
+display_min_value = 0
+display_max_value = 100
+name_label = "Caustics"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Hue"
+value_labels = ["Aqua", "Abyss"]
+initial_value_label = "Aqua"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Glitter"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Murk"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Sea"
+value_labels = ["Calm", "Storm"]
+initial_value_label = "Calm"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Prism"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Depth"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Swimming Pool"
+rotary_potentiometer_1 = 420
+rotary_potentiometer_2 = 120
+rotary_potentiometer_3 = 620
+rotary_potentiometer_4 = 560
+rotary_potentiometer_5 = 380
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Open Ocean"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 520
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 380
+rotary_potentiometer_5 = 620
+rotary_potentiometer_6 = 380
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "The Abyss"
+rotary_potentiometer_1 = 220
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 850
+rotary_potentiometer_6 = 160
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Storm Surge"
+rotary_potentiometer_1 = 520
+rotary_potentiometer_2 = 760
+rotary_potentiometer_3 = 780
+rotary_potentiometer_4 = 520
+rotary_potentiometer_5 = 520
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Gentle Stream"
+rotary_potentiometer_1 = 260
+rotary_potentiometer_2 = 60
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 720
+rotary_potentiometer_5 = 260
+rotary_potentiometer_6 = 520
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Puddle Shimmer"
+rotary_potentiometer_1 = 180
+rotary_potentiometer_2 = 40
+rotary_potentiometer_3 = 580
+rotary_potentiometer_4 = 640
+rotary_potentiometer_5 = 140
+rotary_potentiometer_6 = 260
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700

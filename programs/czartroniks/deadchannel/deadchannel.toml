@@ -1,0 +1,150 @@
+# Dead Channel - Program Configuration
+#
+# A decaying analog signal chain in one program:
+#   tape transport damage -> beam misconvergence -> cathode-ray tube.
+# Distilled from cicero/vhstrack (skew, head-switch band, hiss, chroma drift),
+# cicero/chromaticab (radial U/V separation) and cicero/crt (scanlines, RGB
+# triad, vignette, phosphor glow, roll).
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.deadchannel"
+program_name = "Dead Channel"
+program_version = "1.5.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Signal", "Tube", "Glitch"]
+program_type = "processing"
+description = "Dying analog chain: tape flag, random glitch dropouts, hiss, chroma drift, beam misconvergence, CRT grille."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Dropout"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 886
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Hiss"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 755
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Drift"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 403
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Converge"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Glow"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 379
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Tube"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 307
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Grille"
+value_labels = ["Scan", "Triad"]
+initial_value_label = "Scan"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Cast"
+value_labels = ["Cool", "Sick"]
+initial_value_label = "Cool"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Chroma"
+value_labels = ["Rich", "Faded"]
+initial_value_label = "Faded"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Band"
+value_labels = ["Tear", "Flash"]
+initial_value_label = "Tear"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Skew"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Dead Air"
+rotary_potentiometer_1 = 820
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 820
+rotary_potentiometer_4 = 900
+linear_potentiometer_12 = 880
+
+[[preset]]
+name = "Good Tube"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 60
+rotary_potentiometer_4 = 512
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 1
+toggle_switch_9 = 0
+
+[[preset]]
+name = "Head Switch"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 420
+rotary_potentiometer_4 = 200
+toggle_switch_10 = 1
+linear_potentiometer_12 = 300

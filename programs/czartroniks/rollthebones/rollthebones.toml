@@ -1,0 +1,226 @@
+# Roll the Bones — video re-rendered as a full-screen tabletop of six-sided dice.
+#
+# Every "pixel" is a die: a rounded-corner cube face carrying 1..6 drilled pips.
+# The pip count tracks the local video (luma or chroma), so the field of dice
+# reads as a halftone portrait of the incoming picture.  Each die is lit by a
+# movable light — a soft pillow bevel that catches the rounded corners and a
+# tiny specular glint inside every recessed pip — so the dice look cast, not
+# computed.  Selectable dice colours (casino white, blood red, onyx, ivory,
+# jade felt, gold, plus per-die Rainbow and video-driven Spectrum inks); Hue
+# rotates the felt and inks and tints the pips of white/onyx/ivory dice (with
+# Ink=Video, Hue becomes the video colour's saturation, 50% = unchanged).  An
+# auto-level keeps every source (and Chroma mode) spread over all six faces.
+# Gloss runs matte chalk to lacquer, with a white glint along the lit edges.
+# The Tumble fader spills the neat grid into a scattered, tilted, shadow-
+# casting pile — dice tilted up to 45 degrees at full travel.
+#
+# K1 Zoom  K2 Palette  K3 Hue  K4 Light  K5 Gloss  K6 Contrast
+# S7 Source(Luma/Chroma)  S8 Luma Size  S9 Table  S10 Ink  S11 Bypass
+# P12 Tumble
+#
+# Author: czartroniks
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.rollthebones"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Roll the Bones"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pixel", "Pattern", "Color"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Video re-rendered as a lit tabletop of six-sided dice; pip count follows the picture, the fader spills them into a rolled pile."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 303
+display_min_value = 18
+display_max_value = 150
+name_label = "Zoom"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 295
+display_min_value = 1
+display_max_value = 8
+name_label = "Palette"
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 605
+display_min_value = 0
+display_max_value = 360
+name_label = "Hue"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 648
+display_min_value = 0
+display_max_value = 360
+name_label = "Light"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Gloss"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 461
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Source"
+value_labels = ["Luma", "Chroma"]
+initial_value_label = "Luma"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Luma Size"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Table"
+value_labels = ["Felt", "Video"]
+initial_value_label = "Felt"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Ink"
+value_labels = ["Painted", "Video"]
+initial_value_label = "Video"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 582
+display_min_value = 0
+display_max_value = 100
+name_label = "Tumble"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Casino Table"
+rotary_potentiometer_1 = 430      # medium dice
+rotary_potentiometer_2 = 0        # casino white
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 640      # light from top-left
+rotary_potentiometer_5 = 620
+rotary_potentiometer_6 = 470
+toggle_switch_7 = 0               # luma
+toggle_switch_8 = 0
+toggle_switch_9 = 0               # felt table
+toggle_switch_10 = 0              # painted
+toggle_switch_11 = 0
+linear_potentiometer_12 = 180     # gently scattered
+
+[[preset]]
+name = "Spilled Bones"
+rotary_potentiometer_1 = 360
+rotary_potentiometer_2 = 130      # blood red
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 700
+rotary_potentiometer_5 = 780      # glossy
+rotary_potentiometer_6 = 520
+toggle_switch_7 = 0
+toggle_switch_8 = 1               # luma sizes the dice
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023    # full rolled pile
+
+[[preset]]
+name = "Onyx Grid"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 300      # onyx (index 2 = 256..383)
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 600
+rotary_potentiometer_5 = 900      # hard gloss
+rotary_potentiometer_6 = 560
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1               # video table peeks between
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0       # perfectly aligned grid
+
+[[preset]]
+name = "Rainbow Dust"
+rotary_potentiometer_1 = 260
+rotary_potentiometer_2 = 780      # rainbow inks
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 680
+rotary_potentiometer_5 = 640
+rotary_potentiometer_6 = 470
+toggle_switch_7 = 1               # chroma drives pips
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 520
+
+[[preset]]
+name = "Video Dice"
+rotary_potentiometer_1 = 470
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 640
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 440
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1              # die faces tinted by the video
+toggle_switch_11 = 0
+linear_potentiometer_12 = 240

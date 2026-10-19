@@ -1,0 +1,215 @@
+# CASCADE -- concentric circles that push each other.
+# v2.1.5 (2026-10-17): resolution scaling -- ring spacing, SD pixel aspect,
+# interlace field order and the Video wave depth follow the screen height
+# (1080p bit-identical); 720p caps the modelled rings at 100 (line budget).
+# v2.1.2 (2026-10-10, finalized; developed + HW-verified as cascade_diag).
+# BUILD: ROUTER1; shipped seeds HD Analog 1 / HD HDMI 5 / HD Dual 1 / SD 1
+# (HD HDMI video is placement-sensitive -- A/B on hardware after any change).
+# v1.7 = Tier-1 finalization (developed + HW-verified as cascade_diag):
+# studio-range ring luma, blanking gate in both modes, dead smooth-fade path
+# removed, K5/K6 dropped.  BUILD NOTE: HD HDMI video is placement-sensitive --
+# ship router2 HD HDMI seed 2 (see SUMMARY.md), never router1.
+#
+# Move the centre (K1/K2) and the innermost circle leads; each outer ring holds
+# until the one inside reaches it, then is pushed rigidly outward -- the rings
+# cascade one-by-one and NEVER overlap (a band of the other colour always
+# survives between them).  Stop moving and they either glide home to concentric
+# (Catch-Up=Home) or freeze in the dragged nest (Catch-Up=Stay).  Each ring stays
+# a perfect circle; only the gaps change.
+#
+# Controls: K1/K2 Centre X/Y, K3 Period, K4 Gradient (4 settings across the
+# knob: hard black/white, 4 steps, 8 steps, smooth -- every ring carries its
+# own ramp, re-anchored at its true edges so the shading cascades with it),
+# K5 Width (band balance: thin white lines <- classic 50/50 at centre -> thin
+# black lines; exact circles, the cascade still pushes), S7 Glide, S8 Cascade,
+# S9 Moire (XOR the rings with a half-phase copy: doubled rings at rest,
+# moire while the cascade drags), S10 Catch-Up (Stay/Home), S11 Output.
+# P12 Zoom/Wave -- Rings mode: ZOOM, the rings expand from the centre up to
+# x8 on top of K3 Period (off at the bottom).  S11 Video: the rings REFRACT
+# the incoming video and P12 sets the ripple depth (off at the bottom, up to
+# 53 px at the top); colour passes through untouched, circles never drawn.
+# K1/K2 reach ~12% past each screen edge (v1.8; was 2 screens).
+
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.cascade"
+program_version = "2.1.5"
+abi_version = ">=1.0,<2.0"
+program_name = "Cascade"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Illusion", "Optics", "Pattern"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Concentric circles that push each other: move the centre and rings cascade outward one-by-one, never overlapping"
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 475            # HW-captured default (2026-10-10)
+display_min_value = -100
+display_max_value = 100
+name_label = "Center X"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 575            # HW-captured default
+display_min_value = -100
+display_max_value = 100
+name_label = "Center Y"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 764            # HW-captured default (ring density)
+display_min_value = 0
+display_max_value = 100
+name_label = "Period"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 925            # HW-captured: smooth (quarters: hard / 4 / 8 steps / smooth)
+display_min_value = 0
+display_max_value = 100
+name_label = "Gradient"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512            # WIDTH: centre = classic 50/50 bands (deadbanded)
+display_min_value = -100
+display_max_value = 100
+name_label = "Width"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Glide"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Cascade"
+value_labels = ["Uniform", "Cascade"]
+initial_value_label = "Cascade"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Moire"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Catch-Up"
+value_labels = ["Stay", "Home"]
+initial_value_label = "Home"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Output"
+value_labels = ["Rings", "Video"]
+initial_value_label = "Rings"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 610            # HW-captured (Rings: zoom; Video: ripple depth)
+display_min_value = 0
+display_max_value = 100
+name_label = "Zoom/Wave"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Cascade"                # centred rings; move the centre to see them push
+rotary_potentiometer_1 = 512    # Center X (centred)
+rotary_potentiometer_2 = 512    # Center Y (centred)
+rotary_potentiometer_3 = 430    # Period
+rotary_potentiometer_4 = 0      # Gradient: hard
+rotary_potentiometer_5 = 512    # Width: classic
+toggle_switch_7 = 1            # Glide on
+toggle_switch_8 = 1            # Cascade
+toggle_switch_10 = 1          # Catch-Up: Home (glide back concentric)
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Stay Dragged"           # cascade that freezes offset instead of catching up
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 430
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 512    # Width: classic
+toggle_switch_7 = 1            # Glide on
+toggle_switch_8 = 1            # Cascade
+toggle_switch_10 = 0          # Catch-Up: Stay (hold the dragged nest)
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Fine Rings"             # many close rings -> longer cascade chain
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 680    # higher density
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 512    # Width: classic
+toggle_switch_7 = 1
+toggle_switch_8 = 1            # Cascade
+toggle_switch_10 = 1          # Home
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Ripple Glass"           # rings refract the incoming video (S11 Video + Wave)
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 680    # fine rings -> tight ripples
+rotary_potentiometer_4 = 1023   # Gradient: smooth
+rotary_potentiometer_5 = 512    # Width: classic
+toggle_switch_7 = 1            # Glide on
+toggle_switch_8 = 1            # Cascade
+toggle_switch_10 = 1          # Home
+toggle_switch_11 = 1          # Output: Video
+linear_potentiometer_12 = 1023 # Wave: full depth (53 px)
+
+[[preset]]
+name = "Velvet Rings"          # smooth per-ring ramp riding the cascade
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 430
+rotary_potentiometer_4 = 1023   # Gradient: smooth
+rotary_potentiometer_5 = 512    # Width: classic
+toggle_switch_7 = 1
+toggle_switch_8 = 1            # Cascade
+toggle_switch_10 = 1          # Home
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0

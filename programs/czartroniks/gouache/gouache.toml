@@ -1,0 +1,152 @@
+# Gouache - Program Configuration
+#
+# Catalogue combo #48 (seed 20260920): posterization + hue rotation /
+# saturation crush-boost.  See gouache.vhd.
+#
+# v0.2.0 defaults: Dither 25%, Sat 150%, Spread 40% so every switch shows at
+# power-on.  The presets below pin K3/K6 (and keep their v0.1 spin speeds on
+# the new squared P12 curve) so they look as they did in v0.1.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.gouache"
+program_name = "Gouache"
+program_version = "0.2.1"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Material", "Print"]
+program_type = "processing"
+description = "Dithered posterize with hue rotation, rainbow hue steps per luma band or hue sector, and sat crush/boost before or after."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Luma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 305
+display_float_digits = 0
+suffix_label = "b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Chroma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 75
+display_float_digits = 0
+suffix_label = "b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Dither"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 109
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Hue"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 360
+initial_value = 620
+display_float_digits = 0
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Sat"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 400
+initial_value = 853
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Spread"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 268
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Order"
+value_labels = ["Post-Rot", "Rot-Post"]
+initial_value_label = "Post-Rot"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Sat"
+value_labels = ["Before", "After"]
+initial_value_label = "Before"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Bands"
+value_labels = ["Luma", "Hue"]
+initial_value_label = "Luma"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Dither"
+value_labels = ["Bayer", "Noise"]
+initial_value_label = "Noise"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Invert"
+value_labels = ["Off", "Alt"]
+initial_value_label = "Alt"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Spin"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 409
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Rainbow Bands"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_3 = 0
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 700
+linear_potentiometer_12 = 595
+
+[[preset]]
+name = "Crushed Spin"
+rotary_potentiometer_2 = 100
+rotary_potentiometer_3 = 600
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 678
+
+[[preset]]
+name = "Op Art"
+rotary_potentiometer_1 = 350
+rotary_potentiometer_3 = 0
+rotary_potentiometer_5 = 100
+rotary_potentiometer_6 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 512

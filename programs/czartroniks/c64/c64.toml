@@ -1,0 +1,208 @@
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.c64"
+program_version = "2.0.2"
+abi_version = ">=1.0,<2.0"
+program_name = "C64"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Computer", "Pixel", "Color"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Commodore 64 re-render: 16 colours on a native 320x200 grid, multicolour, dither, border, tape loading, READY."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Size"
+value_labels = ["2x", "4x", "C64", "8x", "16x"]
+initial_value_label = "8x"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 296
+display_min_value = 0
+display_max_value = 100
+name_label = "Border"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Border Col"
+value_labels = ["Black", "White", "Red", "Cyan", "Purple", "Green", "Blue", "Yellow", "Orange", "Brown", "Lt Red", "Dk Grey", "Md Grey", "Lt Green", "Lt Blue", "Lt Grey"]
+initial_value_label = "Lt Blue"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 442
+display_min_value = 0
+display_max_value = 100
+name_label = "Scanlines"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 552
+display_min_value = 0
+display_max_value = 100
+name_label = "Color"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 604
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Stability"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Multicolor"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Color Mode"
+value_labels = ["Nearest", "Ramp"]
+initial_value_label = "Nearest"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Loading"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Ready"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 84
+display_min_value = 0
+display_max_value = 100
+name_label = "Dither"
+suffix_label = "%"
+
+# --- Presets (placeholders until captured from the hardware) ---
+
+[[preset]]
+name = "Boot Screen"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 340
+rotary_potentiometer_3 = 928
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Game Art"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 340
+rotary_potentiometer_3 = 32
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 640
+rotary_potentiometer_6 = 600
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Tape Loading"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 340
+rotary_potentiometer_3 = 928
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Demo Ramp"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 200
+rotary_potentiometer_3 = 32
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 600
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Big Pixels"
+rotary_potentiometer_1 = 920
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 928
+rotary_potentiometer_4 = 768
+rotary_potentiometer_5 = 600
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Hi-Res"
+rotary_potentiometer_1 = 100
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 928
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0

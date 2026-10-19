@@ -1,0 +1,138 @@
+# DVD Logo Bouncer
+#
+# Classic bouncing DVD-logo screensaver: up to four 1-bit logos (0.5x-3x of
+# 384x174) drift diagonally across the screen and change palette color on
+# every hit.  A
+# corner hit strobes every logo through the palette.
+
+[program]
+processing_delay_clks = 12
+program_id = "com.czartroniks.dvdlogo"
+program_name = "DVD Logo"
+program_version = "1.0.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pattern", "Game"]
+program_type = "processing"
+description = "Bouncing DVD logo screensaver: colour changes on every bounce, corner hits set off a palette strobe"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Angle"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 372
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Size"
+control_mode = "linear"
+display_min_value = 50
+display_max_value = 300
+initial_value = 277
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Count"
+value_labels = ["1", "2", "3", "4"]
+initial_value_label = "1"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Clr Step"
+value_labels = ["1", "2", "3", "4", "5", "6", "7", "Random"]
+initial_value_label = "1"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Tint"
+control_mode = "steps_8"
+display_min_value = 1
+display_max_value = 8
+initial_value = 101
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Bright"
+control_mode = "linear"
+display_min_value = 25
+display_max_value = 100
+initial_value = 1023
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Color"
+value_labels = ["Mono", "Palette"]
+initial_value_label = "Palette"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Matte"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "BG"
+value_labels = ["Video", "Black"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Pause"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Overlap"
+value_labels = ["Bounce", "Mix"]
+initial_value_label = "Bounce"
+
+# --- Linear Fader (12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Speed"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 728
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Classic DVD"
+
+[[preset]]
+name = "Fast Chaos"
+rotary_potentiometer_4 = 1023
+linear_potentiometer_12 = 900
+
+[[preset]]
+name = "Lone Drifter"
+rotary_potentiometer_3 = 0
+linear_potentiometer_12 = 200
+
+[[preset]]
+name = "Glass Mix"
+toggle_switch_11 = 1
+linear_potentiometer_12 = 560
+
+[[preset]]
+name = "Jumbo"
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_3 = 256
+linear_potentiometer_12 = 560

@@ -1,0 +1,195 @@
+# Glitchscape — "Pixel-Sort Landscape": databend a live source into a dense
+# rectangular mass of vertically-streaked, hyper-saturated jewel-tone color on a
+# flat teal field, with blown-white hot-zones, fine branching white contour
+# filaments, a jagged torn top edge and columns that drip downward.
+#
+# A STREAMING pipeline (no frame buffer) forked from the revenant engine: the
+# bright parts of the source become the colored mass, dark parts fall to the teal
+# sky.  Vertical "sorted" streaks are iso-bars of a luma-bowed height field whose
+# hue is column-locked (each bar a different jewel tone), so the mass reads as a
+# corrupted JPEG / pixel-sorted mountain range melting into colored rain.
+
+[program]
+processing_delay_clks = 28
+program_id = "com.czartroniks.glitchscape"
+program_version = "1.0.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Glitchscape"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Pattern", "Glitch"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Pixel-sort landscape: live source databent into vertical jewel-tone streaks on teal, with hot-zones, white filaments and drips."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 702
+display_min_value = 0
+display_max_value = 100
+name_label = "Mass Key"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 843
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 829
+display_min_value = 0
+display_max_value = 400
+name_label = "Saturation"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Palette"
+value_labels = ["Jewel", "Neon", "Vaporwave", "Inferno", "Toxic", "Glacier", "Candy", "Mono"]
+initial_value_label = "Jewel"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Line Spacing"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1016
+display_min_value = 0
+display_max_value = 100
+name_label = "Filaments"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Channel Sep"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Hot Zones"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Drips"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Compress"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Sort Axis"
+value_labels = ["Vertical", "Horizontal"]
+initial_value_label = "Horizontal"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 659
+display_min_value = 0
+display_max_value = 100
+name_label = "Glitch Intensity"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Teal Meltdown"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 360
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 640
+rotary_potentiometer_6 = 460
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Clean Streaks"
+rotary_potentiometer_1 = 360
+rotary_potentiometer_2 = 240
+rotary_potentiometer_3 = 420
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 260
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 220
+
+[[preset]]
+name = "Neon Overload"
+rotary_potentiometer_1 = 240
+rotary_potentiometer_2 = 520
+rotary_potentiometer_3 = 820
+rotary_potentiometer_4 = 192
+rotary_potentiometer_5 = 820
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 950
+
+[[preset]]
+name = "Vaporwave Drift"
+rotary_potentiometer_1 = 320
+rotary_potentiometer_2 = 320
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 320
+rotary_potentiometer_5 = 420
+rotary_potentiometer_6 = 380
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 520

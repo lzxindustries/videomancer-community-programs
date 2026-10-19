@@ -1,0 +1,186 @@
+# SPDX-License-Identifier: GPL-3.0-only
+#
+# Bajaweave Program Configuration
+# Two FM-modulated vertical-stripe oscillators (DWO3+BAJA+FKG3 emulation).
+
+[program]
+processing_delay_clks = 0
+program_id = "com.czartroniks.bajaweave"
+program_name = "Bajaweave"
+program_version = "1.0.4"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Synthesis", "Pattern"]
+program_type = "synthesis"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Two swaying line oscillators woven together in saturated complementary colour: sway, smooth flow, outlines, drop shadow."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Osc1 Bars"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 134
+display_min_value = 5
+display_max_value = 125
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Osc1 Wave"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 351
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Color"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 360
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Osc2 Bars"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 113
+display_min_value = 5
+display_max_value = 125
+suffix_label = ""
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Osc2 Wave"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 285
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Sway"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 693
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# --- Toggle Switches ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Layering"
+value_labels = ["Woven", "Stacked"]
+initial_value_label = "Woven"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Edges"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Depth"
+value_labels = ["Flat", "Shadow"]
+initial_value_label = "Shadow"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Flow"
+value_labels = ["Opposite", "Same"]
+initial_value_label = "Opposite"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Shape"
+value_labels = ["Sine", "Triangle"]
+initial_value_label = "Sine"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Speed"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 599
+display_min_value = -100
+display_max_value = 100
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Default Weave"
+rotary_potentiometer_1 = 134
+rotary_potentiometer_2 = 351
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 113
+rotary_potentiometer_5 = 285
+rotary_potentiometer_6 = 693
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 599
+
+[[preset]]
+name = "Slow Drift"
+rotary_potentiometer_1 = 128
+rotary_potentiometer_2 = 96
+rotary_potentiometer_3 = 200
+rotary_potentiometer_4 = 192
+rotary_potentiometer_5 = 128
+rotary_potentiometer_6 = 180
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 528
+
+[[preset]]
+name = "Frantic Stripes"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_2 = 800
+rotary_potentiometer_3 = 800
+rotary_potentiometer_4 = 600
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 900
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 64
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# seeds 1-5 each hung nextpnr's router1 (a rip-up livelock) on v1.0.0-v1.0.3;
+# v1.0.4 removed the duplicate-input LUTs behind it, and seeds 1 and 6 both
+# build all 8. Seed 6: own HD timing 99.9/104.5/111.0 MHz Analog/HDMI/Dual.
+seed = 6

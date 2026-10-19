@@ -1,0 +1,225 @@
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.pulp"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Pulp"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Render", "Pattern", "Color"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "1965 newsprint press: rotated CMYK halftone screens, dot gain, misregistration, comic panels and bubbles. Press runs it."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 8
+display_max_value = 96
+name_label = "Screen"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 256
+display_min_value = 0
+display_max_value = 100
+name_label = "Shape"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 797
+display_min_value = 0
+display_max_value = 100
+name_label = "Ink"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 101
+display_min_value = 0
+display_max_value = 100
+name_label = "Paper"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 508
+display_min_value = 0
+display_max_value = 100
+name_label = "Linework"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Register"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Color"
+value_labels = ["B&W", "CMYK"]
+initial_value_label = "CMYK"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Posterize"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Panels"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Bubbles"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Spot"
+value_labels = ["Off", "Red"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 412
+display_min_value = 0
+display_max_value = 100
+name_label = "Press"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Daily News"
+rotary_potentiometer_1 = 723
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 480
+rotary_potentiometer_4 = 620
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 200
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 560
+
+[[preset]]
+name = "Sunday Funnies"
+rotary_potentiometer_1 = 723
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 500
+rotary_potentiometer_4 = 560
+rotary_potentiometer_5 = 520
+rotary_potentiometer_6 = 180
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 560
+
+[[preset]]
+name = "Morgue Copy"
+rotary_potentiometer_1 = 603
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 880
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 420
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 560
+
+[[preset]]
+name = "Etching Desk"
+rotary_potentiometer_1 = 650
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 640
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 560
+
+[[preset]]
+name = "Pop Art"
+rotary_potentiometer_1 = 330
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 380
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 280
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Misprint Comic"
+rotary_potentiometer_1 = 368
+rotary_potentiometer_2 = 873
+rotary_potentiometer_3 = 260
+rotary_potentiometer_4 = 133
+rotary_potentiometer_5 = 193
+rotary_potentiometer_6 = 858
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 252
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# seeds 1-6 each hung nextpnr's router1 (a rip-up livelock) in at least one
+# config, or (seed 3) missed own HD timing on HD HDMI; seed 7 builds all 8.
+# v1.0.3 (resolution scaling): seed 7 still builds all 8, own HD timing
+# 78.1/84.0/81.6 MHz Analog/HDMI/Dual.
+seed = 7

@@ -1,0 +1,144 @@
+# Tearcut - Program Configuration
+#
+# Three catalogue effects (seed 20260926, #115): datamosh / block
+# displacement, scanline shear / tearing and edge detect.  Two knobs each;
+# switches and slider set the interaction.  See tearcut.vhd.
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.tearcut"
+program_name = "Tearcut"
+program_version = "0.2.3"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Glitch", "Stylize"]
+program_type = "processing"
+description = "Edge-detected line drawing torn per band or waved, with moshed blocks, inked over paper or the untorn picture."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Gain"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 1023
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Thresh"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 101
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Block"
+value_labels = ["8 px", "16 px", "32 px", "64 px"]
+initial_value_label = "8 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Density"
+control_mode = "linear"
+display_min_value = 5
+display_max_value = 98
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Tear"
+control_mode = "linear"
+display_min_value = 8
+display_max_value = 518
+initial_value = 288
+display_float_digits = 0
+suffix_label = " px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Bands"
+value_labels = ["2 ln", "4 ln", "8 ln", "16 ln"]
+initial_value_label = "8 ln"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Edges"
+value_labels = ["White", "Tinted"]
+initial_value_label = "White"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Tear"
+value_labels = ["Random", "Wave"]
+initial_value_label = "Random"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Blocks"
+value_labels = ["Plain", "Negative"]
+initial_value_label = "Plain"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Mosh"
+value_labels = ["Shift", "Hold"]
+initial_value_label = "Shift"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Ink"
+value_labels = ["Light", "Dark"]
+initial_value_label = "Light"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Blend"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 158
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Torn Ink"
+rotary_potentiometer_1 = 900
+rotary_potentiometer_2 = 300
+rotary_potentiometer_4 = 100
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 800
+toggle_switch_11 = 1
+linear_potentiometer_12 = 200
+
+[[preset]]
+name = "Wavy Neon"
+rotary_potentiometer_1 = 700
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 600
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 1000
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Held Blocks"
+rotary_potentiometer_3 = 1000
+rotary_potentiometer_4 = 800
+rotary_potentiometer_5 = 150
+toggle_switch_10 = 1
+linear_potentiometer_12 = 800

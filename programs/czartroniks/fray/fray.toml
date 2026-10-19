@@ -1,0 +1,160 @@
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.fray"
+program_version = "0.4.5"
+abi_version = ">=1.0,<2.0"
+program_name = "Fray"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Edges", "Glitch"]
+core = "yuv444_30b"
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+description = "Scanlines fray into filaments to the right of every edge. P12 length, K1 pattern, K3 colour, K5 bundle, K6 density."
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Pattern"
+value_labels = ["Dash", "Morse", "Comet", "Beads", "Sparks", "Bits", "Stutter", "Fray"]
+initial_value_label = "Morse"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Thresh"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 210
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Colour"
+value_labels = ["Hold", "Glow", "Negative", "White", "Rainbow", "Polarity", "Heat", "Tint"]
+initial_value_label = "Glow"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Period"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 856
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Bundle"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 418
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Density"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 326
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Ground"
+value_labels = ["Black", "Video"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Motion"
+value_labels = ["Frozen", "Boil"]
+initial_value_label = "Frozen"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Trigger"
+value_labels = ["Both", "Falling"]
+initial_value_label = "Both"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Retrig"
+value_labels = ["Restart", "Hold"]
+initial_value_label = "Restart"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Negative"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Length"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 277
+suffix_label = "%"
+
+[[preset]]
+name = "Pixel Stretch"
+rotary_potentiometer_1 = 877
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 847
+rotary_potentiometer_5 = 128
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 900
+
+[[preset]]
+name = "Data Burst"
+rotary_potentiometer_1 = 731
+rotary_potentiometer_2 = 320
+rotary_potentiometer_3 = 1023
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Ember Trails"
+rotary_potentiometer_1 = 292
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 877
+rotary_potentiometer_4 = 561
+rotary_potentiometer_5 = 384
+rotary_potentiometer_6 = 800
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 640
+
+[[preset]]
+name = "Etching"
+rotary_potentiometer_1 = 1023
+rotary_potentiometer_2 = 192
+rotary_potentiometer_3 = 438
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 640
+rotary_potentiometer_6 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 700

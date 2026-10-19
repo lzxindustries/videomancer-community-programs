@@ -1,0 +1,149 @@
+# Benday - Program Configuration
+#
+# Two catalogue effects (seed 20260917): chromatic glitch / datamosh bars
+# and ASCII / dither-art / halftone.  Three knobs each; switches and
+# slider set the interaction.  See benday.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.benday"
+program_name = "Benday"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Print", "Glitch"]
+program_type = "processing"
+description = "Halftone print (dot, line, diamond or square screens) torn by hashed bands that shift, recolour or print the picture negative."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Cell"
+value_labels = ["4 px", "8 px", "16 px", "32 px"]
+initial_value_label = "16 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Dot Gain"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 200
+initial_value = 624
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Screen"
+value_labels = ["Dot", "Line", "Diamond", "Square"]
+initial_value_label = "Dot"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Height"
+value_labels = ["8 ln", "16 ln", "32 ln", "64 ln"]
+initial_value_label = "64 ln"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Shift"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 503
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Rate"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 840
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Ink"
+value_labels = ["Dark", "Light"]
+initial_value_label = "Dark"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Colour"
+value_labels = ["Mono", "Colour"]
+initial_value_label = "Colour"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Mosh"
+value_labels = ["Picture", "Screen"]
+initial_value_label = "Picture"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Band FX"
+value_labels = ["Colour", "Negative"]
+initial_value_label = "Negative"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Band Fill"
+value_labels = ["Halftone", "Flat"]
+initial_value_label = "Halftone"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Density"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+# Labelled rotaries take raw positions here (4 labels: 128 / 384 / 640 / 896).
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Newsprint"
+rotary_potentiometer_1 = 384
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 128
+rotary_potentiometer_5 = 200
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Torn Comic"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 512
+rotary_potentiometer_4 = 128
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 500
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 500
+
+[[preset]]
+name = "Line Screen"
+rotary_potentiometer_1 = 640
+rotary_potentiometer_3 = 384
+rotary_potentiometer_5 = 300
+toggle_switch_7 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 800
+
+[[preset]]
+name = "Pop Dots"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 450
+rotary_potentiometer_4 = 640
+toggle_switch_8 = 1
+linear_potentiometer_12 = 150

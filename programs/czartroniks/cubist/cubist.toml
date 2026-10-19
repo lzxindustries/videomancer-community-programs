@@ -1,0 +1,151 @@
+# Cubist — a glossy Rubik's cube that turns its own layers.
+#
+# v0.5.6: resolution scaling -- interlace from the timing ID (SD cube was
+# twice as tall), SD pixel-aspect x correction.
+# v0.5.3: slight fixed bevel on the outline corners (the 7% K4 setting);
+# padding-only pixels dropped at the silhouette (no slivers).
+# v0.5.1: crisp outline corners (faces meet at the true vertex); matte
+# stickers (K4 free).
+# v0.4.4: flat grey backdrop (timing headroom).
+# v0.4.3: S7 Run off = solved; S11 swaps the gradient backdrop for the
+# incoming video.
+# v0.4.2: K6 sets the cube's size (body diagonal 50-90% of the height).
+# v0.4: K4 sets the sticker sheen; K5 puts the incoming video on the
+# stickers of one colour (or all of them).
+#
+# v0.3: random quarter turns of the six faces (a slice turns fully before the
+# next is picked; the stickers really move), eased like a hand turn.  Knobs
+# 1-3 set the orientation; S8-S10 spin it on each axis; the slider sets how
+# fast the layers turn.  S7 off holds the cube solved.
+#
+# Author: czartroniks
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.cubist"
+program_version = "0.5.6"
+abi_version = ">=1.0,<2.0"
+program_name = "Cubist"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Pattern", "Render"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "A glossy Rubik's cube that turns its own layers at random. Knobs set the angle, switches spin it, slider sets turn speed."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 880
+display_min_value = 0
+display_max_value = 360
+name_label = "Yaw"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 68
+display_min_value = 0
+display_max_value = 360
+name_label = "Pitch"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 360
+name_label = "Roll"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Video"
+value_labels = ["Off", "White", "Yellow", "Red", "Orange", "Green", "Blue", "All"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 972
+display_min_value = 50
+display_max_value = 90
+name_label = "Size"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Run"
+value_labels = ["Solved", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Auto Yaw"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Auto Pitch"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Auto Roll"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Background"
+value_labels = ["Grey", "Video"]
+initial_value_label = "Grey"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 400
+display_min_value = 0
+display_max_value = 100
+name_label = "Turn Speed"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Hero"
+rotary_potentiometer_1 = 880
+rotary_potentiometer_2 = 68
+rotary_potentiometer_3 = 0
+rotary_potentiometer_6 = 972
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Corner"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 94
+rotary_potentiometer_3 = 0
+rotary_potentiometer_6 = 972
+linear_potentiometer_12 = 400

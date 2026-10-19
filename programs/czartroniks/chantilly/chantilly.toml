@@ -1,0 +1,229 @@
+# CHANTILLY -- black-lace halftone: incoming video as cream circles on black.
+#
+# The frame is cut into horizontal lace bands; each band owns a row of scallop
+# centres and every pixel is taken to polar coordinates about its nearest
+# centre (CORDIC).  Dots sit on concentric arcs -- 6*ring dots per ring, so
+# the packing is geometric but never a grid.  Dot size follows the input luma
+# (analog halftone): bright video = fat merging cream dots, dark = pinpricks.
+# Four band textures cycle: pebble rows, spiderweb fans, dense seed packing,
+# rosette blooms.  The fans' outer radius is painted black -- a scalloped
+# cordonnet that cusps at the fan seams -- and strong vertical edges in the
+# video become black ink strokes that cut down through the circles.
+#
+# v0.3: dot sizes read a 2-D blurred luma (rounder dots), ink sees horizontal
+# edges too, K3 Flow spins the fans as it scrolls, S9 Colour tints the dots
+# with the source colour, and Ghost works on the White ground.
+#
+# v1.0.2: the lace keeps its size relative to screen height at 720p and SD
+# (per-mode steps from the video timing ID; round on a 4:3 SD screen).
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.chantilly"
+program_version = "1.0.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Chantilly"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Craft", "Pattern", "Print"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Black-lace halftone: video as cream dot fans, rosettes and pebble rows, cut by a scalloped cordonnet and video-edge ink"
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0            # dot-size floor: CCW = dots vanish in black
+display_min_value = 0
+display_max_value = 100
+name_label = "Fill"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 369            # luma -> dot-size slope
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 180            # detent = still; scroll + spin (odd bands counter-rotate)
+display_min_value = -100
+display_max_value = 100
+name_label = "Flow"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0            # video-edge ink amount; bottom detent = no ink
+display_min_value = 0
+display_max_value = 100
+name_label = "Ink"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 454            # cordonnet border weight
+display_min_value = 0
+display_max_value = 100
+name_label = "Border"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0            # detent = radial dots; CW/CCW = phyllotaxis shear
+display_min_value = -100
+display_max_value = 100
+name_label = "Twist"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Tint"
+value_labels = ["Mono", "Ivory"]
+initial_value_label = "Ivory"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Ground"
+value_labels = ["Black", "White"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Colour"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Weave"
+value_labels = ["Doily", "Pebble"]
+initial_value_label = "Doily"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Ghost"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 165            # lace scale, +-1.75 octaves (exp); up = bigger lace
+display_min_value = 0
+display_max_value = 100
+name_label = "Scale"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Black Lace"             # the reference image: full doily on black
+rotary_potentiometer_1 = 220
+rotary_potentiometer_2 = 240
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 600
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1             # Ivory
+toggle_switch_8 = 0             # Black ground
+toggle_switch_9 = 0             # Colour off
+toggle_switch_10 = 0            # Doily weave
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "White Lace"             # black net on white -- the photo's light bands
+rotary_potentiometer_1 = 220
+rotary_potentiometer_2 = 240
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 600
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0             # Mono
+toggle_switch_8 = 1             # White ground
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Fine Mesh"              # zoomed-out dense veil, thin borders, drifting
+rotary_potentiometer_1 = 180
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 560
+rotary_potentiometer_4 = 500
+rotary_potentiometer_5 = 160
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1            # Pebble weave (calm)
+toggle_switch_11 = 0
+linear_potentiometer_12 = 220
+
+[[preset]]
+name = "Bold Doily"             # zoomed-in fat dots over ghosted video
+rotary_potentiometer_1 = 320
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 700
+rotary_potentiometer_5 = 420
+rotary_potentiometer_6 = 640
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1            # Ghost on
+linear_potentiometer_12 = 760
+
+[[preset]]
+name = "Video Lace"             # dots carry the source colour, slow spin
+rotary_potentiometer_1 = 260
+rotary_potentiometer_2 = 280
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 450
+rotary_potentiometer_5 = 260
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0             # Mono (pure source colour)
+toggle_switch_8 = 0
+toggle_switch_9 = 1             # Colour on
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 600
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# v1.0.2 (resolution scaling) crashes nextpnr's router on seed 6; seed 1 builds
+# all 8 (own HD timing 84.8/85.8/87.6 MHz Analog/HDMI/Dual).
+seed = 1

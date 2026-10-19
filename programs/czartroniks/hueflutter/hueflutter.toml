@@ -1,0 +1,162 @@
+# Hueflutter - Program Configuration
+#
+# Three catalogue effects (seed 20260925, #111): hue rotation / saturation,
+# magnetic warp (wobble) and ordered dithering.  Two knobs each; switches and
+# slider set the interaction.  See hueflutter.vhd and SUMMARY.md.
+# v0.2.0: Spin is squared (P12 600 -> 596, 800 -> 656, 200 -> 361 keep the
+# v0.1 speeds); preset depths moved off the zone boundaries (hysteresis).
+# v0.2.3: resolution scaling -- wobble amplitude and wavelength follow the
+# screen height at 720p and SD (1080p unchanged).
+
+[program]
+processing_delay_clks = 32
+program_id = "com.czartroniks.hueflutter"
+program_name = "Hueflutter"
+program_version = "0.2.3"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Warp", "Pixel"]
+program_type = "processing"
+description = "Luma-band wobble of a hue-spun, saturation-scaled picture, posterized with a 2x2 dither; hue can ride the wobble phase."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Wobble"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 255
+initial_value = 766
+display_float_digits = 0
+suffix_label = " px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Waves"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 23
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Hue"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 360
+initial_value = 348
+display_float_digits = 0
+suffix_label = "°"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Sat"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 400
+initial_value = 460
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Luma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 145
+display_float_digits = 0
+suffix_label = " b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Chroma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 448
+display_float_digits = 0
+suffix_label = " b"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Bands"
+value_labels = ["Phase", "Amp"]
+initial_value_label = "Phase"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Order"
+value_labels = ["Dither In", "Dither Out"]
+initial_value_label = "Dither Out"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Chroma"
+value_labels = ["With", "Quarter"]
+initial_value_label = "Quarter"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Hue"
+value_labels = ["Static", "Ripple"]
+initial_value_label = "Ripple"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Quant"
+value_labels = ["Plain", "Dither"]
+initial_value_label = "Dither"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Spin"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 481
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Rainbow Jelly"
+rotary_potentiometer_1 = 900
+rotary_potentiometer_2 = 150
+rotary_potentiometer_4 = 400
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 1023
+toggle_switch_10 = 1
+linear_potentiometer_12 = 656
+
+[[preset]]
+name = "Grey Static"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_2 = 900
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 192
+toggle_switch_8 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Posterwave"
+rotary_potentiometer_1 = 350
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 350
+rotary_potentiometer_5 = 320
+rotary_potentiometer_6 = 192
+toggle_switch_7 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 361
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# seed 1 stalled nextpnr's router1 on SD Dual; seed 3 builds all 8.
+seed = 3

@@ -1,0 +1,150 @@
+# Flutter - Program Configuration
+#
+# Catalogue combo #60 (seed 20260921): magnetic warp (wobble)
+# + posterization.  See flutter.vhd and SUMMARY.md.
+# v0.2.0: Speed is squared (K3 600 -> 584 and 700 -> 611 keep the v0.1
+# speeds); S8 Order (dead without dither) is now Wave Smooth / Snap.
+# v0.2.3: resolution scaling -- wobble amplitude and wavelength follow the
+# screen height at 720p and SD (1080p unchanged).
+
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.flutter"
+program_name = "Flutter"
+program_version = "0.2.3"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Distortion", "Retro", "Colorizer"]
+program_type = "processing"
+description = "Sine wobble where each posterized luma band slides with its own phase or amplitude; 2-D ripple on the slider, chroma fringes."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Wobble"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 255
+initial_value = 431
+display_float_digits = 0
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Waves"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 71
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Speed"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 330
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Luma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 448
+display_float_digits = 0
+suffix_label = "b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Chroma"
+control_mode = "linear"
+display_min_value = 1
+display_max_value = 8
+initial_value = 468
+display_float_digits = 0
+suffix_label = "b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Spread"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 639
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Bands"
+value_labels = ["Phase", "Amp"]
+initial_value_label = "Phase"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Wave"
+value_labels = ["Smooth", "Snap"]
+initial_value_label = "Snap"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Chroma"
+value_labels = ["Together", "Quarter"]
+initial_value_label = "Quarter"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Edges"
+value_labels = ["Fill", "Mirror"]
+initial_value_label = "Mirror"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Dither"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Twist"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 429
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Band Slide"
+rotary_potentiometer_1 = 500
+rotary_potentiometer_4 = 200
+rotary_potentiometer_6 = 1023
+toggle_switch_10 = 1
+
+[[preset]]
+name = "Ripple Fringe"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 611
+toggle_switch_9 = 1
+linear_potentiometer_12 = 600
+
+[[preset]]
+name = "Amp Steps"
+rotary_potentiometer_1 = 800
+rotary_potentiometer_4 = 100
+rotary_potentiometer_5 = 100
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 200

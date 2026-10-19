@@ -1,0 +1,135 @@
+# Oubliette
+#
+# A top-down, turn-based roguelike for the Videomancer.  Pick a class, explore
+# procedurally generated dungeon levels, fight monsters, loot treasure, descend.
+# Driven entirely by the front panel: one Switch-7 flip = one turn.
+
+[program]
+processing_delay_clks = 12
+program_id = "com.czartroniks.oubliette"
+program_name = "Oubliette"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Game", "Pattern"]
+program_type = "processing"
+description = "Turn-based roguelike: pick a class, explore, fight, find potions and slay the dragon on depth 7. One Switch-7 flip = one turn."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Class"
+value_labels = ["Warrior", "Mage", "Rogue", "Cleric"]
+initial_value_label = "Warrior"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Seed"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Action"
+value_labels = ["Attack", "Defend", "Cast", "Item", "Flee"]
+initial_value_label = "Attack"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Zoom"
+value_labels = ["Far", "Wide", "Normal", "Close"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Torch"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 448
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Palette"
+value_labels = ["Colour", "Game Boy", "Amber", "CGA", "C64"]
+initial_value_label = "Colour"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Step/Act"
+value_labels = ["A", "B"]
+initial_value_label = "A"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Map"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Potion"
+value_labels = ["A", "B"]
+initial_value_label = "A"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Peaceful"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "New Game"
+value_labels = ["Run", "New"]
+initial_value_label = "Run"
+
+# --- Linear Fader (12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Heading"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 512
+
+# --- Presets ---
+# One per class.  K1 is labelled: preset values are raw 0-1023 positions, so
+# each sits mid-zone (Warrior 0-255, Mage 256-511, Rogue 512-767, Cleric
+# 768-1023).  Each class gets its own dungeon seed.  Flip S7 to begin.
+
+[[preset]]
+name = "Warrior"
+rotary_potentiometer_1 = 128
+rotary_potentiometer_2 = 512
+
+[[preset]]
+name = "Mage"
+rotary_potentiometer_1 = 384
+rotary_potentiometer_2 = 300
+
+[[preset]]
+name = "Rogue"
+rotary_potentiometer_1 = 640
+rotary_potentiometer_2 = 700
+
+[[preset]]
+name = "Cleric"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 900
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# v1.0.3 (resolution scaling): seed 1 misses 74.25 MHz on the program's own HD
+# paths (73.4 MHz Analog/HDMI); seed 2 builds all 8 and closes all three HD
+# configs (own HD timing 78.5/74.5/74.9 MHz Analog/HDMI/Dual).
+seed = 2

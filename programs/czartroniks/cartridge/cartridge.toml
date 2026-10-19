@@ -1,0 +1,144 @@
+# Cartridge v0.2.0 - catalogue combo #15: cel shading + palette quantization.  See cartridge.vhd.
+# v0.2.2: resolution scaling -- K3 Width ink weight follows the screen height at 720p
+# and SD (labels are px at 1080p; 1080p unchanged); SD dithers on all 4 Bayer rows.
+
+[program]
+processing_delay_clks = 36
+program_id = "com.czartroniks.cartridge"
+program_name = "Cartridge"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Computer", "Print", "Edges"]
+program_type = "processing"
+description = "Cel shading over 8 retro palettes, Gameboy to Pico-8: ink outlines, luma bands, Bayer dither, inking slider."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Edge"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 25
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Levels"
+value_labels = ["Off", "10 bands", "8 bands", "6 bands", "5 bands", "4 bands", "3 bands", "2 bands"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Width"
+value_labels = ["1 px", "2 px", "4 px", "8 px"]
+initial_value_label = "1 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Palette"
+value_labels = ["Gameboy", "Virtual Boy", "CGA", "ZX Spectrum", "Apple II", "C64", "EGA", "Pico-8"]
+initial_value_label = "Gameboy"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Dither"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 774
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Range"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 400
+initial_value = 515
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Ink"
+value_labels = ["Black", "Tinted"]
+initial_value_label = "Tinted"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Order"
+value_labels = ["Bands First", "Palette First"]
+initial_value_label = "Bands First"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Edges"
+value_labels = ["Ink", "Original"]
+initial_value_label = "Ink"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Luma"
+value_labels = ["Palette", "Cel"]
+initial_value_label = "Cel"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Inking"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Handheld"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_4 = 64
+rotary_potentiometer_5 = 600
+toggle_switch_7 = 1
+
+[[preset]]
+name = "Comic Strip"
+rotary_potentiometer_1 = 90
+rotary_potentiometer_2 = 700
+rotary_potentiometer_4 = 832
+toggle_switch_8 = 1
+linear_potentiometer_12 = 500
+
+[[preset]]
+name = "Colour Ink"
+rotary_potentiometer_4 = 704
+rotary_potentiometer_6 = 400
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 300
+
+[[preset]]
+name = "Red Goggles"
+rotary_potentiometer_2 = 832
+rotary_potentiometer_4 = 192
+rotary_potentiometer_5 = 400
+toggle_switch_7 = 1
+
+[[preset]]
+name = "Fantasy"
+rotary_potentiometer_2 = 576
+rotary_potentiometer_4 = 960
+rotary_potentiometer_5 = 350

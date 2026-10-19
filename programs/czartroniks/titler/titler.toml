@@ -1,0 +1,208 @@
+# Titler Program Configuration
+#
+# Lo-res video character generator in the style of 1980s/90s hardware
+# titlers: editable text over video, eight edge/box styles, screen-relative
+# placement and size, and a news-ticker Crawl on the slider.
+
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.titler"
+program_name = "Titler"
+program_version = "2.2.3"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Text"]
+program_type = "processing"
+description = "Lo-res 80s/90s character generator: 2x16 editable text, 8 edge styles, news-ticker crawl"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+# Position knobs are screen-relative: 0% puts the text centre on the left /
+# top edge of the ACTIVE picture, 100% on the right / bottom edge, in every
+# video mode. 50% is dead centre.
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "H Position"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 498
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "V Position"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 405
+display_float_digits = 0
+suffix_label = "%"
+
+# The classic character-generator "style" button. The first five are edge
+# treatments on the letterforms; the last three drop a panel behind the whole
+# text block.
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Style"
+value_labels = [
+    "Plain", "Drop Shadow", "Black Edge", "Hollow",
+    "Emboss", "Box", "Half Box", "Reverse",
+]
+initial_value_label = "Black Edge"
+
+# Knob 4 is dual-purpose. With Edit Mode OFF it picks one of 8 preset text
+# colors (the latched value persists when Edit Mode is enabled). With Edit
+# Mode ON it becomes an Erase-and-scroll knob: its position drags the editing
+# cursor along all 32 cells, and every cell the cursor lands on is blanked.
+# Knob 5 still works for moving the cursor without erasing.
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Color/Erase"
+value_labels = [
+    "White", "Red", "Orange", "Yellow",
+    "Green", "Cyan", "Blue", "Magenta",
+]
+initial_value_label = "Yellow"
+
+# Knob 5 is dual-purpose too, the same way. With Edit Mode OFF it is Size:
+# screen-relative, 0% is small caption type, 100% is hero type about eight
+# characters wide across the picture, with the same travel in HD, 720p and
+# SD. With Edit Mode ON it walks the editing cursor over the 32 cells
+# (top 5 bits: line, column). Leaving Edit Mode keeps the size you had; it
+# only follows the knob again once the knob is actually turned.
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Size/Cursor"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 711
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Letter"
+control_mode = "steps_64"
+display_min_value = 0
+display_max_value = 63
+initial_value = 1023
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Edit Mode"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Background"
+value_labels = ["Video", "Black"]
+initial_value_label = "Video"
+
+# Matte mode: when ON, the text glyph pixels reveal the incoming video
+# instead of the selected text color. Combined with a black background this
+# produces video-filled letterforms on black; combined with the video
+# background it makes the text disappear (the whole frame is the input).
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Matte"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# Font picker: Default is the original lo-fi 5x7 face, Sci-Fi is a chunkier
+# Bank-Gothic-style alternative with squared-off curves and digital numerals.
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Font"
+value_labels = ["Default", "Sci-Fi"]
+initial_value_label = "Default"
+
+# Justify: Centre trims trailing spaces on each line (rescanned every field)
+# and centres what is left in the 16-cell field, so a short word sits on the
+# H Position point instead of hanging off to the left of it.
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Justify"
+value_labels = ["Left", "Center"]
+initial_value_label = "Left"
+
+# Crawl is a bipolar news-ticker scroll: centre holds the text still (with a
+# small deadband), above centre it crawls left, below centre right, faster
+# toward either end. The text leaves one side completely before it re-enters
+# the other; H Position sets where it rests.
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Crawl"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 81
+display_float_digits = 0
+suffix_label = "%"
+
+[[preset]]
+name = "Lower Third"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 780
+rotary_potentiometer_3 = 800
+rotary_potentiometer_4 = 0
+toggle_switch_11 = 1
+rotary_potentiometer_5 = 330
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "News Bar"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 830
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 0
+toggle_switch_11 = 1
+rotary_potentiometer_5 = 300
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Hero Card"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 448
+toggle_switch_8 = 1
+toggle_switch_11 = 1
+rotary_potentiometer_5 = 900
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Video Fill"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 300
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_11 = 1
+rotary_potentiometer_5 = 850
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Sci-Fi Emboss"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 580
+rotary_potentiometer_4 = 640
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+rotary_potentiometer_5 = 600
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Ticker"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 830
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 300
+toggle_switch_11 = 1
+linear_potentiometer_12 = 740

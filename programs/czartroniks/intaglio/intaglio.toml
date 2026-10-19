@@ -1,0 +1,188 @@
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.intaglio"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Intaglio"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Print", "Render", "Edges"]
+core = "yuv444_30b"
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+description = "The picture, engraved: form-following hatch strokes, crosshatched shadows, contour ink, clean paper. Bite sets the acid depth."
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 384
+display_min_value = 0
+display_max_value = 100
+name_label = "Pitch"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 256
+display_min_value = 0
+display_max_value = 180
+name_label = "Angle"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512
+display_min_value = 0
+display_max_value = 100
+name_label = "Ink"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Palette"
+value_labels = ["Copper", "Sepia", "Sanguine", "Prussian", "Banknote", "Iron Gall", "Gold", "Blueprint"]
+initial_value_label = "Copper"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Hand"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512
+display_min_value = 0
+display_max_value = 100
+name_label = "Style"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Invert"
+value_labels = ["Paper", "Scratchboard"]
+initial_value_label = "Paper"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Wash"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Contour"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Cross"
+value_labels = ["90 deg", "45 deg"]
+initial_value_label = "90 deg"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Drift"
+value_labels = ["Locked", "Live"]
+initial_value_label = "Locked"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 560
+display_min_value = 0
+display_max_value = 100
+name_label = "Bite"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Copperplate"
+rotary_potentiometer_1 = 384
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 64
+rotary_potentiometer_5 = 128
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 560
+
+[[preset]]
+name = "Scratchboard"
+rotary_potentiometer_1 = 256
+rotary_potentiometer_2 = 400
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 64
+rotary_potentiometer_5 = 256
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 640
+
+[[preset]]
+name = "Woodcut Poster"
+rotary_potentiometer_1 = 640
+rotary_potentiometer_2 = 128
+rotary_potentiometer_3 = 768
+rotary_potentiometer_4 = 192
+rotary_potentiometer_5 = 384
+rotary_potentiometer_6 = 900
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Mezzotint"
+rotary_potentiometer_1 = 384
+rotary_potentiometer_2 = 256
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 704
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 100
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 640
+
+[firmware]
+# nextpnr placement seed for the stock LZX build: seed 1 places the HD Analog build ~1 MHz short;
+# seed 3 builds all 8 configs.
+seed = 3

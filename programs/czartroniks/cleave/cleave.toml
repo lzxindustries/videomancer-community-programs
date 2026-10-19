@@ -1,0 +1,198 @@
+# Cleave — dark/light split re-texturizer.  The picture is posterized into 8
+# luma levels and cleaved into dark and light territory; dark areas are redrawn
+# as serrated thermal scan-bands (white/black bars 3x the width of the color
+# stripes), light areas as TV static whose density follows the source.  The
+# Flip fader rotates the assignment: mid-travel bands the luma extremes and
+# statics the midtones (solarized), full travel is the exact inversion.  A
+# black outline traces the boundary between the two textures.
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.cleave"
+program_version = "0.10.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Cleave"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Pattern", "Glitch"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Dark/light cleave: darks become serrated thermal bands, lights TV static, black outline between; fader flips the worlds."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+# K1-K3 shape the DARK texture (thermal bands), K4-K6 the LIGHT one (static).
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 632
+display_min_value = 0
+display_max_value = 100
+name_label = "Band Size"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 899
+display_min_value = 0
+display_max_value = 100
+name_label = "Wave"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 796
+display_min_value = -100
+display_max_value = 100
+name_label = "Drift"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Static Size"
+value_labels = ["Fine", "Medium", "Coarse", "Chunky"]
+initial_value_label = "Coarse"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 337
+display_min_value = 0
+display_max_value = 100
+name_label = "Boil Rate"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 408
+display_min_value = 0
+display_max_value = 100
+name_label = "Fringe"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Patchwork"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Contrast"
+value_labels = ["Normal", "Boost"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Outline"
+value_labels = ["Thin", "Thick"]
+initial_value_label = "Thick"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Bands"
+value_labels = ["Horizontal", "Vertical"]
+initial_value_label = "Vertical"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Grain"
+value_labels = ["Still", "Boil"]
+initial_value_label = "Boil"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 364
+display_min_value = 0
+display_max_value = 100
+name_label = "Flip"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Thermal Scan"
+rotary_potentiometer_1 = 213
+rotary_potentiometer_2 = 560
+rotary_potentiometer_3 = 632
+rotary_potentiometer_4 = 100
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 620
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Solar Split"
+rotary_potentiometer_1 = 95
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 282
+rotary_potentiometer_4 = 520
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 800
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Still Negative"
+rotary_potentiometer_1 = 149
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 592
+rotary_potentiometer_4 = 100
+rotary_potentiometer_5 = 520
+rotary_potentiometer_6 = 200
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Vertical Rain"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 460
+rotary_potentiometer_3 = 852
+rotary_potentiometer_4 = 800
+rotary_potentiometer_5 = 880
+rotary_potentiometer_6 = 1023
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 300
+
+[firmware]
+# nextpnr placement seed for the stock LZX build: with v0.10.2 seed 1 stalls router1 on SD HDMI
+# and seed 2 stalls on HD HDMI; seed 3 builds all 8 configs.
+seed = 3

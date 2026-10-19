@@ -1,0 +1,162 @@
+# Screenprint - Program Configuration
+#
+# Catalogue combo #77 (seed 20260922): halftone + multi-source mixing.
+# v0.2.0 = finalizing pass; see screenprint.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.screenprint"
+program_name = "Screenprint"
+program_version = "0.2.4"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Stylize", "Mixer", "Retro"]
+program_type = "processing"
+description = "Halftone screens at any size and angle, inked in colour and blended into the picture. P12 grows the dots to pop art."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Angle"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 90
+initial_value = 657
+display_float_digits = 0
+suffix_label = "°"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Mix"
+control_mode = "linear"
+display_min_value = 12
+display_max_value = 100
+initial_value = 990
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Dot"
+value_labels = ["Circle", "Diamond", "Square", "Line"]
+initial_value_label = "Circle"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Blend"
+value_labels = ["Add", "Screen", "Multiply", "Difference", "Hard Light", "Overlay"]
+initial_value_label = "Add"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Ink"
+value_labels = ["Black", "Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Magenta"]
+initial_value_label = "Green"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Gain"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 461
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Register"
+value_labels = ["Tight", "Loose"]
+initial_value_label = "Loose"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Spin"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Colour"
+value_labels = ["Picture", "Ink"]
+initial_value_label = "Picture"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Rosette"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Size"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 220
+display_float_digits = 0
+suffix_label = "%"
+
+# Hand-written placeholders (v0.1 looks remapped + new ones) -- capture
+# real ones from the device once the look settles.
+# Zone centres: Dot 128/384/640/896; Blend 85/256/427/597/768/939;
+# Ink Black 64, Red 192, Orange 320, Yellow 448, Green 576, Cyan 704,
+# Blue 832, Magenta 960.  Size: 8 px = 192, 16 px = 384, 24 px = 495,
+# 40 px = 638, 160 px = 1023.
+
+[[preset]]
+name = "Newsprint"
+rotary_potentiometer_4 = 768
+toggle_switch_11 = 1
+linear_potentiometer_12 = 112
+
+[[preset]]
+name = "Pop Print"
+rotary_potentiometer_4 = 427
+rotary_potentiometer_5 = 192
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 495
+
+[[preset]]
+name = "Screen Burn"
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 256
+rotary_potentiometer_6 = 800
+toggle_switch_8 = 1
+
+[[preset]]
+name = "Line Overlay"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_3 = 896
+rotary_potentiometer_4 = 939
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Off Register"
+rotary_potentiometer_6 = 400
+toggle_switch_7 = 1
+linear_potentiometer_12 = 384
+
+[[preset]]
+name = "Pop Art"
+rotary_potentiometer_4 = 768
+rotary_potentiometer_5 = 960
+toggle_switch_10 = 1
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Spin Rosette"
+rotary_potentiometer_1 = 300
+toggle_switch_9 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 300

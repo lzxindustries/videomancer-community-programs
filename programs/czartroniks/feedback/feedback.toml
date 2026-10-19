@@ -1,0 +1,222 @@
+# Feedback — a digital camera-at-the-monitor loop.  Last frame's output is
+# averaged into a coarse store (128x64 luma, 64x32 chroma, two banks) and
+# read back through a per-pixel zoom / rotate / drift transform with
+# bilinear interpolation, so echoes are smooth at full resolution.  Live
+# video is keyed / mixed / added / lightened over the echoes, and each
+# generation passes through gain (folding above unity), hue rotation,
+# crisp contrast and negative before it goes back into the store.
+
+[program]
+processing_delay_clks = 12
+program_id = "com.czartroniks.feedback"
+program_version = "0.1.4"
+abi_version = ">=1.0,<2.0"
+program_name = "Feedback"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Temporal", "Warp", "Mirror"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Video feedback loop: zoom/rotate/drift tunnels, hue cycling, key/mix/add/lighten, fold overdrive, mirror, negative."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 330
+display_min_value = -100
+display_max_value = 100
+name_label = "Zoom"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 560
+display_min_value = -100
+display_max_value = 100
+name_label = "Rotate"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 600
+display_min_value = -100
+display_max_value = 100
+name_label = "Hue"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512
+display_min_value = -100
+display_max_value = 100
+name_label = "Drift"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 512
+display_min_value = 0
+display_max_value = 100
+name_label = "Live"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Blend"
+value_labels = ["Key", "Mix", "Add", "Lighten"]
+initial_value_label = "Key"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Edges"
+value_labels = ["Black", "Wrap"]
+initial_value_label = "Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Mirror"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Pixels"
+value_labels = ["Smooth", "Blocks"]
+initial_value_label = "Smooth"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Negative"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Crisp"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 650
+display_min_value = 0
+display_max_value = 100
+name_label = "Feedback"
+suffix_label = "%"
+
+# --- Presets (placeholders until captured from hardware) ---
+
+[[preset]]
+name = "Tunnel"
+rotary_potentiometer_1 = 330
+rotary_potentiometer_2 = 560
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 650
+
+[[preset]]
+name = "Mandala"
+rotary_potentiometer_1 = 420
+rotary_potentiometer_2 = 860
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 560
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Smoke Trails"
+rotary_potentiometer_1 = 512
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 720
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 690
+
+[[preset]]
+name = "Negative Rings"
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 512
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 600
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 760
+
+[[preset]]
+name = "Overdrive"
+rotary_potentiometer_1 = 380
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 640
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 340
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 960
+
+[[preset]]
+name = "Fairlight"
+rotary_potentiometer_1 = 640
+rotary_potentiometer_2 = 470
+rotary_potentiometer_3 = 720
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 560
+rotary_potentiometer_6 = 700
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 700

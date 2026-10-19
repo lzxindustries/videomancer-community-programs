@@ -1,0 +1,127 @@
+# Outliner - catalogue combo #13: 2-D edge detect + split-screen + invert.  See outliner.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 28
+program_id = "com.czartroniks.outliner"
+program_name = "Outliner"
+program_version = "0.2.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Edges", "Mask", "Color"]
+program_type = "processing"
+description = "Edge lines on one side of a seam or in strips, a negative or bit-plane on the other; the slider sweeps the seam."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Threshold"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 103
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Kernel"
+value_labels = ["Roberts", "Sobel", "Wide", "DoG"]
+initial_value_label = "Sobel"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Seam"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 434
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Panes"
+value_labels = ["Split", "2 strips", "4 strips", "8 strips"]
+initial_value_label = "8 strips"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Plane"
+value_labels = ["Negative", "Bit 8", "Bit 7", "Bit 6", "Bit 5", "Bit 4", "Bit 3", "Bit 2"]
+initial_value_label = "Bit 4"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Mix"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 278
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Edges"
+value_labels = ["On Black", "Over"]
+initial_value_label = "On Black"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Invert Side"
+value_labels = ["Edge Side", "Other Side"]
+initial_value_label = "Other Side"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Lines"
+value_labels = ["One Side", "Both"]
+initial_value_label = "One Side"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Invert"
+value_labels = ["Area", "Edges Only"]
+initial_value_label = "Area"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Line Colour"
+value_labels = ["White", "Source"]
+initial_value_label = "White"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Sweep"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Blueprint"
+rotary_potentiometer_1 = 240
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 0
+toggle_switch_11 = 1
+
+[[preset]]
+name = "Strip Negative"
+rotary_potentiometer_4 = 700
+rotary_potentiometer_6 = 1000
+toggle_switch_7 = 1
+toggle_switch_9 = 1
+
+[[preset]]
+name = "Bit Sweep"
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 800
+toggle_switch_10 = 1
+linear_potentiometer_12 = 500

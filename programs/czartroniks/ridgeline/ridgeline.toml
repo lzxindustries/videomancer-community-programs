@@ -1,0 +1,141 @@
+# Ridgeline - Program Configuration
+#
+# Catalogue combo #98 (seed 20260924): Perlin-style displacement + edge
+# detect.  See ridgeline.vhd and SUMMARY.md.
+
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.ridgeline"
+program_name = "Ridgeline"
+program_version = "0.2.3"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Stylize", "Distortion", "Generative"]
+program_type = "processing"
+description = "Drifting sine-noise displacement with Roberts or gradient edges inked over the warped picture or on paper; edges can push."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Amount"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 904
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Scale"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Speed"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 490
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Gain"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 502
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Edges"
+value_labels = ["Roberts", "Horizontal", "Vertical", "Sobel"]
+initial_value_label = "Sobel"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Ink"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 66
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Ground"
+value_labels = ["Picture", "Paper"]
+initial_value_label = "Picture"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Order"
+value_labels = ["Warp-Edge", "Edge-Warp"]
+initial_value_label = "Warp-Edge"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Chroma"
+value_labels = ["Follow", "Own"]
+initial_value_label = "Own"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Push"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Octaves"
+value_labels = ["One", "Two"]
+initial_value_label = "One"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Rows"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 110
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "White Ridges"
+rotary_potentiometer_4 = 900
+rotary_potentiometer_6 = 1023
+toggle_switch_7 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 250
+
+[[preset]]
+name = "Pushed Lines"
+rotary_potentiometer_1 = 224
+rotary_potentiometer_5 = 896
+toggle_switch_8 = 1
+toggle_switch_10 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Colour Ripple"
+rotary_potentiometer_1 = 500
+rotary_potentiometer_2 = 318
+rotary_potentiometer_4 = 200
+toggle_switch_9 = 1
+linear_potentiometer_12 = 318

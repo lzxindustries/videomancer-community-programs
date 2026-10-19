@@ -1,0 +1,230 @@
+# VideoSky — the picture cut into a copper line-screen.
+#
+# Lifted out of Penrose's "Video Sky" switch, which engraved the incoming video
+# into the sky behind the impossible staircase: horizontal rules whose thickness
+# tracked the luma. Here that kernel gets continuous pitch and angle, a waver,
+# a crosshatch, six print schemes -- and Relief on the slider, which lets the
+# luma bow the rules around the image instead of merely fattening them.
+
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.videosky"
+program_version = "1.0.2"
+abi_version = ">=1.0,<2.0"
+program_name = "VideoSky"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Print", "Render", "Edges"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "The picture cut into a copper line-screen: rules that fatten with the shadows and bow around the light. Relief raises the plate"
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 517
+display_min_value = 0
+display_max_value = 100
+name_label = "Ink"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 534
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 343
+display_min_value = 0
+display_max_value = 100
+name_label = "Pitch"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 376
+display_min_value = 0
+display_max_value = 360
+name_label = "Angle"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 618
+display_min_value = 0
+display_max_value = 100
+name_label = "Waver"
+suffix_label = "%"
+
+# Enum knob: the config binary stores the LABEL INDEX and the firmware scales it
+# onto the 10-bit register, so index i arrives as i*1023/5 -- 0, 204, 409, 613,
+# 818, 1023 -- landing inside the bands the VHDL decodes. A numeric
+# initial_value is rejected by the validator when value_labels are present.
+# Sim caveat: lzx-vhdl-cli resolves initial_value_label for TOGGLES only and
+# feeds pots a bare 512, which lands on Night -- pass
+# --set rotary_potentiometer_6=0 to sim the intended default.
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Scheme"
+value_labels = ["Parchment", "Gallery", "Night", "Blueprint", "Cyanotype", "Copper"]
+initial_value_label = "Parchment"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Cross"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Tint"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Width"
+value_labels = ["Fixed", "Modulated"]
+initial_value_label = "Modulated"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Drift"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 864
+display_min_value = 0
+display_max_value = 100
+name_label = "Relief"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Penrose Sky"          # the original effect, verbatim: flat horizontal rules
+rotary_potentiometer_1 = 512  # Ink
+rotary_potentiometer_2 = 256  # Contrast
+rotary_potentiometer_3 = 480  # Pitch (8 px, Penrose's)
+rotary_potentiometer_4 = 0    # Angle (horizontal)
+rotary_potentiometer_5 = 0    # Waver
+rotary_potentiometer_6 = 0    # Parchment
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1          # modulated
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0   # Relief flat
+
+[[preset]]
+name = "Bank Note"            # constant-weight rules, shaped purely by relief
+rotary_potentiometer_1 = 560
+rotary_potentiometer_2 = 420
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 0
+rotary_potentiometer_6 = 1023 # Copper
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0          # fixed width
+toggle_switch_11 = 0
+linear_potentiometer_12 = 620 # Relief
+
+[[preset]]
+name = "Copper Plate"         # crosshatched shadow, plate at 45 degrees
+rotary_potentiometer_1 = 480
+rotary_potentiometer_2 = 300
+rotary_potentiometer_3 = 460
+rotary_potentiometer_4 = 128  # 45 deg
+rotary_potentiometer_5 = 180
+rotary_potentiometer_6 = 0    # Parchment
+toggle_switch_7 = 1           # cross
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 180
+
+[[preset]]
+name = "Cyanotype"            # white rules bitten into prussian blue
+rotary_potentiometer_1 = 540
+rotary_potentiometer_2 = 500
+rotary_potentiometer_3 = 380
+rotary_potentiometer_4 = 256  # 90 deg (vertical)
+rotary_potentiometer_5 = 240
+rotary_potentiometer_6 = 818  # Cyanotype
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Woodcut"             # coarse, hand-cut wander, heavy ink
+rotary_potentiometer_1 = 660
+rotary_potentiometer_2 = 620
+rotary_potentiometer_3 = 180  # broad pitch
+rotary_potentiometer_4 = 900
+rotary_potentiometer_5 = 700  # heavy waver
+rotary_potentiometer_6 = 204  # Gallery
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 260
+
+[[preset]]
+name = "Topography"          # the climax: fine rules, full relief, drifting
+rotary_potentiometer_1 = 500
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 620
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 90
+rotary_potentiometer_6 = 613  # Blueprint
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0          # fixed width -- relief is the only shaper
+toggle_switch_11 = 1          # drift
+linear_potentiometer_12 = 1023

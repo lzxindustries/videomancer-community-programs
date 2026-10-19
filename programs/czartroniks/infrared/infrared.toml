@@ -1,0 +1,160 @@
+# Infrared - catalogue combo #10: keystone + thermal-camera false colour.  See infrared.vhd.
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.infrared"
+program_name = "Infrared"
+program_version = "1.0.1"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Camera", "Analysis"]
+program_type = "processing"
+description = "Keystone meets thermal camera: 8 false-colour palettes with isotherms, row drift and a Heat slider that pushes or cycles."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Keystone"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 989
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Skew"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 513
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Zoom"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 490
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Palette"
+value_labels = ["Thermal", "Ironbow", "Plasma", "Rainbow", "Ice", "Night Vision", "White Hot", "X-Ray"]
+initial_value_label = "Thermal"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Range"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 400
+initial_value = 466
+display_float_digits = 0
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Offset"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 519
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Rows"
+value_labels = ["Flat", "Drift"]
+initial_value_label = "Drift"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Iso"
+value_labels = ["Off", "Lines"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Cycle"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Luma"
+value_labels = ["Palette", "Original"]
+initial_value_label = "Original"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Ramp"
+value_labels = ["Normal", "Invert"]
+initial_value_label = "Normal"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Heat"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 10
+display_float_digits = 1
+suffix_label = "%"
+
+# Palette knob positions (zone = value >> 7): Thermal 64, Ironbow 192,
+# Plasma 320, Rainbow 448, Ice 576, Night Vision 704, White Hot 832, X-Ray 960.
+# Defaults: hardware capture of 12 Oct (commit 544a9bf) carried into v1.0.0
+# (K6 539 -> 519 for the 4x Offset range; Pins = Mirror + Heat 1% was v0.1's
+# frozen wrap mode, now Cycle = On).  Presets hand-written for v1.0.0.
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Heat Map"
+rotary_potentiometer_5 = 400
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+linear_potentiometer_12 = 400
+
+[[preset]]
+name = "Cold Wall"
+rotary_potentiometer_1 = 800
+rotary_potentiometer_4 = 576
+toggle_switch_7 = 1
+
+[[preset]]
+name = "X-Ray Tilt"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_2 = 700
+rotary_potentiometer_4 = 960
+toggle_switch_10 = 1
+
+[[preset]]
+name = "Ironbow Burn"
+rotary_potentiometer_4 = 192
+toggle_switch_8 = 1
+linear_potentiometer_12 = 700
+
+[[preset]]
+name = "Night Scope"
+rotary_potentiometer_3 = 440
+rotary_potentiometer_4 = 704
+rotary_potentiometer_5 = 320
+toggle_switch_7 = 1
+
+[[preset]]
+name = "Rainbow Spin"
+rotary_potentiometer_1 = 620
+rotary_potentiometer_4 = 448
+toggle_switch_9 = 1
+linear_potentiometer_12 = 640

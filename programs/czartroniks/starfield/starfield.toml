@@ -1,0 +1,207 @@
+[program]
+processing_delay_clks = 20
+program_id = "com.czartroniks.starfield"
+program_version = "3.1.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Starfield"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Render", "Pattern", "Screen"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Glowing parallax starfield: 4 star shapes, twinkle, fading population, 8 palettes, nebula, luma mode, video overlay."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Layers"
+value_labels = ["1", "2", "3", "4", "5", "6", "7", "8"]
+initial_value_label = "6"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Density"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Brightness"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Palette"
+value_labels = ["Silver", "Candle", "Twilight", "Neon", "Ember", "Honey", "Rainbow", "B&W"]
+initial_value_label = "Silver"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 409
+display_min_value = 0
+display_max_value = 100
+name_label = "Glow"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Depth"
+value_labels = ["1", "2", "3", "4", "5", "6", "7", "Max"]
+initial_value_label = "4"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Direction"
+value_labels = ["Left", "Right"]
+initial_value_label = "Right"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Video"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Luma Mode"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Background"
+value_labels = ["Off", "Deep Space"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Gate"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 469
+display_min_value = 0
+display_max_value = 100
+name_label = "Speed"
+suffix_label = "%"
+
+# --- Presets ---
+# Hand-remapped from v3.0 (old P12 brightness -> K3, old K3 speed -> the
+# same px/frame on the new P12 curve, palettes onto the new set).
+# Recapture on hardware with ./capture_preset.sh.
+
+[[preset]]
+name = "Night Sky"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 350
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 128
+rotary_potentiometer_5 = 256
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 352
+
+[[preset]]
+name = "Deep Field"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 700
+rotary_potentiometer_3 = 800
+rotary_potentiometer_4 = 768
+rotary_potentiometer_5 = 600
+rotary_potentiometer_6 = 896
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 140
+
+[[preset]]
+name = "Hyperspace"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 1023
+rotary_potentiometer_4 = 384
+rotary_potentiometer_5 = 128
+rotary_potentiometer_6 = 640
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Nebula"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 800
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 512
+rotary_potentiometer_5 = 900
+rotary_potentiometer_6 = 768
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 268
+
+[[preset]]
+name = "Crystal Night"
+rotary_potentiometer_1 = 384
+rotary_potentiometer_2 = 250
+rotary_potentiometer_3 = 1023
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 200
+rotary_potentiometer_6 = 512
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 532
+
+[[preset]]
+name = "Deep Drift"
+rotary_potentiometer_1 = 896
+rotary_potentiometer_2 = 180
+rotary_potentiometer_3 = 850
+rotary_potentiometer_4 = 256
+rotary_potentiometer_5 = 800
+rotary_potentiometer_6 = 640
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 140

@@ -1,0 +1,230 @@
+# Pipedream — a woven Truchet network of glossy 3D pipes.
+#
+# Every cell holds two quarter-circle elbows or an over/under crossing, so
+# every pipe is a continuous closed loop: no dead ends, no tees.  Weave sets
+# how many crossings (pure loops -> basket weave), Rings closes the elbows into
+# chain-mail rings, and Image (P12) lets the input's luma set the pipe
+# thickness per pixel, so the picture is drawn by the weave itself.  Gloss or
+# Chrome finish; Flow pulses circulate along each loop.
+#
+# Author: czartroniks
+
+[program]
+processing_delay_clks = 16
+program_id = "com.czartroniks.pipedream"
+program_version = "3.3.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Pipedream"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Tube", "Render", "Pattern"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "A woven Truchet network of glossy 3D pipes; the input's luma swells or thins the pipes."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 217
+display_min_value = 32
+display_max_value = 158
+name_label = "Scale"
+suffix_label = "px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 591
+display_min_value = 0
+display_max_value = 100
+name_label = "Weave"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 703
+display_min_value = 0
+display_max_value = 100
+name_label = "Fatness"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 743
+display_min_value = 0
+display_max_value = 100
+name_label = "Flow"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "polar_degs_360"
+min_value = 0
+max_value = 1023
+initial_value = 460
+display_min_value = 0
+display_max_value = 360
+name_label = "Hue"
+suffix_label = "deg"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 584
+display_min_value = 0
+display_max_value = 100
+name_label = "Spread"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Pattern"
+value_labels = ["Random", "Rings"]
+initial_value_label = "Random"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Finish"
+value_labels = ["Gloss", "Chrome"]
+initial_value_label = "Chrome"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Morph"
+value_labels = ["Static", "Reshuffle"]
+initial_value_label = "Static"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Light"
+value_labels = ["Fixed", "Spin"]
+initial_value_label = "Fixed"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Image"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = -100
+display_max_value = 100
+name_label = "Image"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Truchet"   # pure looping Truchet
+rotary_potentiometer_1 = 420
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 700
+rotary_potentiometer_4 = 300
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 400
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Basket Weave"   # all crossings, over/under
+rotary_potentiometer_1 = 300
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_3 = 900
+rotary_potentiometer_4 = 200
+rotary_potentiometer_5 = 90
+rotary_potentiometer_6 = 150
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Chain Mail"   # rings + crossings, chrome
+rotary_potentiometer_1 = 260
+rotary_potentiometer_2 = 420
+rotary_potentiometer_3 = 760
+rotary_potentiometer_4 = 250
+rotary_potentiometer_5 = 600
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 512
+
+[[preset]]
+name = "Portrait"   # bright grows the pipes
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 250
+rotary_potentiometer_3 = 1023
+rotary_potentiometer_4 = 150
+rotary_potentiometer_5 = 512
+rotary_potentiometer_6 = 500
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Negative"   # bright thins fat pipes
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 250
+rotary_potentiometer_3 = 1023
+rotary_potentiometer_4 = 150
+rotary_potentiometer_5 = 200
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 0
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 0
+
+[[preset]]
+name = "Neon Circuit"   # racing light, swell wave
+rotary_potentiometer_1 = 140
+rotary_potentiometer_2 = 600
+rotary_potentiometer_3 = 600
+rotary_potentiometer_4 = 1023
+rotary_potentiometer_5 = 300
+rotary_potentiometer_6 = 900
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 800

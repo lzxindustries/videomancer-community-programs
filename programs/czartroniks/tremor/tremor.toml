@@ -1,0 +1,162 @@
+# Tremor - Program Configuration
+#
+# Three catalogue effects (seed 20260915): Perlin-style displacement,
+# scanline shear and duotone.  Two knobs each; switches and slider set the
+# interaction.  See tremor.vhd.
+#
+# v0.2.0: Scale is log (4..512 px, 64 steps per octave), Amount is glided
+# with a squared curve up to a quarter of the width.  The v0.1 defaults and
+# presets were translated to keep their cell sizes and amplitudes.
+# v0.3.0: Drift is two-way about the knob centre (right = rises, as v0.1's
+# drift did; presets translated to the same speeds); the field boils as it
+# drifts (lattice rows slide sideways at random speeds); Scale zooms about
+# the centre; S9 Shade lifts alternate bands; the top quarter of Amount adds
+# the quake.
+
+[program]
+processing_delay_clks = 32
+program_id = "com.czartroniks.tremor"
+program_name = "Tremor"
+program_version = "0.3.2"
+abi_version = ">=1.0,<2.0"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Glitch", "Colorizer", "Distortion"]
+program_type = "processing"
+description = "Value-noise warp, sawtooth scanline shear and a two-tone palette: noise warps or grains, bands lean and flip tones."
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Scale"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 4
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Drift"
+control_mode = "linear"
+display_min_value = -100
+display_max_value = 100
+initial_value = 407
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Skew"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 0
+display_float_digits = 1
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Period"
+control_mode = "linear"
+display_min_value = 2
+display_max_value = 257
+initial_value = 773
+display_float_digits = 0
+suffix_label = " ln"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Hue"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 360
+initial_value = 187
+display_float_digits = 0
+suffix_label = "°"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Spread"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 180
+initial_value = 795
+display_float_digits = 0
+suffix_label = "°"
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Noise"
+value_labels = ["Warp", "Grain"]
+initial_value_label = "Warp"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Shear"
+value_labels = ["Saw", "Tri"]
+initial_value_label = "Saw"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Bands"
+value_labels = ["Shade", "Flip"]
+initial_value_label = "Flip"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Field"
+value_labels = ["Smooth", "Blocky"]
+initial_value_label = "Smooth"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Tone"
+value_labels = ["Luma", "Noise"]
+initial_value_label = "Luma"
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Amount"
+control_mode = "linear"
+display_min_value = 0
+display_max_value = 100
+initial_value = 467
+display_float_digits = 1
+suffix_label = "%"
+
+[[preset]]
+name = "Default"
+
+[[preset]]
+name = "Heat Haze"
+rotary_potentiometer_1 = 586
+rotary_potentiometer_2 = 712
+rotary_potentiometer_3 = 0
+rotary_potentiometer_5 = 40
+rotary_potentiometer_6 = 700
+linear_potentiometer_12 = 351
+
+[[preset]]
+name = "Venetian"
+rotary_potentiometer_1 = 147
+rotary_potentiometer_3 = 500
+rotary_potentiometer_4 = 60
+rotary_potentiometer_5 = 600
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+linear_potentiometer_12 = 206
+
+[[preset]]
+name = "Noise Print"
+rotary_potentiometer_1 = 732
+rotary_potentiometer_2 = 636
+rotary_potentiometer_3 = 200
+rotary_potentiometer_4 = 900
+rotary_potentiometer_5 = 850
+toggle_switch_7 = 1
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 590

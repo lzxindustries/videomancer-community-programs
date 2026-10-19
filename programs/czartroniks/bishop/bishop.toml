@@ -1,0 +1,245 @@
+[program]
+processing_delay_clks = 8
+program_id = "com.czartroniks.bishop"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Bishop"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Render", "Shape", "Demo", "Computer"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Wireframe head. P12 grows the head to fill the screen. K1 mouth, K2 weight, K3 palette, K4 expression, K5 noise, K6 position."
+
+# --- Rotary Potentiometers (K1-K6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Mouth"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+name_label = "Line Weight"
+value_labels = ["1 px", "3 px", "5 px", "7 px"]
+initial_value_label = "3 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+name_label = "Palette"
+value_labels = ["Green", "Amber", "Cyan", "Red", "White", "Magenta", "Yellow", "Blue"]
+initial_value_label = "Red"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Expression"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Noise"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 118
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Position"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 491
+display_min_value = -100
+display_max_value = 100
+suffix_label = "%"
+
+# --- Toggle Switches (7-11) ---
+# T7 = Fill (eyes/brows/mouth solid).  T8 = Eyes blink.  Mouth is the K1 knob.
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Fill"
+value_labels = ["Outline", "Solid"]
+initial_value_label = "Outline"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Eyes"
+value_labels = ["Closed", "Open"]
+initial_value_label = "Open"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Noise"
+value_labels = ["Smooth", "Streaks"]
+initial_value_label = "Streaks"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Background"
+value_labels = ["Black", "Video"]
+initial_value_label = "Black"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+name_label = "Head Size"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 907
+display_min_value = 0
+display_max_value = 100
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Neutral"
+rotary_potentiometer_1   = 1023  # Mouth = open (neutral)
+rotary_potentiometer_2   = 384   # Line Weight = 3 px
+rotary_potentiometer_3   = 0     # Palette = Green
+rotary_potentiometer_4   = 0     # Expression = Neutral
+rotary_potentiometer_5   = 0     # Noise = off
+rotary_potentiometer_6   = 512   # Position = centre
+toggle_switch_7          = 0     # Fill = Outline
+toggle_switch_8          = 1     # Eyes = Open
+toggle_switch_9          = 0     # Noise = Smooth
+toggle_switch_10         = 0     # Invert = Off
+toggle_switch_11         = 0     # Background = Black
+linear_potentiometer_12  = 0     # Head Size
+
+[[preset]]
+name = "Happy"
+rotary_potentiometer_1   = 1023
+rotary_potentiometer_2   = 384
+rotary_potentiometer_3   = 256   # Palette = Amber
+rotary_potentiometer_4   = 256   # Expression = Happy
+rotary_potentiometer_5   = 0
+rotary_potentiometer_6   = 512
+toggle_switch_7          = 0
+toggle_switch_8          = 1
+toggle_switch_9          = 0
+toggle_switch_10         = 0
+toggle_switch_11         = 0
+linear_potentiometer_12  = 640
+
+[[preset]]
+name = "Angry"
+rotary_potentiometer_1   = 1023
+rotary_potentiometer_2   = 640   # Line Weight = 5 px
+rotary_potentiometer_3   = 384   # Palette = Red
+rotary_potentiometer_4   = 768   # Expression = Angry
+rotary_potentiometer_5   = 0
+rotary_potentiometer_6   = 512
+toggle_switch_7          = 0
+toggle_switch_8          = 1
+toggle_switch_9          = 0
+toggle_switch_10         = 0
+toggle_switch_11         = 0
+linear_potentiometer_12  = 0
+
+[[preset]]
+name = "Surprised"
+rotary_potentiometer_1   = 1023
+rotary_potentiometer_2   = 640
+rotary_potentiometer_3   = 128   # Palette = Cyan
+rotary_potentiometer_4   = 896   # Expression = Surprised
+rotary_potentiometer_5   = 0
+rotary_potentiometer_6   = 512
+toggle_switch_7          = 0
+toggle_switch_8          = 1
+toggle_switch_9          = 0
+toggle_switch_10         = 0
+toggle_switch_11         = 0
+linear_potentiometer_12  = 640
+
+[[preset]]
+name = "Solid Fill"
+rotary_potentiometer_1   = 1023
+rotary_potentiometer_2   = 384
+rotary_potentiometer_3   = 640   # Palette = Magenta
+rotary_potentiometer_4   = 256   # Expression = Happy
+rotary_potentiometer_5   = 0
+rotary_potentiometer_6   = 512
+toggle_switch_7          = 1     # Fill = Solid
+toggle_switch_8          = 1
+toggle_switch_9          = 0
+toggle_switch_10         = 0
+toggle_switch_11         = 0
+linear_potentiometer_12  = 512
+
+[[preset]]
+name = "Static"
+rotary_potentiometer_1   = 1023
+rotary_potentiometer_2   = 128   # Line Weight = 1 px
+rotary_potentiometer_3   = 0     # Palette = Green
+rotary_potentiometer_4   = 0
+rotary_potentiometer_5   = 768   # Noise = 75%
+rotary_potentiometer_6   = 512
+toggle_switch_7          = 0
+toggle_switch_8          = 1
+toggle_switch_9          = 1     # Noise = Streaks
+toggle_switch_10         = 0
+toggle_switch_11         = 0
+linear_potentiometer_12  = 256
+
+[[preset]]
+name = "Big Head"
+rotary_potentiometer_1   = 1023
+rotary_potentiometer_2   = 640   # Line Weight = 5 px
+rotary_potentiometer_3   = 256   # Palette = Amber
+rotary_potentiometer_4   = 0
+rotary_potentiometer_5   = 0
+rotary_potentiometer_6   = 512
+toggle_switch_7          = 0
+toggle_switch_8          = 1
+toggle_switch_9          = 0
+toggle_switch_10         = 0
+toggle_switch_11         = 0
+linear_potentiometer_12  = 1023  # Head Size = max
+
+[[preset]]
+name = "Video Ink"
+rotary_potentiometer_1   = 1023
+rotary_potentiometer_2   = 640   # Line Weight = 5 px
+rotary_potentiometer_3   = 512   # Palette = White
+rotary_potentiometer_4   = 0
+rotary_potentiometer_5   = 0
+rotary_potentiometer_6   = 768   # Position = right of centre
+toggle_switch_7          = 1     # Fill = Solid
+toggle_switch_8          = 1
+toggle_switch_9          = 0
+toggle_switch_10         = 1     # Invert = On (black ink)
+toggle_switch_11         = 1     # Background = Video
+linear_potentiometer_12  = 384
+
+[firmware]
+# nextpnr placement seed for the stock LZX build (one seed, all 8 configs):
+# v1.0.3 (resolution scaling): seed 3 crashes nextpnr's router; seed 1 builds
+# all 8 (own HD timing 82.7/86.3/76.6 MHz Analog/HDMI/Dual).
+seed = 1

@@ -1,0 +1,182 @@
+# Revenant — "Ghost in the Signal": analog luma-contour glitch.
+#
+# Re-draws a live source as a degrading analog signal: bright parts of the figure
+# are redrawn by swarms of thin electric contour lines that hug the volume, dark
+# parts fall into true black, the eyes blow out into a solid icy fill, and the whole
+# image frays / fringes / jitters under the P12 master "signal decay" fader.
+# Streaming pixel pipeline (no frame buffer) forked from the triangulator engine.
+
+[program]
+processing_delay_clks = 28
+program_id = "com.czartroniks.revenant"
+program_version = "1.0.3"
+abi_version = ">=1.0,<2.0"
+program_name = "Revenant"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Color", "Pattern", "Glitch"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Ghost in the Signal: luma-driven electric contour redraw with analog signal-decay glitch."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 432
+display_min_value = 0
+display_max_value = 100
+name_label = "Luma Key"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 107
+display_min_value = 0
+display_max_value = 100
+name_label = "Line Density"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 350
+display_min_value = 0
+display_max_value = 100
+name_label = "Contrast"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+name_label = "Hue Rotate"
+value_labels = ["Violet", "Cyan", "Amber", "Green"]
+initial_value_label = "Cyan"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 531
+display_min_value = 0
+display_max_value = 100
+name_label = "Drift Speed"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 0
+display_min_value = 0
+display_max_value = 100
+name_label = "Eye Glow"
+suffix_label = "%"
+
+# --- Toggle Switches (7-11, binary) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Warp"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Chroma Sep"
+value_labels = ["Off", "On"]
+initial_value_label = "On"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Motion"
+value_labels = ["Smooth", "Glitch"]
+initial_value_label = "Smooth"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Bypass"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+# --- Linear Potentiometer (Fader 12) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 856
+display_min_value = 0
+display_max_value = 100
+name_label = "Signal Decay"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Clean Portrait"
+rotary_potentiometer_1 = 280
+rotary_potentiometer_2 = 512
+rotary_potentiometer_3 = 260
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 200
+rotary_potentiometer_6 = 160
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 120
+
+[[preset]]
+name = "Possessed"
+rotary_potentiometer_1 = 240
+rotary_potentiometer_2 = 760
+rotary_potentiometer_3 = 360
+rotary_potentiometer_4 = 0
+rotary_potentiometer_5 = 700
+rotary_potentiometer_6 = 320
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 880
+
+[[preset]]
+name = "Cyan Wireframe"
+rotary_potentiometer_1 = 200
+rotary_potentiometer_2 = 880
+rotary_potentiometer_3 = 300
+rotary_potentiometer_4 = 256
+rotary_potentiometer_5 = 400
+rotary_potentiometer_6 = 96
+toggle_switch_7 = 1
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 420
+
+[firmware]
+# nextpnr placement seed for the stock LZX build: with v1.0.2 seed 1 stalls router1 on HD Standalone;
+# seeds 2, 3 and 4 all build 8/8.
+seed = 2

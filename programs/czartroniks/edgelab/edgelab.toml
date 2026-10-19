@@ -1,0 +1,159 @@
+[program]
+processing_delay_clks = 24
+program_id = "com.czartroniks.edgelab"
+program_version = "1.3.2"
+abi_version = ">=1.0,<2.0"
+program_name = "Edge Lab"
+author = "czartroniks"
+license = "GPL-3.0"
+categories = ["Edges", "Analysis"]
+program_type = "processing"
+hardware_compatibility = ["rev_b"]
+core = "yuv444_30b"
+description = "Video redrawn as edge lines: Fine or Chalk style, four colour modes (compass, source, heat), live Sensitivity slider."
+url = "https://github.com/lzxindustries/videomancer-community-programs"
+
+# --- Rotary Potentiometers (Knobs 1-6) ---
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_1"
+name_label = "Thickness"
+value_labels = ["1 px", "2 px", "3 px", "4 px", "5 px"]
+initial_value_label = "2 px"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_2"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1023
+display_min_value = 0
+display_max_value = 100
+name_label = "Mix"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_3"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 293
+display_min_value = -100
+display_max_value = 100
+name_label = "Brightness"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_4"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 581
+display_min_value = 0
+display_max_value = 400
+name_label = "Contrast"
+suffix_label = "%"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_5"
+name_label = "Posterize"
+value_labels = ["Off", "128", "64", "32", "16", "8", "4", "2"]
+initial_value_label = "8"
+
+[[parameter]]
+parameter_id = "rotary_potentiometer_6"
+name_label = "Color"
+value_labels = ["White", "Compass", "Source", "Heat"]
+initial_value_label = "Source"
+
+# --- Toggle Switches (7-11) ---
+
+[[parameter]]
+parameter_id = "toggle_switch_7"
+name_label = "Smooth"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_8"
+name_label = "Invert"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_9"
+name_label = "Style"
+value_labels = ["Fine", "Chalk"]
+initial_value_label = "Fine"
+
+[[parameter]]
+parameter_id = "toggle_switch_10"
+name_label = "Overlay"
+value_labels = ["Off", "On"]
+initial_value_label = "Off"
+
+[[parameter]]
+parameter_id = "toggle_switch_11"
+name_label = "Output"
+value_labels = ["Binary", "Gradient"]
+initial_value_label = "Binary"
+
+# --- Linear Potentiometer (Slider) ---
+
+[[parameter]]
+parameter_id = "linear_potentiometer_12"
+control_mode = "linear"
+min_value = 0
+max_value = 1023
+initial_value = 1022
+display_min_value = 0
+display_max_value = 100
+name_label = "Sensitivity"
+suffix_label = "%"
+
+# --- Presets ---
+
+[[preset]]
+name = "Contour Map"
+rotary_potentiometer_1 = 262
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_3 = 927
+rotary_potentiometer_4 = 1013
+rotary_potentiometer_5 = 812
+rotary_potentiometer_6 = 100
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Ghost Contours"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 464
+rotary_potentiometer_3 = 656
+rotary_potentiometer_4 = 1013
+rotary_potentiometer_5 = 885
+rotary_potentiometer_6 = 100
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
+
+[[preset]]
+name = "Hairline Sketch"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 1023
+rotary_potentiometer_3 = 197
+rotary_potentiometer_4 = 162
+rotary_potentiometer_5 = 256
+rotary_potentiometer_6 = 300
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023
