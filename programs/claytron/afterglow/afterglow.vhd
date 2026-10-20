@@ -68,6 +68,7 @@ library work;
 use work.video_timing_pkg.all;
 use work.video_stream_pkg.all;
 use work.core_pkg.all;
+use work.core_config_pkg.all;
 use work.all;
 
 architecture afterglow of program_top is
@@ -81,7 +82,17 @@ architecture afterglow of program_top is
     constant C_PROCESSING_DELAY_CLKS : integer := 8;
     -- Stage 3 line buffer depth: 2^11 = 2048 entries per bank.
     -- Covers HD active width (1920) with room to spare for offset wrap.
-    constant C_LINE_DEPTH   : integer := 11;
+    -- SD total lines fit in 1024 clocks. HD needs 2048. An 11-bit buffer
+    -- is one block RAM over the limit on SD HDMI with the current core.
+    function line_depth return integer is
+    begin
+        if C_ENABLE_SD then
+            return 10;
+        else
+            return 11;
+        end if;
+    end function;
+    constant C_LINE_DEPTH   : integer := line_depth;
 
     ---------------------------------------------------------------------------
     -- Stage 0: Control signals (decoded from registers_in)
@@ -158,7 +169,7 @@ architecture afterglow of program_top is
     signal s_lb_wr_addr : unsigned(C_LINE_DEPTH - 1 downto 0)   := (others => '0');
     -- Read address: wr_addr + s_line_offset, clamped to valid pixel range.
     -- Y uses s_lb_rd_addr directly; U and V add their chroma offsets on top.
-    -- _sum signals are full 12-bit signed sums before clamping to 11 bits.
+    -- _sum signals are signed sums one bit wider than the line address.
     signal s_lb_rd_addr_sum   : signed(C_LINE_DEPTH downto 0);
     signal s_lb_rd_addr_sum_u : signed(C_LINE_DEPTH downto 0);
     signal s_lb_rd_addr_sum_v : signed(C_LINE_DEPTH downto 0);
@@ -499,9 +510,9 @@ begin
     -- U and V channels add their chroma offsets on top of the base sum,
     -- independently shifting the colour planes for chromatic aberration.
     ---------------------------------------------------------------------------
-    s_lb_rd_addr_sum   <= signed('0' & s_lb_wr_addr) + resize(s_line_offset, 12);
-    s_lb_rd_addr_sum_u <= s_lb_rd_addr_sum + resize(signed(resize(s_chroma_u, 11)) - 512, 12);
-    s_lb_rd_addr_sum_v <= s_lb_rd_addr_sum + resize(signed(resize(s_chroma_v, 11)) - 512, 12);
+    s_lb_rd_addr_sum   <= signed('0' & s_lb_wr_addr) + resize(s_line_offset, C_LINE_DEPTH + 1);
+    s_lb_rd_addr_sum_u <= s_lb_rd_addr_sum + resize(signed(resize(s_chroma_u, 11)) - 512, C_LINE_DEPTH + 1);
+    s_lb_rd_addr_sum_v <= s_lb_rd_addr_sum + resize(signed(resize(s_chroma_v, 11)) - 512, C_LINE_DEPTH + 1);
 
     -- Clamp Y read address to valid pixel range
     s_lb_rd_addr <= (others => '0')

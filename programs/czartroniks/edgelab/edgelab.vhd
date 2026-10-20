@@ -88,6 +88,7 @@ library work;
 use work.video_timing_pkg.all;
 use work.video_stream_pkg.all;
 use work.core_pkg.all;
+use work.core_config_pkg.all;
 use work.all;
 
 architecture edgelab of program_top is
@@ -176,12 +177,25 @@ architecture edgelab of program_top is
     end function;
 
     ----------------------------------------------------------------------
-    -- Line buffers (BRAM)
+    -- Line buffers (BRAM). HD active width is 1920, so the buffers are
+    -- 2048 deep. An SD line is under 864 clocks and fits in 1024; the
+    -- 2048-deep set is one block RAM over the limit on SD HDMI.
     ----------------------------------------------------------------------
-    type t_lb8 is array (0 to 2047) of std_logic_vector(7 downto 0);
-    type t_lb2 is array (0 to 2047) of std_logic_vector(1 downto 0);
-    type t_lb4 is array (0 to 2047) of std_logic_vector(3 downto 0);
-    type t_lb1 is array (0 to 2047) of std_logic_vector(0 downto 0);
+    function lb_addr_width return integer is
+    begin
+        if C_ENABLE_SD then
+            return 10;
+        else
+            return 11;
+        end if;
+    end function;
+    constant C_LB_AW   : integer := lb_addr_width;
+    constant C_LB_LAST : integer := (2 ** C_LB_AW) - 1;
+
+    type t_lb8 is array (0 to C_LB_LAST) of std_logic_vector(7 downto 0);
+    type t_lb2 is array (0 to C_LB_LAST) of std_logic_vector(1 downto 0);
+    type t_lb4 is array (0 to C_LB_LAST) of std_logic_vector(3 downto 0);
+    type t_lb1 is array (0 to C_LB_LAST) of std_logic_vector(0 downto 0);
 
     signal lb1, lb2, lb3, lb4 : t_lb8 := (others => (others => '0'));  -- luma
     signal mb1, mb2           : t_lb8 := (others => (others => '0'));  -- mag
@@ -208,10 +222,10 @@ architecture edgelab of program_top is
     ----------------------------------------------------------------------
     signal av : std_logic_vector(1 to 20) := (others => '0');
 
-    signal lrx, lwx : unsigned(10 downto 0) := (others => '0');  -- luma rd/wr
-    signal mrx, mwx : unsigned(10 downto 0) := (others => '0');  -- mag rd/wr
-    signal abr, abw : unsigned(10 downto 0) := (others => '0');  -- accept
-    signal drx, dwx : unsigned(10 downto 0) := (others => '0');  -- dilate
+    signal lrx, lwx : unsigned(C_LB_AW - 1 downto 0) := (others => '0');  -- luma rd/wr
+    signal mrx, mwx : unsigned(C_LB_AW - 1 downto 0) := (others => '0');  -- mag rd/wr
+    signal abr, abw : unsigned(C_LB_AW - 1 downto 0) := (others => '0');  -- accept
+    signal drx, dwx : unsigned(C_LB_AW - 1 downto 0) := (others => '0');  -- dilate
     signal cbx      : unsigned(10 downto 0) := (others => '0');  -- blank @S15
     signal gbx      : unsigned(10 downto 0) := (others => '0');  -- guard @S18
     signal obx      : unsigned(10 downto 0) := (others => '0');  -- guard @S19

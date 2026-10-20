@@ -103,11 +103,11 @@ architecture rgb_bit_logic of program_top is
     -- RGB->YUV
     signal s_lut_ry_r : t_lut9 := C_LUT_RY_R;
     signal s_lut_ry_g : t_lut10 := C_LUT_RY_G;
-    signal s_lut_ry_b : t_lut7 := C_LUT_RY_B;
     signal s_lut_ru_r : t_lut9 := C_LUT_RU_R;
     signal s_lut_ru_g : t_lut10 := C_LUT_RU_G;
     signal s_lut_rv_g : t_lut10 := C_LUT_RV_G;
-    signal s_lut_rv_b : t_lut8 := C_LUT_RV_B;
+    -- C_LUT_RY_B and C_LUT_RV_B are computed. Those ROMs no longer fit
+    -- beside the current core.
  
     --------------------------------------------------------------------------------
     -- Functions
@@ -137,6 +137,18 @@ architecture rgb_bit_logic of program_top is
         if    v <    0 then return to_unsigned(0,    C_VIDEO_DATA_WIDTH);
         elsif v > 1023 then return to_unsigned(1023, C_VIDEO_DATA_WIDTH);
         else                return to_unsigned(v,    C_VIDEO_DATA_WIDTH);
+        end if;
+    end function;
+
+    -- round(n/1024), half toward +inf. Matches C_LUT_RY_B and C_LUT_RV_B.
+    function round_div_1024(n : integer) return integer is
+        variable adj : integer;
+    begin
+        adj := n + 512;
+        if adj >= 0 or adj mod 1024 = 0 then
+            return adj / 1024;
+        else
+            return (adj / 1024) - 1;
         end if;
     end function;
 
@@ -599,11 +611,11 @@ begin
         if rising_edge(clk) then
             s_4a_ry_r  <= to_integer(unsigned(s_lut_ry_r(to_integer(s_global_r))));
             s_4a_ry_g  <= to_integer(unsigned(s_lut_ry_g(to_integer(s_global_g))));
-            s_4a_ry_b  <= to_integer(unsigned(s_lut_ry_b(to_integer(s_global_b))));
+            s_4a_ry_b  <= round_div_1024(117 * to_integer(s_global_b));
             s_4a_ru_r  <= to_integer(signed(  s_lut_ru_r(to_integer(s_global_r))));
             s_4a_ru_g  <= to_integer(signed(  s_lut_ru_g(to_integer(s_global_g))));
             s_4a_rv_g  <= to_integer(signed(  s_lut_rv_g(to_integer(s_global_g))));
-            s_4a_rv_b  <= to_integer(signed(  s_lut_rv_b(to_integer(s_global_b))));
+            s_4a_rv_b  <= round_div_1024(-83 * to_integer(s_global_b));
             s_4a_r_d   <= s_global_r;
             s_4a_b_d   <= s_global_b;
             s_4ai_valid <= s_global_r_valid;
