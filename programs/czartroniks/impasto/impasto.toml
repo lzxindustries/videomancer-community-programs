@@ -12,7 +12,7 @@
 processing_delay_clks = 24
 program_id = "com.czartroniks.impasto"
 program_name = "Impasto"
-program_version = "0.3.2"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 author = "czartroniks"
 license = "GPL-3.0"

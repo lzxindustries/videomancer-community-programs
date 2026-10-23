@@ -9,7 +9,7 @@
 [program]
 processing_delay_clks = 16
 program_id = "com.czartroniks.cleave"
-program_version = "0.10.3"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 program_name = "Cleave"
 author = "czartroniks"

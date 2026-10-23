@@ -7,7 +7,7 @@
 processing_delay_clks = 20
 program_id = "com.czartroniks.snowglobe"
 program_name = "Snowglobe"
-program_version = "0.2.2"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 author = "czartroniks"
 license = "GPL-3.0"

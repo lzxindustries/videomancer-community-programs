@@ -9,7 +9,7 @@
 [program]
 processing_delay_clks = 12
 program_id = "com.czartroniks.feedback"
-program_version = "0.1.4"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 program_name = "Feedback"
 author = "czartroniks"

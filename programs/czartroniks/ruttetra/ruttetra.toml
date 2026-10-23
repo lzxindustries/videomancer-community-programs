@@ -10,7 +10,7 @@
 [program]
 processing_delay_clks = 16
 program_id = "com.czartroniks.ruttetra"
-program_version = "0.2.4"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 program_name = "Rutt Etra"
 author = "czartroniks"

@@ -1,7 +1,7 @@
 [program]
 processing_delay_clks = 20
 program_id = "com.czartroniks.fray"
-program_version = "0.4.5"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 program_name = "Fray"
 author = "czartroniks"

@@ -4,7 +4,7 @@
 processing_delay_clks = 16
 program_id = "com.czartroniks.etchwarp"
 program_name = "Etchwarp"
-program_version = "0.1.6"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 author = "czartroniks"
 license = "GPL-3.0"

@@ -7,7 +7,7 @@
 processing_delay_clks = 32
 program_id = "com.czartroniks.noisetone"
 program_name = "Noisetone"
-program_version = "0.2.2"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 author = "czartroniks"
 license = "GPL-3.0"

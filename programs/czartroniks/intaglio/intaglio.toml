@@ -1,7 +1,7 @@
 [program]
 processing_delay_clks = 16
 program_id = "com.czartroniks.intaglio"
-program_version = "0.2.2"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 program_name = "Intaglio"
 author = "czartroniks"

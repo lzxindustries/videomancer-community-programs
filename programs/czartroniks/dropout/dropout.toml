@@ -9,7 +9,7 @@
 processing_delay_clks = 16
 program_id = "com.czartroniks.dropout"
 program_name = "Dropout"
-program_version = "0.2.2"
+program_version = "1.0.0"
 abi_version = ">=1.0,<2.0"
 author = "czartroniks"
 license = "GPL-3.0"
