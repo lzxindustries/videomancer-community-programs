@@ -9,7 +9,7 @@
 [program]
 processing_delay_clks = 8
 program_id = "com.czartroniks.tessera"
-program_version = "1.0.5"
+program_version = "1.0.6"
 abi_version = ">=1.0,<2.0"
 program_name = "Tessera"
 author = "czartroniks"
@@ -122,3 +122,23 @@ suffix_label = "%"
 # config up to v1.0.4; v1.0.5 removed the duplicate-input LUTs behind it.
 # Seed 7 builds all 8 (v1.0.5 own HD timing 80.0/85.3/77.4 MHz Analog/HDMI/Dual).
 seed = 7
+
+# ---------------------------------------------------------------------------
+# PRESETS
+# ---------------------------------------------------------------------------
+
+# Init: the initial values above. A factory preset lets firmware 1.0.1 and
+# 1.0.2 start a new user preset (long press on Init); without one the STATE
+# long press only offers OVERWRITE?/DELETE? (CRS #1891, #1909).
+
+[[preset]]
+name = "Init"
+rotary_potentiometer_1 = 498
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 1023
+rotary_potentiometer_4 = 567
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 256
+toggle_switch_10 = 1
+toggle_switch_11 = 1
+linear_potentiometer_12 = 1023

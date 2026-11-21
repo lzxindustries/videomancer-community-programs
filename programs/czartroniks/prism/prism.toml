@@ -1,7 +1,7 @@
 [program]
 processing_delay_clks = 16
 program_id = "com.czartroniks.prism"
-program_version = "1.1.2"
+program_version = "1.1.3"
 abi_version = ">=1.0,<2.0"
 program_name = "Prism"
 author = "czartroniks"
@@ -100,3 +100,26 @@ parameter_id = "toggle_switch_11"
 name_label = "Reverse"
 value_labels = ["Off", "On"]
 initial_value_label = "Off"
+
+# ---------------------------------------------------------------------------
+# PRESETS
+# ---------------------------------------------------------------------------
+
+# Init: the initial values above. A factory preset lets firmware 1.0.1 and
+# 1.0.2 start a new user preset (long press on Init); without one the STATE
+# long press only offers OVERWRITE?/DELETE? (CRS #1891, #1909).
+
+[[preset]]
+name = "Init"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 8
+rotary_potentiometer_4 = 1023
+rotary_potentiometer_5 = 209
+rotary_potentiometer_6 = 0
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 325

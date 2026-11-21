@@ -23,7 +23,7 @@
 [program]
 program_id = "com.peteappleby.rgb_bit_crush"
 program_name = "RGB Bit Crush"
-program_version = "1.0.1"
+program_version = "1.0.2"
 abi_version = ">=1.0,<2.0"
 author = "Pete Appleby"
 license = "GPL-3.0"
@@ -153,3 +153,26 @@ display_max_value = 100
 initial_value = 1023
 display_float_digits = 1
 suffix_label = "%"
+
+# ---------------------------------------------------------------------------
+# PRESETS
+# ---------------------------------------------------------------------------
+
+# Init: the initial values above. A factory preset lets firmware 1.0.1 and
+# 1.0.2 start a new user preset (long press on Init); without one the STATE
+# long press only offers OVERWRITE?/DELETE? (CRS #1891, #1909).
+
+[[preset]]
+name = "Init"
+rotary_potentiometer_1 = 0
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 0
+rotary_potentiometer_4 = 1023
+rotary_potentiometer_5 = 1023
+rotary_potentiometer_6 = 1023
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 0
+toggle_switch_11 = 0
+linear_potentiometer_12 = 1023

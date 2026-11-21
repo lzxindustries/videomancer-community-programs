@@ -1,7 +1,7 @@
 [program]
 processing_delay_clks = 0
 program_id = "com.czartroniks.pixelbeach"
-program_version = "3.24.2"
+program_version = "3.24.3"
 abi_version = ">=1.0,<2.0"
 program_name = "Pixel Beach"
 author = "czartroniks"
@@ -118,3 +118,26 @@ suffix_label = "%"
 # HD pin >= 0.96 ns from the clock (HD HDMI -0.96, HD Analog HDMI +1.22, HD Dual
 # HDMI -1.24) and builds all 8 (screened 2026-10-18).
 seed = 1
+
+# ---------------------------------------------------------------------------
+# PRESETS
+# ---------------------------------------------------------------------------
+
+# Init: the initial values above. A factory preset lets firmware 1.0.1 and
+# 1.0.2 start a new user preset (long press on Init); without one the STATE
+# long press only offers OVERWRITE?/DELETE? (CRS #1891, #1909).
+
+[[preset]]
+name = "Init"
+rotary_potentiometer_1 = 400
+rotary_potentiometer_2 = 449
+rotary_potentiometer_3 = 412
+rotary_potentiometer_4 = 418
+rotary_potentiometer_5 = 519
+rotary_potentiometer_6 = 758
+toggle_switch_7 = 1
+toggle_switch_8 = 1
+toggle_switch_9 = 1
+toggle_switch_10 = 0
+toggle_switch_11 = 1
+linear_potentiometer_12 = 1023

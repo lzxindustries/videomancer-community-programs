@@ -1,7 +1,7 @@
 [program]
 processing_delay_clks = 24
 program_id = "com.czartroniks.inferno"
-program_version = "2.0.3"
+program_version = "2.0.4"
 abi_version = ">=1.0,<2.0"
 program_name = "Inferno"
 author = "czartroniks"
@@ -104,3 +104,26 @@ display_min_value = 1
 display_max_value = 5
 initial_value = 0
 suffix_label = "x"
+
+# ---------------------------------------------------------------------------
+# PRESETS
+# ---------------------------------------------------------------------------
+
+# Init: the initial values above. A factory preset lets firmware 1.0.1 and
+# 1.0.2 start a new user preset (long press on Init); without one the STATE
+# long press only offers OVERWRITE?/DELETE? (CRS #1891, #1909).
+
+[[preset]]
+name = "Init"
+rotary_potentiometer_1 = 767
+rotary_potentiometer_2 = 0
+rotary_potentiometer_3 = 419
+rotary_potentiometer_4 = 685
+rotary_potentiometer_5 = 691
+rotary_potentiometer_6 = 559
+toggle_switch_7 = 0
+toggle_switch_8 = 0
+toggle_switch_9 = 0
+toggle_switch_10 = 1
+toggle_switch_11 = 0
+linear_potentiometer_12 = 0
